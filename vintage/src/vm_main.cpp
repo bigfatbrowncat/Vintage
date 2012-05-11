@@ -1,0 +1,103 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include <wchar.h>
+
+#include "SDLConsole.h"
+#include "Debugger.h"
+#include "CPU.h"
+#include "../../FontEditor/include/Font.h"
+
+#include <string>
+
+using namespace std;
+
+#define	RESULT_OK									0
+#define	RESULT_ERROR								1
+
+int main(int argc, char* argv[])
+{
+	if (argc < 2)
+	{
+		printf("Using:\n	vintage-vm <image> [<debugging symbols file> <source code file>]\n");
+		return RESULT_ERROR;
+	}
+
+
+	CPU cpu(1024 * 1024, 1024 * 1024, 256, 64);			// 1MB heap and 1MB stack
+
+	Keyboard kbd(cpu, 2, 256);
+
+	Font font("res/font.txt");
+	Font curfont("res/curfont.txt");
+	SDLTerminal window(kbd, font, curfont);
+
+	HardwareTimer ht(cpu, 3);
+	Console term(cpu, 1, &(window.getScreen(0)));
+
+	Debugger* dbg = NULL;
+
+	char* binary_name = argv[1];
+	char* dbg_symbols_name = NULL;
+	char* src_code_name = NULL;
+	FILE *binfile = NULL, *dbg_symbols_file = NULL, *src_code_file = NULL;
+
+	if (argc > 3)
+	{
+		dbg_symbols_name = argv[2];
+		dbg_symbols_file = fopen(dbg_symbols_name, "rb");
+		if (dbg_symbols_file == NULL)
+		{
+			printf("VM loader error: can't open the debugging symbols file\n");
+			goto exit;
+		}
+
+		src_code_name = argv[3];
+		src_code_file = fopen(src_code_name, "r");
+		if (dbg_symbols_file == NULL)
+		{
+			printf("VM loader error: can't open the source code file\n");
+			goto exit;
+		}
+	}
+
+	binfile = fopen(binary_name, "rb");
+	if (binfile == NULL)
+	{
+		printf("VM loader error: can't open the binary file\n");
+		goto exit;
+	}
+
+	int4 act_read;
+	act_read = fread(cpu.GetHeap(), 1, cpu.GetHeapSize(), binfile);
+	printf("Loaded %d bytes binary\n", act_read);
+
+	if (src_code_file != NULL && dbg_symbols_file != NULL)
+	{
+		dbg = new Debugger(dbg_symbols_file, window.getScreen(1));
+
+		printf("Loaded debug symbols and source code\n");
+	}
+	cpu.setDebugger(*dbg);
+
+	term.TurnOn();
+	ht.TurnOn();
+	kbd.TurnOn();
+	cpu.TurnOn();
+
+	window.Run();
+
+	cpu.TurnOff();
+	kbd.TurnOff();
+	ht.TurnOff();
+	term.TurnOff();
+
+exit:
+	if (dbg != NULL) delete dbg;
+
+	if (binfile != NULL) fclose(binfile);
+	if (dbg_symbols_file != NULL) fclose(dbg_symbols_file);
+
+    printf("Bye!\n");
+	return RESULT_OK;
+}

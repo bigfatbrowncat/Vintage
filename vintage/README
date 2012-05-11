@@ -1,0 +1,9 @@
+Run
+
+  vintage-asm code.viasm memory.bin debug_symbols.dbg
+
+to compile and then
+
+  vintage-vm memory.bin debug-symbols.dbg code.viasm
+
+to execute it.

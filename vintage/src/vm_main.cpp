@@ -39,24 +39,15 @@ int main(int argc, char* argv[])
 
 	char* binary_name = argv[1];
 	char* dbg_symbols_name = NULL;
-	char* src_code_name = NULL;
-	FILE *binfile = NULL, *dbg_symbols_file = NULL, *src_code_file = NULL;
+	FILE *binfile = NULL, *dbg_symbols_file = NULL;
 
-	if (argc > 3)
+	if (argc > 2)
 	{
 		dbg_symbols_name = argv[2];
 		dbg_symbols_file = fopen(dbg_symbols_name, "rb");
 		if (dbg_symbols_file == NULL)
 		{
 			printf("VM loader error: can't open the debugging symbols file\n");
-			goto exit;
-		}
-
-		src_code_name = argv[3];
-		src_code_file = fopen(src_code_name, "r");
-		if (dbg_symbols_file == NULL)
-		{
-			printf("VM loader error: can't open the source code file\n");
 			goto exit;
 		}
 	}
@@ -72,7 +63,7 @@ int main(int argc, char* argv[])
 	act_read = fread(cpu.GetHeap(), 1, cpu.GetHeapSize(), binfile);
 	printf("Loaded %d bytes binary\n", act_read);
 
-	if (src_code_file != NULL && dbg_symbols_file != NULL)
+	if (dbg_symbols_file != NULL)
 	{
 		dbg = new Debugger(dbg_symbols_file, window.getScreen(1));
 

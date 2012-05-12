@@ -1,5 +1,5 @@
 PTHREADS_BIN_PATH =		/mingw/bin
-PTHREADS_DLL =			pthreadGC2.dll
+PTHREADS_DLL =			libpthread-2.dll
 
 SDL_INCLUDE_PATH =		../../SDL-1.2.14/include/SDL
 SDL_LIBS_PATH =			../../SDL-1.2.14/lib

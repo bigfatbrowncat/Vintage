@@ -48,7 +48,7 @@ private:
 	pthread_mutex_t printing_mutex;
     Uint32 selected_fore_color, selected_back_color;
     int cursor_x, cursor_y;
-    Keyboard* keyboard;
+    KeyboardController* keyboardController;
 
 protected:
     static wchar_t* encoding;
@@ -68,8 +68,8 @@ public:
 	void SetCursorPosition(int x, int y);
 	void MoveCursor(int dx, int dy);
 
-	void setKeyboard(Keyboard* value) { keyboard = value; }
-	Keyboard* getKeyboard() { return keyboard; }
+	void setKeyboardController(KeyboardController* value) { keyboardController = value; }
+	KeyboardController* getKeyboardController() { return keyboardController; }
 
 	SDLScreen(int frameBufferWidth, int frameBufferHeight);
 	~SDLScreen();

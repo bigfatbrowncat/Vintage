@@ -76,7 +76,7 @@ void Console::CallHandler(int1* heap, int1* stack, int4 stp)
 	}
 }
 
-Keyboard::Keyboard(CPU& cpu, int port, int2 bufferLength):
+CPUKeyboardController::CPUKeyboardController(CPU& cpu, int port, int2 bufferLength):
 	HardwareDevice(cpu, port),
 	bufferLength(bufferLength)
 {
@@ -89,7 +89,7 @@ Keyboard::Keyboard(CPU& cpu, int port, int2 bufferLength):
 	current = 0; last = 0;
 }
 
-Keyboard::~Keyboard()
+CPUKeyboardController::~CPUKeyboardController()
 {
 	pthread_mutex_destroy(&keyBufferLock);
 	delete [] keyDown;
@@ -97,7 +97,7 @@ Keyboard::~Keyboard()
 	delete [] keyCode;
 }
 
-void Keyboard::ChangeKeyState(bool key_down, KeyModifiers modifiers, int4 key_code)
+void CPUKeyboardController::ChangeKeyState(bool key_down, KeyModifiers modifiers, int4 key_code)
 {
 	pthread_mutex_lock(&keyBufferLock);
 	if (last != current - 1)
@@ -114,7 +114,7 @@ void Keyboard::ChangeKeyState(bool key_down, KeyModifiers modifiers, int4 key_co
 	pthread_mutex_unlock(&keyBufferLock);
 }
 
-void Keyboard::ActivityFunction()
+void CPUKeyboardController::ActivityFunction()
 {
 	while (!TurnOffPending())
 	{

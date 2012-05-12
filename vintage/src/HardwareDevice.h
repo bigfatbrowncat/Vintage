@@ -1,7 +1,8 @@
 class HardwareDevice;
 class HardwareTimer;
 class Console;
-class Keyboard;
+class KeyboardController;
+class CPUKeyboardController;
 
 #ifndef HARDWAREDEVICE_H_
 #define HARDWAREDEVICE_H_
@@ -81,7 +82,14 @@ enum KeyModifiers
 	KEYMOD_MODE  = 0x0400
 };
 
-class Keyboard : public HardwareDevice
+class KeyboardController
+{
+public:
+	virtual void ChangeKeyState(bool key_down, KeyModifiers modifiers, int4 key_code) = 0;
+	virtual ~KeyboardController() {}
+};
+
+class CPUKeyboardController : public HardwareDevice, public KeyboardController
 {
 private:
 	pthread_mutex_t keyBufferLock;
@@ -93,9 +101,9 @@ private:
 	int2* modifiers;
 	int4* keyCode;
 public:
-	Keyboard(CPU& cpu, int port, int2 bufferLength);
-	~Keyboard();
-	void ChangeKeyState(bool key_down, KeyModifiers modifiers, int4 key_code);
+	CPUKeyboardController(CPU& cpu, int port, int2 bufferLength);
+	~CPUKeyboardController();
+	virtual void ChangeKeyState(bool key_down, KeyModifiers modifiers, int4 key_code);
 	void CallHandler(int1* heap, int1* stack, int4 stp) {}
 	void ActivityFunction();
 };

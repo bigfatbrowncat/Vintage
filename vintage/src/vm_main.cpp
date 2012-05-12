@@ -19,14 +19,18 @@ int main(int argc, char* argv[])
 {
 	CPU cpu(1024 * 1024, 1024 * 1024, 256, 64);			// 1MB heap and 1MB stack
 
-	Keyboard kbd(cpu, 2, 256);
+	CPUKeyboardController kbd(cpu, 2, 256);
 
 	Font font("res/font.txt");
 	Font curfont("res/curfont.txt");
-	SDLTerminal window(kbd, font, curfont);
+	SDLTerminal window(font, curfont);
+	SDLScreen& cpuScreen = window.getScreen(0);
+	SDLScreen& debuggerScreen = window.getScreen(1);
+
+	cpuScreen.setKeyboardController(&kbd);
 
 	HardwareTimer ht(cpu, 3);
-	Console term(cpu, 1, &(window.getScreen(0)));
+	Console term(cpu, 1, &cpuScreen);
 
 	Debugger* dbg = NULL;
 
@@ -58,7 +62,7 @@ int main(int argc, char* argv[])
 
 			if (dbg_symbols_file != NULL)
 			{
-				dbg = new Debugger(dbg_symbols_file, window.getScreen(1));
+				dbg = new Debugger(dbg_symbols_file, debuggerScreen);
 				cpu.setDebugger(*dbg);
 
 				printf("Loaded debug symbols and source code\n");

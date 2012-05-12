@@ -216,7 +216,7 @@ void SDLScreen::MoveCursor(int dx, int dy)
 SDLScreen::SDLScreen(int frameBufferWidth, int frameBufferHeight) :
 	SDLBuffer(frameBufferWidth, frameBufferHeight),
 	cursor_x(0), cursor_y(0),
-	keyboard(0)
+	keyboardController(0)
 {
 	selected_fore_color = 0xaaaaaa;
 	selected_back_color = 0x000000;

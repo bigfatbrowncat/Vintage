@@ -60,7 +60,7 @@ protected:
 	}
 
 public:
-	SDLTerminal(Keyboard& kbd, Font& font, Font& curFont);
+	SDLTerminal(Font& font, Font& curFont);
 	void Run();
 	SDLScreen& getScreen(int index)
 	{

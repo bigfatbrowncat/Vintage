@@ -17,13 +17,6 @@ using namespace std;
 
 int main(int argc, char* argv[])
 {
-	if (argc < 2)
-	{
-		printf("Using:\n	vintage-vm <image> [<debugging symbols file> <source code file>]\n");
-		return RESULT_ERROR;
-	}
-
-
 	CPU cpu(1024 * 1024, 1024 * 1024, 256, 64);			// 1MB heap and 1MB stack
 
 	Keyboard kbd(cpu, 2, 256);
@@ -37,39 +30,41 @@ int main(int argc, char* argv[])
 
 	Debugger* dbg = NULL;
 
-	char* binary_name = argv[1];
-	char* dbg_symbols_name = NULL;
 	FILE *binfile = NULL, *dbg_symbols_file = NULL;
 
-	if (argc > 2)
+	if (argc >= 2)	// Binary name is present
 	{
-		dbg_symbols_name = argv[2];
-		dbg_symbols_file = fopen(dbg_symbols_name, "rb");
-		if (dbg_symbols_file == NULL)
+		char* binary_name = argv[1];
+		char* dbg_symbols_name = NULL;
+
+		if (argc > 2)
 		{
-			printf("VM loader error: can't open the debugging symbols file\n");
-			goto exit;
+			dbg_symbols_name = argv[2];
+			dbg_symbols_file = fopen(dbg_symbols_name, "rb");
+			if (dbg_symbols_file == NULL)
+			{
+				printf("VM loader error: can't open the debugging symbols file\n");
+			}
+		}
+
+		binfile = fopen(binary_name, "rb");
+		if (binfile != NULL)
+		{
+			printf("VM loader error: can't open the binary file\n");
+
+			int4 act_read;
+			act_read = fread(cpu.GetHeap(), 1, cpu.GetHeapSize(), binfile);
+			printf("Loaded %d bytes binary\n", act_read);
+
+			if (dbg_symbols_file != NULL)
+			{
+				dbg = new Debugger(dbg_symbols_file, window.getScreen(1));
+				cpu.setDebugger(*dbg);
+
+				printf("Loaded debug symbols and source code\n");
+			}
 		}
 	}
-
-	binfile = fopen(binary_name, "rb");
-	if (binfile == NULL)
-	{
-		printf("VM loader error: can't open the binary file\n");
-		goto exit;
-	}
-
-	int4 act_read;
-	act_read = fread(cpu.GetHeap(), 1, cpu.GetHeapSize(), binfile);
-	printf("Loaded %d bytes binary\n", act_read);
-
-	if (dbg_symbols_file != NULL)
-	{
-		dbg = new Debugger(dbg_symbols_file, window.getScreen(1));
-
-		printf("Loaded debug symbols and source code\n");
-	}
-	cpu.setDebugger(*dbg);
 
 	term.TurnOn();
 	ht.TurnOn();
@@ -84,7 +79,11 @@ int main(int argc, char* argv[])
 	term.TurnOff();
 
 exit:
-	if (dbg != NULL) delete dbg;
+	if (dbg != NULL)
+	{
+		printf("Destroying the debugger\n");
+		delete dbg;
+	}
 
 	if (binfile != NULL) fclose(binfile);
 	if (dbg_symbols_file != NULL) fclose(dbg_symbols_file);

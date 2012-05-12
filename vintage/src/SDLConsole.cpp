@@ -95,7 +95,10 @@ void SDLTerminal::process_events()
 				if (event.key.keysym.mod & KMOD_NUM) modifiers = (KeyModifiers)((int)modifiers | (int) KEYMOD_NUM);
 				if (event.key.keysym.mod & KMOD_CAPS) modifiers = (KeyModifiers)((int)modifiers | (int) KEYMOD_CAPS);
 				if (event.key.keysym.mod & KMOD_MODE) modifiers = (KeyModifiers)((int)modifiers | (int) KEYMOD_MODE);
-				keyboard.ChangeKeyState(true, modifiers, event.key.keysym.sym);
+				if (screens[activeScreen]->getKeyboard() != NULL)
+				{
+					screens[activeScreen]->getKeyboard()->ChangeKeyState(true, modifiers, event.key.keysym.sym);
+				}
 			}
 			break;
 		case SDL_KEYUP:
@@ -116,7 +119,10 @@ void SDLTerminal::process_events()
 				if (event.key.keysym.mod & KMOD_NUM) modifiers = (KeyModifiers)((int)modifiers & ~((int) KEYMOD_NUM));
 				if (event.key.keysym.mod & KMOD_CAPS) modifiers = (KeyModifiers)((int)modifiers & ~((int) KEYMOD_CAPS));
 				if (event.key.keysym.mod & KMOD_MODE) modifiers = (KeyModifiers)((int)modifiers & ~((int) KEYMOD_MODE));
-				keyboard.ChangeKeyState(false, modifiers, event.key.keysym.sym);
+				if (screens[activeScreen]->getKeyboard() != NULL)
+				{
+					screens[activeScreen]->getKeyboard()->ChangeKeyState(false, modifiers, event.key.keysym.sym);
+				}
 			}
 			break;
 		case SDL_QUIT:
@@ -130,7 +136,6 @@ void SDLTerminal::process_events()
 SDLTerminal::SDLTerminal(Keyboard& kbd, Font& font, Font& curFont):
 		frame_buffer_width(96),
 		frame_buffer_height(40),
-		keyboard(kbd),
 		font(font),
 		curFont(curFont),
 		activeScreen(0),

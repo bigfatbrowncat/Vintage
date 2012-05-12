@@ -1,17 +1,19 @@
+class HardwareDevice;
+class HardwareTimer;
+class Console;
+class Keyboard;
+
 #ifndef HARDWAREDEVICE_H_
 #define HARDWAREDEVICE_H_
 
 #include <pthread.h>
 
 #include "instructions.h"
-#include "SDLConsole.h"
 #include "CPU.h"
+#include "SDLScreen.h"
 
 #define	TERMINAL_CALL_PRINT									1
 #define	TERMINAL_CALL_MOVECURSOR							2
-
-class CPU;
-class SDLScreen;
 
 class HardwareDevice {
 private:

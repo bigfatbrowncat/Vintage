@@ -1,3 +1,5 @@
+class CPU;
+
 #ifndef CPU_H_
 #define CPU_H_
 
@@ -8,9 +10,6 @@
 #include "HardwareDevice.h"
 #include "Debugger.h"
 
-//#define PORTS_NUMBER					1024
-
-class HardwareDevice;
 
 class CPU
 {
@@ -69,6 +68,7 @@ public:
 	{
 		heap = new int1[heap_size];
 		this->heapSize = heap_size;
+		heap[0] = halt;
 
 		stack = new int1[stack_size];
 		this->stackSize = stack_size;

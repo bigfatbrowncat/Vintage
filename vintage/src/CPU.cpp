@@ -12,32 +12,6 @@
 
 //#define OUTPUT_INSTRUCTIONS
 
-void Debugger::reportFlow(int4 flow)
-{
-	const DebugEntry* fl = findLine(flow);
-
-	screen.SelectForeColor(128, 128, 128);
-	wstringstream strs;
-	strs << std::setw(8) << setfill(L'0') << std::hex << uppercase << fl->mem_pos << L" ";
-	screen.Write(strs.str().c_str());
-
-	screen.SelectForeColor(192, 192, 192);
-	wstringstream strs2;
-	if (fl != NULL)
-	{
-		//printf("0x%X: %s\n", fl->mem_pos, fl->lines.c_str());
-		strs2 << fl->lines << L"\n";
-	}
-	else
-	{
-		//printf("0x%X: <<No such address in debug symbols>>\n");
-		wstringstream strs2;
-		strs2 << L"<< No such address in debug symbols >>\n";
-	}
-	screen.Write(strs2.str().c_str());
-}
-
-
 void* CPU_activity_function(void* arg)
 {
 	((CPU*)arg)->ActivityFunction();

@@ -13,6 +13,8 @@ class SDLTerminal;
 
 #define SCREENS_COUNT	12		// F1..F12
 
+typedef bool CustomEventsHandler(void* data);
+
 class SDLTerminal
 {
 private:
@@ -36,6 +38,8 @@ private:
     wchar_t cursor_symbol;
     int cursor_x, cursor_y;
 
+    CustomEventsHandler* customEventsHandler;
+    void* customEventsHandlerData;
 
 	void process_events();
 	bool handleSpecialKeyDown(SDL_keysym* keysym);
@@ -59,9 +63,24 @@ protected:
 	    SDL_WM_SetCaption(captionLong, captionShort);
 	}
 
+	// Should return true to continue working
+	bool handleCustomEvents()
+	{
+		if (customEventsHandler != NULL)
+		{
+			return customEventsHandler(customEventsHandlerData);
+		}
+	}
+
 public:
 	SDLTerminal(Font& font, Font& curFont);
+	void setCustomEventsHandler(CustomEventsHandler* handler, void* data)
+	{
+		customEventsHandler = handler;
+		customEventsHandlerData = data;
+	}
 	void Run();
+
 	SDLScreen& getScreen(int index)
 	{
 		return *(screens[index]);

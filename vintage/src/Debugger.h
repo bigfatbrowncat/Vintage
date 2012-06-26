@@ -1,4 +1,5 @@
 class Debugger;
+class DebuggerKeyboardController;
 
 #ifndef DEBUGGER_H
 #define DEBUGGER_H
@@ -11,12 +12,15 @@ class Debugger;
 #include <stdio.h>
 
 #include "SDLScreen.h"
+#include "HardwareDevice.h"
 
 using namespace std;
 
 #define CODE_LINE_MAX_LENGTH		256
 
-class SDLScreen;
+enum DebuggerOrder { Wait, Go, Halt };
+
+class Screen;
 
 struct DebugEntry
 {
@@ -29,10 +33,69 @@ class Debugger
 private:
 	vector<DebugEntry> entries;
 	SDLScreen& screen;
+	volatile bool running;
+	volatile bool haltPending;
+	volatile bool stepPending;
+	pthread_mutex_t printing_mutex;
+protected:
+	void printMenu();
 public:
 	Debugger(FILE* debug_symbols, SDLScreen& screen);
+	virtual ~Debugger();
 	const DebugEntry* findLine(int4 mem_pos) const;
-	void reportFlow(int4 flow);
+	void stepDone(int4 flow);
+	const DebuggerOrder askForOrder(int4 flow)
+	{
+		if (haltPending)
+		{
+			return Halt;
+		}
+		else if (!running)
+		{
+			if (stepPending)
+			{
+				stepPending = false;
+				return Go;
+			}
+			else
+			{
+				return Wait;
+			}
+		}
+		else
+		{
+			return Go;
+		}
+	}
+	void run()
+	{
+		pthread_mutex_lock(&printing_mutex);
+		running = true;
+		printMenu();
+		pthread_mutex_unlock(&printing_mutex);
+	}
+	void stop()
+	{
+		pthread_mutex_lock(&printing_mutex);
+		running = false;
+		printMenu();
+		pthread_mutex_unlock(&printing_mutex);
+	}
+	void step()
+	{
+		pthread_mutex_lock(&printing_mutex);
+		running = false;
+		stepPending = true;
+		printMenu();
+		pthread_mutex_unlock(&printing_mutex);
+	}
+	void halt()
+	{
+		pthread_mutex_lock(&printing_mutex);
+		haltPending = true;
+		printMenu();
+		pthread_mutex_unlock(&printing_mutex);
+	}
 };
 
 #endif

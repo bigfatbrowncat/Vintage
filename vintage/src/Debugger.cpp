@@ -1,8 +1,10 @@
 #include "Debugger.h"
 
 Debugger::Debugger(FILE* debug_symbols, SDLScreen& screen) :
-	screen(screen)
+	screen(screen), running(false), haltPending(false), stepPending(false)
 {
+	pthread_mutex_init(&printing_mutex, NULL);
+
 	while (!feof(debug_symbols))
 	{
 		int4 mem_pos;
@@ -28,6 +30,12 @@ Debugger::Debugger(FILE* debug_symbols, SDLScreen& screen) :
 		entries.push_back(newEntry);
 	}
 }
+
+Debugger::~Debugger()
+{
+	pthread_mutex_destroy(&printing_mutex);
+}
+
 const DebugEntry* Debugger::findLine(int4 mem_pos) const
 {
 	for (unsigned int i = 0; i < entries.size() - 1; i++)
@@ -41,8 +49,60 @@ const DebugEntry* Debugger::findLine(int4 mem_pos) const
 	return &(entries[entries.size() - 1]);
 }
 
-void Debugger::reportFlow(int4 flow)
+void Debugger::printMenu()
 {
+	screen.SetCursorPosition(0, 0);
+	screen.SelectForeColor(0, 0, 0);
+
+	screen.SelectBackColor(192, 192, 192);
+	screen.Write(L" Vintage hardware debugging tool ");
+	screen.SelectBackColor(0, 0, 0);
+	screen.Write(L"   ");
+	if (this->running)
+	{
+		screen.SelectBackColor(192, 192, 192);
+	}
+	else
+	{
+		screen.SelectBackColor(128, 128, 128);
+	}
+	screen.Write(L" F1 Run ");
+	screen.SelectBackColor(0, 0, 0);
+	screen.Write(L" ");
+	if (!this->running && !this->stepPending)
+	{
+		screen.SelectBackColor(192, 192, 192);
+	}
+	else
+	{
+		screen.SelectBackColor(128, 128, 128);
+	}
+	screen.Write(L" F2 Pause ");
+	screen.SelectBackColor(0, 0, 0);
+	screen.Write(L" ");
+	if (this->stepPending)
+	{
+		screen.SelectBackColor(192, 192, 192);
+	}
+	else
+	{
+		screen.SelectBackColor(128, 128, 128);
+	}
+	screen.Write(L" F3 Step ");
+	screen.SelectBackColor(0, 0, 0);
+	screen.Write(L" ");
+	screen.SelectBackColor(128, 128, 128);
+	screen.Write(L" F4 Halt CPU ");
+	screen.SelectBackColor(0, 0, 0);
+	screen.Write(L" ");
+	screen.SetCursorPosition(0, screen.getFrameBufferHeight() - 1);
+}
+
+void Debugger::stepDone(int4 flow)
+{
+	pthread_mutex_lock(&printing_mutex);
+	screen.SetCursorPosition(0, screen.getFrameBufferHeight() - 1);
+
 	const DebugEntry* fl = findLine(flow);
 
 	screen.SelectForeColor(128, 128, 128);
@@ -64,4 +124,7 @@ void Debugger::reportFlow(int4 flow)
 		strs2 << L"<< No such address in debug symbols >>\n";
 	}
 	screen.Write(strs2.str().c_str());
+
+	printMenu();
+	pthread_mutex_unlock(&printing_mutex);
 }

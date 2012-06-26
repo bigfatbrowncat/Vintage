@@ -31,10 +31,20 @@ void CPU::ActivityFunction()
 
 	while (!terminationPending)
 	{
-		// Logging to debug
+		// Logging to debugger
 		if (pDebugger != NULL)
 		{
-			pDebugger->reportFlow(flow);
+			pDebugger->stepDone(flow);
+			DebuggerOrder order;
+			while ((order = pDebugger->askForOrder(flow)) == Wait)
+			{
+				Sleep(50);
+			}
+
+			if (order == Halt)
+			{
+				break;
+			}
 		}
 
 		// Checking ports input
@@ -845,4 +855,5 @@ void CPU::ActivityFunction()
 
 	}
 
+	halted = true;
 }

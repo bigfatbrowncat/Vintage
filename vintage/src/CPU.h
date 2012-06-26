@@ -46,10 +46,16 @@ private:
 
 	void ActivityFunction();
 	volatile bool terminationPending;
+	volatile bool halted;
 public:
 	void TurnOff()
 	{
 		terminationPending = true;
+	}
+
+	bool isHalted()
+	{
+		return halted;
 	}
 
 	void CallPortIn(int4 port, const int1* data, int4 data_len)

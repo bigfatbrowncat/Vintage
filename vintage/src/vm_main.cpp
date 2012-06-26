@@ -15,6 +15,19 @@ using namespace std;
 #define	RESULT_OK									0
 #define	RESULT_ERROR								1
 
+bool handleTerminalCustomEvents(void* data)
+{
+	CPU* cpu = (CPU*)data;
+	if (cpu->isHalted())
+	{
+		return false;
+	}
+	else
+	{
+		return true;
+	}
+}
+
 int main(int argc, char* argv[])
 {
 	CPU cpu(1024 * 1024, 1024 * 1024, 256, 64);			// 1MB heap and 1MB stack
@@ -24,6 +37,8 @@ int main(int argc, char* argv[])
 	Font font("res/font.txt");
 	Font curfont("res/curfont.txt");
 	SDLTerminal window(font, curfont);
+	window.setCustomEventsHandler(handleTerminalCustomEvents, &cpu);
+
 	SDLScreen& cpuScreen = window.getScreen(0);
 	SDLScreen& debuggerScreen = window.getScreen(1);
 
@@ -33,6 +48,7 @@ int main(int argc, char* argv[])
 	Console term(cpu, 1, &cpuScreen);
 
 	Debugger* dbg = NULL;
+	DebuggerKeyboardController* dbg_kbd = NULL;
 
 	FILE *binfile = NULL, *dbg_symbols_file = NULL;
 
@@ -63,6 +79,8 @@ int main(int argc, char* argv[])
 			if (dbg_symbols_file != NULL)
 			{
 				dbg = new Debugger(dbg_symbols_file, debuggerScreen);
+				dbg_kbd = new DebuggerKeyboardController(*dbg);
+				debuggerScreen.setKeyboardController(dbg_kbd);
 				cpu.setDebugger(*dbg);
 
 				printf("Loaded debug symbols and source code\n");
@@ -82,7 +100,6 @@ int main(int argc, char* argv[])
 	ht.TurnOff();
 	term.TurnOff();
 
-exit:
 	if (dbg != NULL)
 	{
 		printf("Destroying the debugger\n");

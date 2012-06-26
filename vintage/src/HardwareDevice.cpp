@@ -135,3 +135,26 @@ void CPUKeyboardController::ActivityFunction()
 }
 
 
+void DebuggerKeyboardController::ChangeKeyState(bool key_down, KeyModifiers modifiers, int4 key_code)
+{
+	if (key_down)
+	{
+		if (key_code == SDLK_F1)
+		{
+			debugger.run();
+		}
+		else if (key_code == SDLK_F2)
+		{
+			debugger.stop();
+		}
+		else if (key_code == SDLK_F3)
+		{
+			debugger.step();
+		}
+		else if (key_code == SDLK_F4)
+		{
+			debugger.halt();
+		}
+
+	}
+}

@@ -16,7 +16,8 @@ class CPUKeyboardController;
 #define	TERMINAL_CALL_PRINT									1
 #define	TERMINAL_CALL_MOVECURSOR							2
 
-class HardwareDevice {
+class HardwareDevice
+{
 private:
 	CPU& cpu;
 	int port;
@@ -86,7 +87,6 @@ class KeyboardController
 {
 public:
 	virtual void ChangeKeyState(bool key_down, KeyModifiers modifiers, int4 key_code) = 0;
-	virtual ~KeyboardController() {}
 };
 
 class CPUKeyboardController : public HardwareDevice, public KeyboardController
@@ -102,10 +102,20 @@ private:
 	int4* keyCode;
 public:
 	CPUKeyboardController(CPU& cpu, int port, int2 bufferLength);
-	~CPUKeyboardController();
+	virtual ~CPUKeyboardController();
 	virtual void ChangeKeyState(bool key_down, KeyModifiers modifiers, int4 key_code);
 	void CallHandler(int1* heap, int1* stack, int4 stp) {}
 	void ActivityFunction();
 };
+
+class DebuggerKeyboardController : public KeyboardController
+{
+private:
+	Debugger& debugger;
+public:
+	DebuggerKeyboardController(Debugger& debugger) : debugger(debugger) {}
+	void ChangeKeyState(bool key_down, KeyModifiers modifiers, int4 key_code);
+};
+
 
 #endif /* HARDWAREDEVICE_H_ */

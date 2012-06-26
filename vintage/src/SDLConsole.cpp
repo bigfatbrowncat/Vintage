@@ -40,7 +40,7 @@ wchar_t* SDLScreen::cursor_encoding = L"0123456789";
 
 bool SDLTerminal::handleSpecialKeyDown(SDL_keysym* keysym)
 {
-	if (keysym->sym >= SDLK_F1 && keysym->sym <= SDLK_F12)
+	if ((keysym->mod & (KMOD_LCTRL | KMOD_RCTRL)) && (keysym->sym >= SDLK_F1 && keysym->sym <= SDLK_F12))
 	{
 		activeScreen = (keysym->sym - SDLK_F1);
 		activeScreenChanged = true;
@@ -215,6 +215,12 @@ void SDLTerminal::Run()
     	}
         /* Process incoming events. */
         process_events( );
+
+        if (!handleCustomEvents())
+        {
+        	quit_pending = true;
+        }
+
         /* Draw the screen. */
     	draw(mainSurface);
     }

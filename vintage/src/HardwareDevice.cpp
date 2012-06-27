@@ -139,21 +139,102 @@ void DebuggerKeyboardController::ChangeKeyState(bool key_down, KeyModifiers modi
 {
 	if (key_down)
 	{
-		if (key_code == SDLK_F1)
+		switch (key_code)
 		{
+		case SDLK_F1:
 			debugger.run();
-		}
-		else if (key_code == SDLK_F2)
-		{
+			break;
+		case SDLK_F2:
 			debugger.stop();
-		}
-		else if (key_code == SDLK_F3)
-		{
+			break;
+		case SDLK_F3:
 			debugger.step();
-		}
-		else if (key_code == SDLK_F4)
-		{
+			break;
+		case SDLK_F4:
 			debugger.halt();
+			break;
+
+		case SDLK_INSERT:
+			debugger.addWatch();
+			break;
+		case SDLK_0:
+			if (debugger.isEditingWatchAddress())
+				debugger.inputDigit(0);
+			break;
+		case SDLK_1:
+			if (debugger.isEditingWatchAddress() || debugger.isEditingWatchLength())
+				debugger.inputDigit(1);
+			break;
+		case SDLK_2:
+			if (debugger.isEditingWatchAddress() || debugger.isEditingWatchLength())
+				debugger.inputDigit(2);
+			break;
+		case SDLK_3:
+			if (debugger.isEditingWatchAddress())
+				debugger.inputDigit(3);
+			break;
+		case SDLK_4:
+			if (debugger.isEditingWatchAddress() || debugger.isEditingWatchLength())
+				debugger.inputDigit(4);
+			break;
+		case SDLK_5:
+			if (debugger.isEditingWatchAddress())
+				debugger.inputDigit(5);
+			break;
+		case SDLK_6:
+			if (debugger.isEditingWatchAddress())
+				debugger.inputDigit(6);
+			break;
+		case SDLK_7:
+			if (debugger.isEditingWatchAddress())
+				debugger.inputDigit(7);
+			break;
+		case SDLK_8:
+			if (debugger.isEditingWatchAddress() || debugger.isEditingWatchLength())
+				debugger.inputDigit(8);
+			break;
+		case SDLK_9:
+			if (debugger.isEditingWatchAddress())
+				debugger.inputDigit(9);
+			break;
+		case SDLK_a:
+			if (debugger.isEditingWatchAddress())
+				debugger.inputDigit(0xA);
+			break;
+		case SDLK_b:
+			if (debugger.isEditingWatchAddress())
+				debugger.inputDigit(0xB);
+			break;
+		case SDLK_c:
+			if (debugger.isEditingWatchAddress())
+				debugger.inputDigit(0xC);
+			break;
+		case SDLK_d:
+			if (debugger.isEditingWatchAddress())
+				debugger.inputDigit(0xD);
+			break;
+		case SDLK_e:
+			if (debugger.isEditingWatchAddress())
+				debugger.inputDigit(0xE);
+			break;
+		case SDLK_f:
+			if (debugger.isEditingWatchAddress())
+				debugger.inputDigit(0xF);
+			break;
+		case SDLK_SPACE:
+			if (debugger.isEditingWatchAddress())
+				debugger.switchRadix();
+			break;
+		case SDLK_TAB:
+			debugger.changeSelection();
+			break;
+		case SDLK_BACKSPACE:
+			if (debugger.isEditingWatchAddress())
+				debugger.removeWatchAddressDigit();
+			break;
+		case SDLK_RETURN:
+			debugger.completeAddWatch();
+			break;
 		}
 
 	}

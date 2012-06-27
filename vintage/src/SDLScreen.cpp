@@ -108,15 +108,7 @@ void SDLScreen::Clear()
 	SymbolPlace* sp = LockFrameBuffer();
 	for (int i = 0; i < getFrameBufferWidth() * getFrameBufferHeight(); i++)
 	{
-		sp[i].fore_b = selected_fore_color & 0xFF;
-		sp[i].fore_g = selected_fore_color >> 8 & 0xFF;
-		sp[i].fore_r = selected_fore_color >> 16 & 0xFF;
-
-		sp[i].back_b = selected_back_color & 0xFF;
-		sp[i].back_g = selected_back_color >> 8 & 0xFF;
-		sp[i].back_r = selected_back_color >> 16 & 0xFF;
-
-		sp[i].code = 0;
+		sp[i] = createSymbolPlaceWithCurrentColors(0);
 	}
 	UnlockFrameBuffer();
 	pthread_mutex_unlock(&printing_mutex);
@@ -136,15 +128,9 @@ void SDLScreen::Write(const wchar_t* str)
 		else if (str[i] != '\n')
 		{
 			int pos = cursor_y * getFrameBufferWidth() + cursor_x;
-			sp[pos].fore_b = selected_fore_color & 0xFF;
-			sp[pos].fore_g = selected_fore_color >> 8 & 0xFF;
-			sp[pos].fore_r = selected_fore_color >> 16 & 0xFF;
 
-			sp[pos].back_b = selected_back_color & 0xFF;
-			sp[pos].back_g = selected_back_color >> 8 & 0xFF;
-			sp[pos].back_r = selected_back_color >> 16 & 0xFF;
+			sp[pos] = createSymbolPlaceWithCurrentColors(str[i]);
 
-			sp[pos].code = str[i];
 			cursor_x ++;
 		}
 		else
@@ -170,14 +156,7 @@ void SDLScreen::Write(const wchar_t* str)
 			for (int i = 0; i < getFrameBufferWidth(); i++)
 			{
 				int pos = (getFrameBufferHeight() - 1) * getFrameBufferWidth() + i;
-				sp[pos].code = 0;
-				sp[pos].fore_b = selected_fore_color & 0xFF;
-				sp[pos].fore_g = selected_fore_color >> 8 & 0xFF;
-				sp[pos].fore_r = selected_fore_color >> 16 & 0xFF;
-
-				sp[pos].back_b = selected_back_color & 0xFF;
-				sp[pos].back_g = selected_back_color >> 8 & 0xFF;
-				sp[pos].back_r = selected_back_color >> 16 & 0xFF;
+				sp[pos] = createSymbolPlaceWithCurrentColors(0);
 			}
 			cursor_x = 0;
 			cursor_y --;

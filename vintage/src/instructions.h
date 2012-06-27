@@ -9,6 +9,8 @@ typedef signed short int2;
 typedef signed int int4;
 typedef signed long int8;
 
+typedef unsigned int addr;
+
 // nop
 const instr_t nop 				= 0;
 

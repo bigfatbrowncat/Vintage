@@ -34,7 +34,7 @@ void CPU::ActivityFunction()
 		// Logging to debugger
 		if (pDebugger != NULL)
 		{
-			pDebugger->stepDone(flow);
+			pDebugger->stepDone(flow, &stack[stackPtr], stackSize - stackPtr, heap, heapSize);
 			DebuggerOrder order;
 			while ((order = pDebugger->askForOrder(flow)) == Wait)
 			{

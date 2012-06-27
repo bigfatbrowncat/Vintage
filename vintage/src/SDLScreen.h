@@ -60,12 +60,29 @@ protected:
 	void putChar(SDL_Surface *surface, Font& font, wchar_t ch, int sx, int sy, int x_left, int y_top, wchar_t* encoding,  Uint8 r, Uint8 g, Uint8 b);
 
 public:
+    SymbolPlace createSymbolPlaceWithCurrentColors(wchar_t ch)
+    {
+    	SymbolPlace res;
+		res.fore_b = selected_fore_color & 0xFF;
+		res.fore_g = selected_fore_color >> 8 & 0xFF;
+		res.fore_r = selected_fore_color >> 16 & 0xFF;
+
+		res.back_b = selected_back_color & 0xFF;
+		res.back_g = selected_back_color >> 8 & 0xFF;
+		res.back_r = selected_back_color >> 16 & 0xFF;
+
+		res.code = ch;
+
+		return res;
+    }
 	void Clear();
 	void Write(const wchar_t* str);
 
 	void SelectForeColor(Uint8 r, Uint8 g, Uint8 b);
 	void SelectBackColor(Uint8 r, Uint8 g, Uint8 b);
 	void SetCursorPosition(int x, int y);
+	int GetCursorPositionX() { return cursor_x; }
+	int GetCursorPositionY() { return cursor_y; }
 	void MoveCursor(int dx, int dy);
 
 	void setKeyboardController(KeyboardController* value) { keyboardController = value; }

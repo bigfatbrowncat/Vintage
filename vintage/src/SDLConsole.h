@@ -70,6 +70,7 @@ protected:
 		{
 			return customEventsHandler(customEventsHandlerData);
 		}
+		return true;
 	}
 
 public:

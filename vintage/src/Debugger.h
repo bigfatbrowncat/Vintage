@@ -39,10 +39,12 @@ private:
 	pthread_mutex_t printing_mutex;
 protected:
 	void printMenu();
+	void writeFixed(const wchar_t* str, int length);
 public:
+	const vector<DebugEntry>& getEntries() const { return entries; }
 	Debugger(FILE* debug_symbols, SDLScreen& screen);
 	virtual ~Debugger();
-	const DebugEntry* findLine(int4 mem_pos) const;
+	int findLine(int4 mem_pos) const;
 	void stepDone(int4 flow);
 	const DebuggerOrder askForOrder(int4 flow)
 	{

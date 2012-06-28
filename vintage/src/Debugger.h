@@ -1,5 +1,4 @@
 class Debugger;
-class DebuggerKeyboardController;
 
 #ifndef DEBUGGER_H
 #define DEBUGGER_H
@@ -18,9 +17,15 @@ using namespace std;
 
 #define CODE_LINE_MAX_LENGTH		256
 
-enum DebuggerOrder { Wait, Go, Halt };
-
 class Screen;
+class DebuggerKeyboardController;
+
+enum DebuggerOrder
+{
+	Wait,
+	Go,
+	Halt
+};
 
 struct DebugEntry
 {
@@ -34,142 +39,105 @@ struct WatchEntry
 	int1 length;
 };
 
-enum DebuggerUIState
+enum DebuggerActiveWindow
 {
-	Idle,
-	AddWatchEditAddress,
-	AddWatchEditLength
+	dawCode		= 0,
+	dawStack	= 1,
+	dawHeap		= 2,
+	dawSize		= 3
+};
+
+enum ControlKey
+{
+	ckUp,
+	ckDown,
+	ckPageUp,
+	ckPageDown,
+	ckLeft,
+	ckRight,
+	ckTab
 };
 
 class Debugger
 {
+	friend class DebuggerKeyboardController;
 private:
-	int top_space;
-	DebuggerUIState state;
+	int topSpace;
+
+	int wStackTopRow;
+	int wHeapTopRow;
+	int wStackBytes;
+	int wHeapBytes;
+
+
+	DebuggerActiveWindow activeWindow;
 	vector<DebugEntry> entries;
-	vector<WatchEntry> watches;
 	SDLScreen& screen;
 	volatile bool running;
 	volatile bool haltPending;
 	volatile bool stepPending;
-	pthread_mutex_t printing_mutex;
-
-	addr watch_add_address;
-	int1 watch_add_bytes;
+	pthread_mutex_t printingMutex;
 
 	int4 flow;
-
 	int1* stack;
 	int4 stackSize;
-
+	int4 stackMaxSize;
 	int1* heap;
 	int4 heapSize;
-
-	int radix;
 
 protected:
 	void printMenu();
 	void printFixed(int x, int y, const wchar_t* str, int length);
 public:
-	void updateWatchUI();
 	void updateUI();
+	void handleControlKey(ControlKey ck)
+	{
+		int heapLines = heapSize / wHeapBytes;
+		int stackLines = stackMaxSize / wStackBytes;
 
-	bool isEditingWatchAddress()
-	{
-		return (state == AddWatchEditAddress);
-	}
-	bool isEditingWatchLength()
-	{
-		return (state == AddWatchEditLength);
-	}
-
-	void addWatch()
-	{
-		if (state == Idle)
+		if (ck == ckTab)
 		{
-			watch_add_address = 0;
-			watch_add_bytes = 8;
-			selectWatchAddressEditor();
-		}
-	}
-	void selectWatchAddressEditor()
-	{
-		state = AddWatchEditAddress;
-		updateUI();
-	}
-	void inputDigit(char d)
-	{
-		if (state == AddWatchEditAddress)
-		{
-			if (radix == 16)
-			{
-				if (watch_add_address < 0x10000000)
-				{
-					watch_add_address = watch_add_address * 0x10 + d;
-					updateUI();
-				}
-			}
-			else if (radix == 10)
-			{
-				if (d < 10 && watch_add_address * 10 + d > watch_add_address)
-				{
-					watch_add_address = watch_add_address * 10 + d;
-					updateUI();
-				}
-			}
-		}
-		else if (state == AddWatchEditLength)
-		{
-			watch_add_bytes = d;
-			updateUI();
-		}
-	}
-	void removeWatchAddressDigit()
-	{
-		if (radix == 16)
-		{
-			watch_add_address /= 0x10;
-		}
-		else if (radix == 10)
-		{
-			watch_add_address /= 10;
+			activeWindow = (DebuggerActiveWindow)((activeWindow + 1) % dawSize);
 		}
 
-		updateUI();
-	}
-	void selectWatchLengthEditor()
-	{
-		state = AddWatchEditLength;
-		updateUI();
-	}
-	void completeAddWatch()
-	{
-		if (state == AddWatchEditAddress || state == AddWatchEditLength)
+		else if (ck == ckUp && activeWindow == dawHeap)
 		{
-			state = Idle;
-
-			WatchEntry we;
-			we.stack_pos = watch_add_address;
-			we.length = watch_add_bytes;
-
-			watches.push_back(we);
-			updateUI();
+			wHeapTopRow --;
 		}
-	}
-	void changeSelection()
-	{
-		if (state == AddWatchEditAddress)
-			selectWatchLengthEditor();
-		else if (state == AddWatchEditLength)
-			selectWatchAddressEditor();
-	}
+		else if (ck == ckDown && activeWindow == dawHeap)
+		{
+			wHeapTopRow ++;
+		}
+		else if (ck == ckUp && activeWindow == dawStack)
+		{
+			wStackTopRow --;
+		}
+		else if (ck == ckDown && activeWindow == dawStack)
+		{
+			wStackTopRow ++;
+		}
 
-	void switchRadix()
-	{
-		if (radix == 16)
-			radix = 10;
-		else if (radix == 10)
-			radix = 16;
+		else if (ck == ckPageUp && activeWindow == dawHeap)
+		{
+			wHeapTopRow -= topSpace / 2;
+		}
+		else if (ck == ckPageDown && activeWindow == dawHeap)
+		{
+			wHeapTopRow += topSpace / 2;
+		}
+		else if (ck == ckPageUp && activeWindow == dawStack)
+		{
+			wStackTopRow -= topSpace / 2;
+		}
+		else if (ck == ckPageDown && activeWindow == dawStack)
+		{
+			wStackTopRow += topSpace / 2;
+		}
+
+		if (wHeapTopRow < 0) wHeapTopRow = 0;
+		if (wStackTopRow < 0) wStackTopRow = 0;
+		if (wHeapTopRow > heapLines) wHeapTopRow = heapLines;
+		if (wStackTopRow > stackLines) wStackTopRow = stackLines;
 
 		updateUI();
 	}
@@ -178,7 +146,7 @@ public:
 	Debugger(FILE* debug_symbols, SDLScreen& screen);
 	virtual ~Debugger();
 	int findLine(int4 mem_pos) const;
-	void stepDone(int4 flow, int1* stack, int4 stackSize, int1* heap, int4 heapSize);
+	void flowChanged(int4 flow, int1* stack, int4 stackMaxSize, int4 stackSize, int1* heap, int4 heapSize);
 	const DebuggerOrder askForOrder(int4 flow)
 	{
 		if (haltPending)
@@ -204,32 +172,32 @@ public:
 	}
 	void run()
 	{
-		pthread_mutex_lock(&printing_mutex);
+		pthread_mutex_lock(&printingMutex);
 		running = true;
 		printMenu();
-		pthread_mutex_unlock(&printing_mutex);
+		pthread_mutex_unlock(&printingMutex);
 	}
 	void stop()
 	{
-		pthread_mutex_lock(&printing_mutex);
+		pthread_mutex_lock(&printingMutex);
 		running = false;
 		printMenu();
-		pthread_mutex_unlock(&printing_mutex);
+		pthread_mutex_unlock(&printingMutex);
 	}
 	void step()
 	{
-		pthread_mutex_lock(&printing_mutex);
+		pthread_mutex_lock(&printingMutex);
 		running = false;
 		stepPending = true;
 		printMenu();
-		pthread_mutex_unlock(&printing_mutex);
+		pthread_mutex_unlock(&printingMutex);
 	}
 	void halt()
 	{
-		pthread_mutex_lock(&printing_mutex);
+		pthread_mutex_lock(&printingMutex);
 		haltPending = true;
 		printMenu();
-		pthread_mutex_unlock(&printing_mutex);
+		pthread_mutex_unlock(&printingMutex);
 	}
 };
 

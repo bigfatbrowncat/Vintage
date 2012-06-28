@@ -10,6 +10,7 @@ class CPU;
 #include "HardwareDevice.h"
 #include "Debugger.h"
 
+#define NO_INDEX		-1
 
 class CPU
 {
@@ -29,15 +30,16 @@ private:
 	int4 port_data_length;
 
 	HardwareDevice** devices;
-	int4* portInHandlers;
+	int4* inputPortHandlersAddresses;
 
-	bool* portInWaiting;
+	bool* inputPortIsWaiting;
 	int1* portInWaitingData;
 	int4* portInWaitingDataLength;
 
-	volatile int4 portInHandling;
-	volatile bool anyPortInWaiting;
-	volatile bool portInHandlingInProgress;
+	volatile int4* inputPortsCurrentlyHandlingStack;
+	int4 inputPortsCurrentlyHandlingCount;
+
+	volatile bool someInputPortIsWaiting;
 
 	pthread_t activity;
 	friend void* CPU_activity_function(void* arg);
@@ -58,11 +60,11 @@ public:
 		return halted;
 	}
 
-	void CallPortIn(int4 port, const int1* data, int4 data_len)
+	void handleInputPort(int4 port, const int1* data, int4 data_len)
 	{
 		pthread_mutex_lock(&portReadingMutex);
-		anyPortInWaiting = true;
-		portInWaiting[port] = true;
+		someInputPortIsWaiting = true;
+		inputPortIsWaiting[port] = true;
 		memcpy(&portInWaitingData[port * port_data_length], data, data_len);
 		portInWaitingDataLength[port] = data_len;
 		pthread_mutex_unlock(&portReadingMutex);
@@ -83,17 +85,19 @@ public:
 		this->port_data_length = port_data_length;
 
 		devices = new HardwareDevice*[ports_count];
-		portInHandlers = new int4[ports_count];
-		for (int i = 0; i < ports_count; i++) portInHandlers[i] = 0;
+		inputPortHandlersAddresses = new int4[ports_count];
+		for (int i = 0; i < ports_count; i++) inputPortHandlersAddresses[i] = 0;
 
-		portInWaiting = new bool[ports_count];
-		for (int i = 0; i < ports_count; i++) portInWaiting[i] = false;
+		inputPortIsWaiting = new bool[ports_count];
+		for (int i = 0; i < ports_count; i++) inputPortIsWaiting[i] = false;
 
 		portInWaitingData = new int1[ports_count * port_data_length];
 		portInWaitingDataLength = new int4[ports_count];
 
-		anyPortInWaiting = false;
-		portInHandlingInProgress = false;
+		someInputPortIsWaiting = false;
+
+		inputPortsCurrentlyHandlingCount = 0;
+		inputPortsCurrentlyHandlingStack = new int4[ports_count];
 
 		stackPtr = stack_size;
 
@@ -115,10 +119,11 @@ public:
 		delete[] heap;
 		delete[] stack;
 		delete[] devices;
-		delete[] portInHandlers;
-		delete[] portInWaiting;
+		delete[] inputPortHandlersAddresses;
+		delete[] inputPortIsWaiting;
 		delete[] portInWaitingData;
 		delete[] portInWaitingDataLength;
+		delete[] inputPortsCurrentlyHandlingStack;
 
 		pthread_mutex_destroy(&portReadingMutex);
 	}

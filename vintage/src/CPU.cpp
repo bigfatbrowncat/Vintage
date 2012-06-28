@@ -34,7 +34,7 @@ void CPU::ActivityFunction()
 		// Logging to debugger
 		if (pDebugger != NULL)
 		{
-			pDebugger->stepDone(flow, &stack[stackPtr], stackSize - stackPtr, heap, heapSize);
+			pDebugger->flowChanged(flow, &stack[stackPtr], stackSize, stackSize - stackPtr, heap, heapSize);
 			DebuggerOrder order;
 			while ((order = pDebugger->askForOrder(flow)) == Wait)
 			{
@@ -49,38 +49,72 @@ void CPU::ActivityFunction()
 
 		// Checking ports input
 		pthread_mutex_lock(&portReadingMutex);
-		if (anyPortInWaiting && !portInHandlingInProgress)
+		if (someInputPortIsWaiting)
 		{
-			int ports_waiting = 0;
-			int port = -1;
+			// Clearing our flag (doing this by default, we will check it later)
+			someInputPortIsWaiting = false;
+
+			int inputPortsWaitingCount = 0;
+			int portToHandle = -1;
+
+			// Here we are checking if any port is waiting.
+			// We don't consider ports, which numbers are greater or equal
+			// than the currently handling one. This means that
+			// the least is the index of the port, the most priority it has.
+
+			// Example: if we are handling port #3 and port #4 is waiting,
+			//          the handler for the port #4 will not be executed
+			//          until port #3 handling is done.
+
+			// And we start handling for the highest priority
+			// (i.e. the least index) port
 			for (int i = 0; i < ports_count; i++)
 			{
-				if (portInWaiting[i] && portInHandlers[i] > 0)
+				if (inputPortIsWaiting[i] && inputPortHandlersAddresses[i] > 0)
 				{
-					ports_waiting++;
-					if (port == -1) port = i;
+					inputPortsWaitingCount++;
+					if (portToHandle == -1 && i < inputPortsCurrentlyHandlingStack[inputPortsCurrentlyHandlingCount - 1])
+					{
+						// If it is the first port we found
+						// and it's priority is greater than the currently handling ones,
+						// saving it for handling NOW
+						portToHandle = i;
+					}
+					else
+					{
+						// In all other cases it should be handled LATER,
+						// so we have the flag to set
+						someInputPortIsWaiting = true;
+
+						// Nothing to search more
+						break;
+					}
 				}
 			}
 
 			// Calling the handler
-			if (port >= 0)		// it's better to use a flag here
+			if (portToHandle >= 0)		// it's better to use a flag here
 			{
-				portInHandlingInProgress = true;
-				portInHandling = port;
-				portInWaiting[port] = false;
+				// Adding the port we are handling to input-ports-we-are-currently-handling stack
+				inputPortsCurrentlyHandlingStack[inputPortsCurrentlyHandlingCount] = portToHandle;
+				inputPortsCurrentlyHandlingCount++;
+
+				inputPortIsWaiting[portToHandle] = false;
 
 				stackPtr -= 4;
 				*((int4*)&stack[stackPtr]) = flow;
-				flow = portInHandlers[portInHandling];
 
-				stackPtr -= portInWaitingDataLength[portInHandling];
+				flow = inputPortHandlersAddresses[portToHandle];
+				//pDebugger->flowChanged(flow, &stack[stackPtr], stackSize, stackSize - stackPtr, heap, heapSize);
 
-				for (int i = 0; i < portInWaitingDataLength[portInHandling]; i++)
+				stackPtr -= portInWaitingDataLength[portToHandle];
+
+				for (int i = 0; i < portInWaitingDataLength[portToHandle]; i++)
 				{
-					*((int1*)&stack[stackPtr + i]) = *((int1*)&portInWaitingData[port * port_data_length + i]);
+					*((int1*)&stack[stackPtr + i]) = *((int1*)&portInWaitingData[portToHandle * port_data_length + i]);
 				}
 
-				if (ports_waiting == 1) anyPortInWaiting = false;
+				if (inputPortsWaitingCount == 1) someInputPortIsWaiting = false;
 			}
 
 		}
@@ -785,12 +819,19 @@ void CPU::ActivityFunction()
 			printf("hret");
 			fflush(stdout);
 #endif
-			pthread_mutex_lock(&portReadingMutex);
-			stackPtr += portInWaitingDataLength[portInHandling];	// removing port data
-			flow = *((int4*)&stack[stackPtr]);
-			stackPtr += 4;	// removing the callr's address
-			portInHandlingInProgress = false;
-			pthread_mutex_unlock(&portReadingMutex);
+			if (inputPortsCurrentlyHandlingCount > 0)
+			{
+				pthread_mutex_lock(&portReadingMutex);
+				stackPtr += portInWaitingDataLength[inputPortsCurrentlyHandlingStack[inputPortsCurrentlyHandlingCount - 1]];	// removing port data
+				flow = *((int4*)&stack[stackPtr]);
+				stackPtr += 4;	// removing the callr's address
+				inputPortsCurrentlyHandlingCount--;
+				pthread_mutex_unlock(&portReadingMutex);
+			}
+			else
+			{
+				// TODO: Implement some exception here :)
+			}
 			break;
 
 		case jmp_flow:
@@ -818,7 +859,7 @@ void CPU::ActivityFunction()
 			printf("regin %d, %d", arg1, arg2);
 			fflush(stdout);
 #endif
-			portInHandlers[arg1] = arg2;
+			inputPortHandlersAddresses[arg1] = arg2;
 			break;
 
 		case uregin_const:
@@ -828,7 +869,7 @@ void CPU::ActivityFunction()
 			printf("uregin %d", arg1);
 			fflush(stdout);
 #endif
-			portInHandlers[arg1] = 0;
+			inputPortHandlersAddresses[arg1] = 0;
 			break;
 
 		case halt:

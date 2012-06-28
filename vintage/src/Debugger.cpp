@@ -1,9 +1,9 @@
 #include "Debugger.h"
 
 Debugger::Debugger(FILE* debug_symbols, SDLScreen& screen) :
-	screen(screen), running(true), haltPending(false), stepPending(false), top_space(20), radix(16)
+	screen(screen), running(false), haltPending(false), stepPending(false), topSpace(20), wStackBytes(8), wHeapBytes(10), wStackTopRow(0), wHeapTopRow(0)
 {
-	pthread_mutex_init(&printing_mutex, NULL);
+	pthread_mutex_init(&printingMutex, NULL);
 
 	while (!feof(debug_symbols))
 	{
@@ -33,7 +33,7 @@ Debugger::Debugger(FILE* debug_symbols, SDLScreen& screen) :
 
 Debugger::~Debugger()
 {
-	pthread_mutex_destroy(&printing_mutex);
+	pthread_mutex_destroy(&printingMutex);
 }
 
 int Debugger::findLine(int4 mem_pos) const
@@ -127,17 +127,25 @@ void Debugger::printFixed(int x, int y, const wchar_t* str, int length)
 
 void Debugger::updateUI()
 {
-	if (screen.isActive())
+	if (screen.isActive() || !running)
 	{
-		pthread_mutex_lock(&printing_mutex);
+		pthread_mutex_lock(&printingMutex);
 
 		// *** Printing code ***
 
-		screen.SelectForeColor(192, 192, 192);
-		screen.SelectBackColor(96, 96, 96);
-		printFixed(0, top_space - 1, L" Code ", screen.getFrameBufferWidth());
+		if (activeWindow == dawCode)
+		{
+			screen.SelectForeColor(0, 0, 0);
+			screen.SelectBackColor(192, 192, 192);
+		}
+		else
+		{
+			screen.SelectForeColor(192, 192, 192);
+			screen.SelectBackColor(96, 96, 96);
+		}
+		printFixed(0, topSpace - 1, L" Code ", screen.getFrameBufferWidth());
 
-		int code_lines = screen.getFrameBufferHeight() - top_space;
+		int code_lines = screen.getFrameBufferHeight() - topSpace;
 		int up = code_lines / 2;
 		int down = code_lines - up - 2;
 
@@ -146,7 +154,7 @@ void Debugger::updateUI()
 		{
 			int index = findLine(flow) + i;
 
-			int y = top_space + up + i;
+			int y = topSpace + up + i;
 
 			if (i != 0)
 			{
@@ -202,17 +210,23 @@ void Debugger::updateUI()
 
 		// ** Printing stack **
 
-		int wStackTopRow = 0;
-		int wStackBytes = 8;
 		int wStackWindowWidth = 9 + 3 * wStackBytes + wStackBytes + 2;
 
-		screen.SelectForeColor(192, 192, 192);
-		screen.SelectBackColor(96, 96, 96);
+		if (activeWindow == dawStack)
+		{
+			screen.SelectForeColor(0, 0, 0);
+			screen.SelectBackColor(192, 192, 192);
+		}
+		else
+		{
+			screen.SelectForeColor(192, 192, 192);
+			screen.SelectBackColor(96, 96, 96);
+		}
 		printFixed(0, 0, L" Stack ", wStackWindowWidth);
 
 		screen.SelectBackColor(0, 0, 0);
 
-		for (int row = wStackTopRow; row < wStackTopRow + top_space - 3; row++)
+		for (int row = wStackTopRow; row < wStackTopRow + topSpace - 3; row++)
 		{
 			int stack_addr = row * wStackBytes;
 
@@ -268,17 +282,23 @@ void Debugger::updateUI()
 
 		// ** Printing heap **
 
-		int wHeapTopRow = 0;
-		int wHeapBytes = 10;
 		int wHeapWindowWidth = 2 + 9 + 3 * wHeapBytes + wHeapBytes;
 
-		screen.SelectForeColor(192, 192, 192);
-		screen.SelectBackColor(96, 96, 96);
+		if (activeWindow == dawHeap)
+		{
+			screen.SelectForeColor(0, 0, 0);
+			screen.SelectBackColor(192, 192, 192);
+		}
+		else
+		{
+			screen.SelectForeColor(192, 192, 192);
+			screen.SelectBackColor(96, 96, 96);
+		}
 		printFixed(wStackWindowWidth + 2, 0, L" Heap ", wHeapWindowWidth);
 
 		screen.SelectBackColor(0, 0, 0);
 
-		for (int row = wHeapTopRow; row < wHeapTopRow + top_space - 3; row++)
+		for (int row = wHeapTopRow; row < wHeapTopRow + topSpace - 3; row++)
 		{
 			int heap_addr = row * wHeapBytes;
 
@@ -333,19 +353,21 @@ void Debugger::updateUI()
 			}
 
 			strs2 << strs3.str();
-			printFixed(wStackWindowWidth + 3 + 9, row - wStackTopRow + 1, strs2.str().c_str(), wHeapWindowWidth - 9);
+			printFixed(wStackWindowWidth + 3 + 9, row - wHeapTopRow + 1, strs2.str().c_str(), wHeapWindowWidth - 9);
 		}
 
-		pthread_mutex_unlock(&printing_mutex);
+		pthread_mutex_unlock(&printingMutex);
 	}
 }
 
-void Debugger::stepDone(int4 flow, int1* stack, int4 stackSize, int1* heap, int4 heapSize)
+void Debugger::flowChanged(int4 flow, int1* stack, int4 stackMaxSize, int4 stackSize, int1* heap, int4 heapSize)
 {
 	this->flow = flow;
 
 	this->stack = stack;
 	this->stackSize = stackSize;
+
+	this->stackMaxSize = stackMaxSize;
 
 	this->heap = heap;
 	this->heapSize = heapSize;

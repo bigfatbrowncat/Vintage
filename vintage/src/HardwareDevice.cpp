@@ -48,7 +48,7 @@ void HardwareTimer::ActivityFunction()
 	while (!TurnOffPending())
 	{
     	clock_t tt = clock();
-    	GetCPU().CallPortIn(GetPort(), (int1*)(&tt), 8);
+    	GetCPU().handleInputPort(GetPort(), (int1*)(&tt), 8);
     	usleep(100);	// 0.1 millisecond
 	}
 }
@@ -127,7 +127,7 @@ void CPUKeyboardController::ActivityFunction()
 			msg[0] = keyDown[current];
 			*((int2*)&msg[1]) = (int2)(modifiers[current]);
 			*((int4*)&msg[3]) = keyCode[current];
-			GetCPU().CallPortIn(GetPort(), msg, 7);
+			GetCPU().handleInputPort(GetPort(), msg, 7);
 			current = (current + 1) % bufferLength;
 		}
 		pthread_mutex_unlock(&keyBufferLock);
@@ -154,87 +154,28 @@ void DebuggerKeyboardController::ChangeKeyState(bool key_down, KeyModifiers modi
 			debugger.halt();
 			break;
 
-		case SDLK_INSERT:
-			debugger.addWatch();
-			break;
-		case SDLK_0:
-			if (debugger.isEditingWatchAddress())
-				debugger.inputDigit(0);
-			break;
-		case SDLK_1:
-			if (debugger.isEditingWatchAddress() || debugger.isEditingWatchLength())
-				debugger.inputDigit(1);
-			break;
-		case SDLK_2:
-			if (debugger.isEditingWatchAddress() || debugger.isEditingWatchLength())
-				debugger.inputDigit(2);
-			break;
-		case SDLK_3:
-			if (debugger.isEditingWatchAddress())
-				debugger.inputDigit(3);
-			break;
-		case SDLK_4:
-			if (debugger.isEditingWatchAddress() || debugger.isEditingWatchLength())
-				debugger.inputDigit(4);
-			break;
-		case SDLK_5:
-			if (debugger.isEditingWatchAddress())
-				debugger.inputDigit(5);
-			break;
-		case SDLK_6:
-			if (debugger.isEditingWatchAddress())
-				debugger.inputDigit(6);
-			break;
-		case SDLK_7:
-			if (debugger.isEditingWatchAddress())
-				debugger.inputDigit(7);
-			break;
-		case SDLK_8:
-			if (debugger.isEditingWatchAddress() || debugger.isEditingWatchLength())
-				debugger.inputDigit(8);
-			break;
-		case SDLK_9:
-			if (debugger.isEditingWatchAddress())
-				debugger.inputDigit(9);
-			break;
-		case SDLK_a:
-			if (debugger.isEditingWatchAddress())
-				debugger.inputDigit(0xA);
-			break;
-		case SDLK_b:
-			if (debugger.isEditingWatchAddress())
-				debugger.inputDigit(0xB);
-			break;
-		case SDLK_c:
-			if (debugger.isEditingWatchAddress())
-				debugger.inputDigit(0xC);
-			break;
-		case SDLK_d:
-			if (debugger.isEditingWatchAddress())
-				debugger.inputDigit(0xD);
-			break;
-		case SDLK_e:
-			if (debugger.isEditingWatchAddress())
-				debugger.inputDigit(0xE);
-			break;
-		case SDLK_f:
-			if (debugger.isEditingWatchAddress())
-				debugger.inputDigit(0xF);
-			break;
-		case SDLK_SPACE:
-			if (debugger.isEditingWatchAddress())
-				debugger.switchRadix();
-			break;
 		case SDLK_TAB:
-			debugger.changeSelection();
+			debugger.handleControlKey(ckTab);
 			break;
-		case SDLK_BACKSPACE:
-			if (debugger.isEditingWatchAddress())
-				debugger.removeWatchAddressDigit();
+		case SDLK_LEFT:
+			debugger.handleControlKey(ckLeft);
 			break;
-		case SDLK_RETURN:
-			debugger.completeAddWatch();
+		case SDLK_UP:
+			debugger.handleControlKey(ckUp);
 			break;
+		case SDLK_RIGHT:
+			debugger.handleControlKey(ckRight);
+			break;
+		case SDLK_DOWN:
+			debugger.handleControlKey(ckDown);
+			break;
+		case SDLK_PAGEUP:
+			debugger.handleControlKey(ckPageUp);
+			break;
+		case SDLK_PAGEDOWN:
+			debugger.handleControlKey(ckPageDown);
+			break;
+
 		}
 
 	}

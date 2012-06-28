@@ -64,7 +64,7 @@ void Debugger::printMenu()
 	{
 		screen.SelectBackColor(128, 128, 128);
 	}
-	screen.Write(L"F1 Run");
+	screen.Write(L" F1 Run ");
 	screen.SelectBackColor(0, 0, 0);
 	screen.Write(L" ");
 	if (!this->running && !this->stepPending)
@@ -75,7 +75,7 @@ void Debugger::printMenu()
 	{
 		screen.SelectBackColor(128, 128, 128);
 	}
-	screen.Write(L"F2 Pause");
+	screen.Write(L" F2 Pause ");
 	screen.SelectBackColor(0, 0, 0);
 	screen.Write(L" ");
 	if (this->stepPending)
@@ -86,12 +86,12 @@ void Debugger::printMenu()
 	{
 		screen.SelectBackColor(128, 128, 128);
 	}
-	screen.Write(L"F3 Step");
+	screen.Write(L" F3 Step ");
 	screen.SelectBackColor(0, 0, 0);
 	screen.Write(L" ");
 
 	screen.SelectBackColor(128, 128, 128);
-	screen.Write(L"F4 Halt CPU");
+	screen.Write(L" F4 Halt CPU ");
 	screen.SelectBackColor(0, 0, 0);
 	screen.Write(L" ");
 	screen.SetCursorPosition(0, screen.getFrameBufferHeight() - 1);
@@ -127,185 +127,217 @@ void Debugger::printFixed(int x, int y, const wchar_t* str, int length)
 
 void Debugger::updateUI()
 {
-	pthread_mutex_lock(&printing_mutex);
-	//screen.SetCursorPosition(0, screen.getFrameBufferHeight() - 1);
-
-	// *** Printing code ***
-
-	screen.SelectForeColor(192, 192, 192);
-	screen.SelectBackColor(96, 96, 96);
-	printFixed(0, top_space - 1, L" Code ", screen.getFrameBufferWidth());
-
-	int code_lines = screen.getFrameBufferHeight() - top_space;
-	int up = code_lines / 2;
-	int down = code_lines - up - 2;
-
-	int prev_addr = 0;
-	for (int i = down; i >= -up; i--)
+	if (screen.isActive())
 	{
-		int index = findLine(flow) + i;
+		pthread_mutex_lock(&printing_mutex);
 
-		int y = top_space + up + i;
+		// *** Printing code ***
 
-		if (i != 0)
-		{
-			screen.SelectForeColor(128, 128, 128);
-			screen.SelectBackColor(32, 32, 32);
-		}
-		else
-		{
-			screen.SelectForeColor(0, 0, 0);
-			screen.SelectBackColor(192, 192, 192);
-		}
+		screen.SelectForeColor(192, 192, 192);
+		screen.SelectBackColor(96, 96, 96);
+		printFixed(0, top_space - 1, L" Code ", screen.getFrameBufferWidth());
 
-		wstringstream strs;
-		if (index >= 0 && index < (int)entries.size() && entries[index].mem_pos != prev_addr)
-		{
-			strs << std::setw(8) << setfill(L'0') << std::hex << uppercase << entries[index].mem_pos << L" ";
-			prev_addr = entries[index].mem_pos;
-		}
-		else
-		{
-			strs << L"         ";
-		}
-		printFixed(0, y, strs.str().c_str(), 9);
+		int code_lines = screen.getFrameBufferHeight() - top_space;
+		int up = code_lines / 2;
+		int down = code_lines - up - 2;
 
-		if (i != 0)
+		int prev_addr = 0;
+		for (int i = down; i >= -up; i--)
 		{
-			screen.SelectForeColor(192, 192, 192);
-			screen.SelectBackColor(32, 32, 32);
-		}
-		else
-		{
-			screen.SelectBackColor(32, 32, 32);
-			screen.SelectBackColor(192, 192, 192);
-		}
+			int index = findLine(flow) + i;
 
-		wstringstream strs2;
-		if (index >= 0 && index < (int)entries.size())
-		{
-			//printf("0x%X: %s\n", fl->mem_pos, fl->lines.c_str());
-			strs2 << entries[index].lines << L"\n";
-		}
-		else
-		{
-			//printf("0x%X: <<No such address in debug symbols>>\n");
+			int y = top_space + up + i;
+
+			if (i != 0)
+			{
+				screen.SelectForeColor(128, 128, 128);
+				screen.SelectBackColor(0, 0, 0);
+			}
+			else
+			{
+				screen.SelectForeColor(0, 0, 0);
+				screen.SelectBackColor(192, 192, 192);
+			}
+
+			wstringstream strs;
+			if (index >= 0 && index < (int)entries.size() && entries[index].mem_pos != prev_addr)
+			{
+				strs << std::setw(8) << setfill(L'0') << std::hex << uppercase << entries[index].mem_pos << L" ";
+				prev_addr = entries[index].mem_pos;
+			}
+			else
+			{
+				strs << L"         ";
+			}
+			printFixed(1, y, strs.str().c_str(), 9);
+
+			if (i != 0)
+			{
+				screen.SelectForeColor(192, 192, 192);
+				screen.SelectBackColor(0, 0, 0);
+			}
+			else
+			{
+				screen.SelectBackColor(0, 0, 0);
+				screen.SelectBackColor(192, 192, 192);
+			}
+
 			wstringstream strs2;
-			strs2 << L"<< No such address in debug symbols >>\n";
-		}
-		printFixed(9, y, strs2.str().c_str(), screen.getFrameBufferWidth() - 9);
-	}
-
-	printMenu();
-
-
-	// ** Printing stack **
-
-	int wStackTopRow = 0;
-	int wStackBytes = 8;
-	int wStackWindowWidth = 9 + 3 * wStackBytes + wStackBytes;
-
-	screen.SelectForeColor(192, 192, 192);
-	screen.SelectBackColor(96, 96, 96);
-	printFixed(0, 0, L" Stack ", wStackWindowWidth);
-
-	screen.SelectBackColor(32, 32, 32);
-
-	for (int row = wStackTopRow; row < wStackTopRow + top_space - 3; row++)
-	{
-		int stack_addr = row * wStackBytes;
-
-		wstringstream strs;
-		strs << std::setw(8) << setfill(L'0') << std::hex << uppercase << stack_addr << L" ";
-
-		screen.SelectForeColor(128, 128, 128);
-		printFixed(0, row - wStackTopRow + 1, strs.str().c_str(), 9);
-
-		for (; stack_addr < (row + 1) * wStackBytes; stack_addr ++)
-		{
-			if (stack_addr < stackSize)
+			if (index >= 0 && index < (int)entries.size())
 			{
-				unsigned char i1 = *((unsigned char*)(&stack[stack_addr]));
-
-				//wstringstream strs;
-				//strs << std::setw(2) << setfill(L'0') << std::hex << uppercase << i1 << " ";
-				const wchar_t* hexchars = L"0123456789ABCDEF";
-				wchar_t num[4];
-				num[3] = 0;
-				num[2] = L' ';
-				num[1] = hexchars[i1 % 16];
-				num[0] = hexchars[i1 / 16];
-
-				wchar_t ch[2];
-				ch[0] = i1;
-				ch[1] = 0;
-
-				screen.SelectForeColor(192, 192, 192);
-				printFixed(9 + 3 * (stack_addr % wStackBytes), row - wStackTopRow + 1, num, 3);
-				printFixed(9 + wStackBytes * 3 + (stack_addr % wStackBytes), row - wStackTopRow + 1, ch, 1);
-
+				//printf("0x%X: %s\n", fl->mem_pos, fl->lines.c_str());
+				strs2 << entries[index].lines << L"\n";
 			}
 			else
 			{
-				printFixed(9 + 3 * (stack_addr % wStackBytes), row - wStackTopRow + 1, L"   ", 3);
-				printFixed(9 + wStackBytes * 3 + (stack_addr % wStackBytes), row - wStackTopRow + 1, L" ", 1);
+				//printf("0x%X: <<No such address in debug symbols>>\n");
+				wstringstream strs2;
+				strs2 << L"<< No such address in debug symbols >>\n";
 			}
+			printFixed(10, y, strs2.str().c_str(), screen.getFrameBufferWidth() - 11);
 		}
-	}
 
-	// ** Printing heap **
+		printMenu();
 
-	int wHeapTopRow = 0;
-	int wHeapBytes = 10;
-	int wHeapWindowWidth = 9 + 3 * wHeapBytes + wHeapBytes;
 
-	screen.SelectForeColor(192, 192, 192);
-	screen.SelectBackColor(96, 96, 96);
-	printFixed(wStackWindowWidth + 1, 0, L" Heap ", wHeapWindowWidth);
+		// ** Printing stack **
 
-	screen.SelectBackColor(32, 32, 32);
+		int wStackTopRow = 0;
+		int wStackBytes = 8;
+		int wStackWindowWidth = 9 + 3 * wStackBytes + wStackBytes + 2;
 
-	for (int row = wHeapTopRow; row < wHeapTopRow + top_space - 3; row++)
-	{
-		int heap_addr = row * wHeapBytes;
+		screen.SelectForeColor(192, 192, 192);
+		screen.SelectBackColor(96, 96, 96);
+		printFixed(0, 0, L" Stack ", wStackWindowWidth);
 
-		wstringstream strs;
-		strs << std::setw(8) << setfill(L'0') << std::hex << uppercase << heap_addr << L" ";
+		screen.SelectBackColor(0, 0, 0);
 
-		screen.SelectForeColor(128, 128, 128);
-		printFixed(wStackWindowWidth + 1, row - wHeapTopRow + 1, strs.str().c_str(), 9);
-
-		for (; heap_addr < (row + 1) * wHeapBytes; heap_addr ++)
+		for (int row = wStackTopRow; row < wStackTopRow + top_space - 3; row++)
 		{
-			if (heap_addr < heapSize)
-			{
-				unsigned char i1 = *((unsigned char*)(&heap[heap_addr]));
-				//wstringstream strs;
-				//strs << std::setw(2) << setfill(L'0') << std::hex << uppercase << i1 << " ";
-				const wchar_t* hexchars = L"0123456789ABCDEF";
-				wchar_t num[4];
-				num[3] = 0;
-				num[2] = L' ';
-				num[1] = hexchars[i1 % 16];
-				num[0] = hexchars[i1 / 16];
+			int stack_addr = row * wStackBytes;
 
-				wchar_t ch[2];
-				ch[0] = i1;
-				ch[1] = 0;
+			wstringstream strs;
+			strs << std::setw(8) << setfill(L'0') << std::hex << uppercase << stack_addr << L" ";
 
-				screen.SelectForeColor(192, 192, 192);
-				printFixed(wStackWindowWidth + 1 + 9 + 3 * (heap_addr % wHeapBytes), row - wHeapTopRow + 1, num, 3);
-				printFixed(wStackWindowWidth + 1 + 9 + wHeapBytes * 3 + (heap_addr % wHeapBytes), row - wStackTopRow + 1, ch, 1);
-			}
-			else
+			screen.SelectForeColor(128, 128, 128);
+			printFixed(1, row - wStackTopRow + 1, strs.str().c_str(), 9);
+
+			wstringstream strs2;
+			wstringstream strs3;
+
+			for (; stack_addr < (row + 1) * wStackBytes; stack_addr ++)
 			{
-				printFixed(wStackWindowWidth + 1 + 9 + 3 * (heap_addr % wHeapBytes), row - wHeapTopRow + 1, L"   ", 3);
-				printFixed(wStackWindowWidth + 1 + 9 + wHeapBytes * 3 + (heap_addr % wHeapBytes), row - wStackTopRow + 1, L" ", 1);
+				if (stack_addr < stackSize)
+				{
+					unsigned char i1 = *((unsigned char*)(&stack[stack_addr]));
+
+					//wstringstream strs;
+					//strs << std::setw(2) << setfill(L'0') << std::hex << uppercase << i1 << " ";
+					const wchar_t* hexchars = L"0123456789ABCDEF";
+					wchar_t num[4];
+					num[3] = 0;
+					num[2] = L' ';
+					num[1] = hexchars[i1 % 16];
+					num[0] = hexchars[i1 / 16];
+
+					wchar_t ch[2];
+					ch[0] = i1;
+					ch[1] = 0;
+
+					screen.SelectForeColor(192, 192, 192);
+
+					strs2 << num;
+					strs3 << ch;
+					//printFixed(9 + 1 + 3 * (stack_addr % wStackBytes), row - wStackTopRow + 1, num, 3);
+					//printFixed(9 + 1 + wStackBytes * 3 + (stack_addr % wStackBytes), row - wStackTopRow + 1, ch, 1);
+
+				}
+				else
+				{
+					strs2 << L"   ";
+					strs3 << L" ";
+
+					//printFixed(9 + 1 + 3 * (stack_addr % wStackBytes), row - wStackTopRow + 1, L"   ", 3);
+					//printFixed(9 + 1 + wStackBytes * 3 + (stack_addr % wStackBytes), row - wStackTopRow + 1, L" ", 1);
+				}
 			}
+
+			strs2 << strs3.str();
+			printFixed(9 + 1, row - wStackTopRow + 1, strs2.str().c_str(), wStackWindowWidth - 9);
 		}
-	}
 
-	pthread_mutex_unlock(&printing_mutex);
+		// ** Printing heap **
+
+		int wHeapTopRow = 0;
+		int wHeapBytes = 10;
+		int wHeapWindowWidth = 2 + 9 + 3 * wHeapBytes + wHeapBytes;
+
+		screen.SelectForeColor(192, 192, 192);
+		screen.SelectBackColor(96, 96, 96);
+		printFixed(wStackWindowWidth + 2, 0, L" Heap ", wHeapWindowWidth);
+
+		screen.SelectBackColor(0, 0, 0);
+
+		for (int row = wHeapTopRow; row < wHeapTopRow + top_space - 3; row++)
+		{
+			int heap_addr = row * wHeapBytes;
+
+			wstringstream strs;
+			strs << L" " << std::setw(8) << setfill(L'0') << std::hex << uppercase << heap_addr << L" ";
+
+			screen.SelectForeColor(128, 128, 128);
+			printFixed(wStackWindowWidth + 2, row - wHeapTopRow + 1, strs.str().c_str(), 9);
+
+			wstringstream strs2;
+			wstringstream strs3;
+
+			for (; heap_addr < (row + 1) * wHeapBytes; heap_addr ++)
+			{
+				if (heap_addr < heapSize)
+				{
+					unsigned char i1 = *((unsigned char*)(&heap[heap_addr]));
+					//wstringstream strs;
+					//strs << std::setw(2) << setfill(L'0') << std::hex << uppercase << i1 << " ";
+					const wchar_t* hexchars = L"0123456789ABCDEF";
+					wchar_t num[4];
+					num[3] = 0;
+					num[2] = L' ';
+					num[1] = hexchars[i1 % 16];
+					num[0] = hexchars[i1 / 16];
+
+					wchar_t ch[2];
+					if (i1 == 0)
+					{
+						ch[0] = ' ';
+					}
+					else
+					{
+						ch[0] = i1;
+					}
+					ch[1] = 0;
+
+					screen.SelectForeColor(192, 192, 192);
+
+					strs2 << num;
+					strs3 << ch;
+					//printFixed(wStackWindowWidth + 3 + 9 + 3 * (heap_addr % wHeapBytes), row - wHeapTopRow + 1, num, 3);
+					//printFixed(wStackWindowWidth + 3 + 9 + wHeapBytes * 3 + (heap_addr % wHeapBytes), row - wStackTopRow + 1, ch, 1);
+				}
+				else
+				{
+					strs2 << L"   ";
+					strs3 << L" ";
+					//printFixed(wStackWindowWidth + 3 + 9 + 3 * (heap_addr % wHeapBytes), row - wHeapTopRow + 1, L"   ", 3);
+					//printFixed(wStackWindowWidth + 3 + 9 + wHeapBytes * 3 + (heap_addr % wHeapBytes), row - wStackTopRow + 1, L" ", 1);
+				}
+			}
+
+			strs2 << strs3.str();
+			printFixed(wStackWindowWidth + 3 + 9, row - wStackTopRow + 1, strs2.str().c_str(), wHeapWindowWidth - 9);
+		}
+
+		pthread_mutex_unlock(&printing_mutex);
+	}
 }
 
 void Debugger::stepDone(int4 flow, int1* stack, int4 stackSize, int1* heap, int4 heapSize)

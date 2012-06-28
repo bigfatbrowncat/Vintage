@@ -42,8 +42,7 @@ bool SDLTerminal::handleSpecialKeyDown(SDL_keysym* keysym)
 {
 	if ((keysym->mod & (KMOD_LCTRL | KMOD_RCTRL)) && (keysym->sym >= SDLK_F1 && keysym->sym <= SDLK_F12))
 	{
-		activeScreen = (keysym->sym - SDLK_F1);
-		activeScreenChanged = true;
+		setActiveScreen(keysym->sym - SDLK_F1);
 		return true;
 	}
 	else
@@ -158,6 +157,7 @@ SDLTerminal::SDLTerminal(Font& font, Font& curFont):
 	{
 		screens[i] = new SDLScreen(frame_buffer_width, frame_buffer_height);
 	}
+	screens[activeScreen]->setActivity(true);
 
     printf("Initializing SDL.\n");
 

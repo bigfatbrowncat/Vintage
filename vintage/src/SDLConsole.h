@@ -52,6 +52,21 @@ private:
 	void draw(SDL_Surface* surface);
 	void cinescope_sim(SDL_Surface *surface, float interlacing, float sliding, float blur);
 protected:
+	void setActiveScreen(int index)
+	{
+		if (activeScreen >= 0 && activeScreen < SCREENS_COUNT)
+		{
+			screens[activeScreen]->setActivity(false);
+		}
+		activeScreen = index;
+		if (activeScreen >= 0 && activeScreen < SCREENS_COUNT)
+		{
+			screens[activeScreen]->setActivity(true);
+		}
+		activeScreenChanged = true;
+
+	}
+
 	void updateCaption()
 	{
 	    char captionLong[100];

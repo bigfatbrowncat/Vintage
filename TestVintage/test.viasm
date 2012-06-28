@@ -1,200 +1,198 @@
-              jmp start
+               jmp start
 
 ; *** GLOBAL DATA SECTION *******************************************************************************************
 
-fox:          data "The quick brown fox jumps over the lazy dog." 10 10 0
-hello:        data "Devices printout:" 10 0
+fox:           data "The quick brown fox jumps over the lazy dog." 10 10 0
+hello:         data "Devices printout:" 10 0
 
 ; *** FUNCTIONS SECTION *********************************************************************************************
 
-inttostr:     ; in:  (integer value) 
-              ; out: (target string pointer)
+inttostr:      ; in:  (integer value) 
+               ; out: (target string pointer)
 
-              jmp its_s
-its_digs:     data "0123456789ABCDEF"
-its_strbuf:   data 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0    ; 30 digits should be enough + zero in the end
+               jmp its_s
+its_digs:      data "0123456789ABCDEF"
+its_strbuf:    data 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0    ; 30 digits should be enough + zero in the end
 
-its_s:
-              alloc 12                          ; 3 * 4 (text ptr 4, int buf1 4, int buf2 4 | ret addr 4 | int val 4, int radix 1, int digits 1)
-              mov {0}, its_strbuf
-              add {0}, 60
+its_s:         alloc 12                          ; 3 * 4 (text ptr 4, int buf1 4, int buf2 4 | ret addr 4 | int val 4, int radix 1, int digits 1)
+               mov {0}, its_strbuf
+               add {0}, 60
              
-its_loop:     sub {0}, 2                        ; size of char
-              mov {4}, {16}
-              mov {8}, 0
-              mov 1, {8}, {20}                  ; getting the radix
-              mod {4}, {8}                      ; the current digit is in {1}
-              div {16}, {8}                     ; the remaining part is in {3}
-              sub 1, {21}, 1                    ; 1 digit added
+its_loop:      sub {0}, 2                        ; size of char
+               mov {4}, {16}
+               mov {8}, 0
+               mov 1, {8}, {20}                  ; getting the radix
+               mod {4}, {8}                      ; the current digit is in {1}
+               div {16}, {8}                     ; the remaining part is in {3}
+               sub 1, {21}, 1                    ; 1 digit added
             
-              mov {8}, {4}
-              add {8}, {4}                      ; char = 2 x byte
-              add {8}, its_digs                 ; {2} contains pointer to digit buffer
+               mov {8}, {4}
+               add {8}, {4}                      ; char = 2 x byte
+               add {8}, its_digs                 ; {2} contains pointer to digit buffer
 
-              mov {8}, [{8}]
+               mov {8}, [{8}]
             
-              mov 2, [{0}], {8}                 ; moving 2 bytes of char
-              if {16}, its_loop
+               mov 2, [{0}], {8}                 ; moving 2 bytes of char
+               if {16}, its_loop
               
-              ; now we should add the remaining digits
-              ifp 1, {21}, its_next
-              jmp its_exit
+               ; now we should add the remaining digits
+               ifp 1, {21}, its_next
+               jmp its_exit
 
-its_next:     sub {0}, 2
-              mov {4}, its_digs
-              mov 2, {4}, [{4}]
-              mov 2, [{0}], {4}                 ; adding zero
-              sub 1, {21}, 1
-              ifp 1, {21}, its_next                          
+its_next:      sub {0}, 2
+               mov {4}, its_digs
+               mov 2, {4}, [{4}]
+               mov 2, [{0}], {4}                 ; adding zero
+               sub 1, {21}, 1
+               ifp 1, {21}, its_next                          
             
-its_exit:     mov {16}, {0}                     ; result saved
-              free 12
-              ret
+its_exit:      mov {16}, {0}                     ; result saved
+               free 12
+               ret
 
 ; *** HANDLERS SECTION **************************************************************************************************
 
-timer_calls:  data "Timer: " 0
+timer_calls:   data "Timer: " 0
 
-timer_handler:; port in handler, should free 8 additional bytes on end
-              alloc 10
+timer_handler: ; port in handler, should free 8 additional bytes on end
+               alloc 10
               
-              ; moving the cursor to 0,3
-              mov {0}, 2
-              mov 2, {4}, 0
-              mov 2, {6}, 3
-              out 1
+               ; moving the cursor to 0,3
+               mov {0}, 2
+               mov 2, {4}, 0
+               mov 2, {6}, 3
+               out 1
               
-              ; printing out "timer: "
-              mov {0}, 1                        ; 1 means "print the text out"
-              mov {4}, timer_calls              ; address of the text buffer
-              out 1                             ; call terminal
+               ; printing out "timer: "
+               mov {0}, 1                        ; 1 means "print the text out"
+               mov {4}, timer_calls              ; address of the text buffer
+               out 1                             ; call terminal
 
-              ; moving the cursor to 7,3 (after "Timer: ")
-              mov {0}, 2                        ; 2 means "set cursor position"
-              mov 2, {4}, 7                     ; X
-              mov 2, {6}, 3                     ; Y
-              out 1
+               ; moving the cursor to 7,3 (after "Timer: ")
+               mov {0}, 2                        ; 2 means "set cursor position"
+               mov 2, {4}, 7                     ; X
+               mov 2, {6}, 3                     ; Y
+               out 1
               
-              ; converting timer value to string
-              mov {0}, {10}
-              mov 1, {4}, 10                    ; radix
-              mov 1, {5}, 0                     ; digits -- as much as it can 
-              call inttostr
+               ; converting timer value to string
+               mov {0}, {10}
+               mov 1, {4}, 10                    ; radix
+               mov 1, {5}, 0                     ; digits -- as much as it can 
+               call inttostr
               
-              ; printing out the timer
-              mov {4}, {0}
-              mov {0}, 1
-              out 1
+               ; printing out the timer
+               mov {4}, {0}
+               mov {0}, 1
+               out 1
               
-              free 10
+               free 10
               
-              hret
+               hret
 
-kbd_key:      data "Key: XXX is XXXX, modifiers: XXXXXXXXXXX" 0
-kbd_down_str: data "down" 0
-kbd_up_str:   data " up " 0
+kbd_key:       data "Key: XXX is XXXX, modifiers: XXXXXXXXXXX" 0
+kbd_down_str:  data "down" 0
+kbd_up_str:    data " up " 0
               
-kbd_handler:
-              alloc 10                          ; 4 * 2 + 2
+kbd_handler:   alloc 10                          ; 4 * 2 + 2
 
-              if {13}, kbd_next
-              jmp kbd_exit                      ; taking away the fake '0' events
+               if {13}, kbd_next
+               jmp kbd_exit                      ; taking away the fake '0' events
 kbd_next:
-              ; moving the cursor to 0,4
-              mov {0}, 2                        ; 2 means "set cursor position"
-              mov 2, {4}, 0                     ; X
-              mov 2, {6}, 4                          ; Y
-              out 1
+               ; moving the cursor to 0,4
+               mov {0}, 2                        ; 2 means "set cursor position"
+               mov 2, {4}, 0                     ; X
+               mov 2, {6}, 4                     ; Y
+               out 1
               
-              ; printing the text out
-              mov {0}, 1                        ; 1 means "print the text out"
-              mov {4}, kbd_key                  ; address of the text buffer
-              out 1                             ; call terminal
+               ; printing the text out
+               mov {0}, 1                        ; 1 means "print the text out"
+               mov {4}, kbd_key                  ; address of the text buffer
+               out 1                             ; call terminal
 
-              ; moving the cursor to 5,4 (after "Key: ")
-              mov {0}, 2                        ; 2 means "set cursor position"
-              mov 2, {4}, 5                     ; X
-              mov 2, {6}, 4                     ; Y
-              out 1
+               ; moving the cursor to 5,4 (after "Key: ")
+               mov {0}, 2                        ; 2 means "set cursor position"
+               mov 2, {4}, 5                     ; X
+               mov 2, {6}, 4                     ; Y
+               out 1
               
-              ; converting key code to string
-              mov {0}, {13}                     ; 8 + 3
-              mov 1, {4}, 10                    ; radix
-              mov 1, {5}, 3                     ; digits
-              call inttostr
+               ; converting key code to string
+               mov {0}, {13}                     ; 8 + 3
+               mov 1, {4}, 10                    ; radix
+               mov 1, {5}, 3                     ; digits
+               call inttostr
 
-              ; printing out the key code
-              mov {4}, {0}
-              mov {0}, 1
-              out 1
+               ; printing out the key code
+               mov {4}, {0}
+               mov {0}, 1
+               out 1
 
-              ; moving the cursor to 12,4 
-              mov {0}, 2                        ; 2 means "set cursor position"
-              mov 2, {4}, 12                    ; X
-              mov 2, {6}, 4                     ; Y
-              out 1
+               ; moving the cursor to 12,4 
+               mov {0}, 2                        ; 2 means "set cursor position"
+               mov 2, {4}, 12                    ; X
+               mov 2, {6}, 4                     ; Y
+               out 1
 
-              if 1, {10}, kbd_down 
-kbd_up:       mov {4}, kbd_up_str
-              jmp kbd_print_ud
-kbd_down:     mov {4}, kbd_down_str
+               if 1, {10}, kbd_down 
+kbd_up:        mov {4}, kbd_up_str
+               jmp kbd_print_ud
+kbd_down:      mov {4}, kbd_down_str
 
-kbd_print_ud: mov {0}, 1
-              out 1
+kbd_print_ud:  mov {0}, 1
+               out 1
               
-              ; moving the cursor to 29,4 
-              mov {0}, 2
-              mov 2, {4}, 29
-              mov 2, {6}, 4
-              out 1
+               ; moving the cursor to 29,4 
+               mov {0}, 2
+               mov 2, {4}, 29
+               mov 2, {6}, 4
+               out 1
               
-              ; converting modifiers to string
-              mov 2, {0}, {11}                  ; 8 + 3
-              mov 2, {2}, 0
+               ; converting modifiers to string
+               mov 2, {0}, {11}                  ; 8 + 3
+               mov 2, {2}, 0
+
+               mov 1, {4}, 2                     ; radix
+               mov 1, {5}, 11                    ; digits
+               call inttostr
+
+               ; printing out the key code
+               mov {4}, {0}
+               mov {0}, 1
+               out 1
               
-              mov 1, {4}, 2                     ; radix
-              mov 1, {5}, 11                    ; digits
-              call inttostr
+kbd_exit:      free 10
               
-              ; printing out the key code
-              mov {4}, {0}
-              mov {0}, 1
-              out 1
-              
-kbd_exit:     free 10
-              
-              hret
+               hret
             
 ; *** MAIN SECTION **************************************************************************************************
 
-start:        alloc 8                           ; 4 * 2
+start:         alloc 8                           ; 4 * 2
           
-              ; printing the text out
-              mov {0}, 1                        ; 1 means "print the text out"
-              mov {4}, fox                      ; address of the text buffer
-              out 1                             ; call terminal
+               ; printing the text out
+               mov {0}, 1                        ; 1 means "print the text out"
+               mov {4}, fox                      ; address of the text buffer
+               out 1                             ; call terminal
 
-              ; printing the text out
-              mov {0}, 1                        ; 1 means "print the text out"
-              mov {4}, hello                    ; address of the text buffer
-              out 1                             ; call terminal
+               ; printing the text out
+               mov {0}, 1                        ; 1 means "print the text out"
+               mov {4}, hello                    ; address of the text buffer
+               out 1                             ; call terminal
 
-              ;mov {0}, 987654
-              ;mov 1, {4}, 10                   ; radix
-              ;mov 1, {5}, 0                    ; digits -- as much as it can 
-              ;call inttostr
+               ;mov {0}, 987654
+               ;mov 1, {4}, 10                   ; radix
+               ;mov 1, {5}, 0                    ; digits -- as much as it can 
+               ;call inttostr
 
-              ; printing out the value
-              mov {4}, {0}
-              mov {0}, 1
-              out 1              
+               ; printing out the value
+               mov {4}, {0}
+               mov {0}, 1
+               out 1              
 
-              regin 3, timer_handler
-              regin 2, kbd_handler
+               regin 3, timer_handler
+               regin 2, kbd_handler
 
-              free 8
+               free 8
 
-eternal:      jmp eternal
-              halt
+eternal:       jmp eternal
+               halt
 
-              data "mega junk" 0
+               data "mega junk" 0

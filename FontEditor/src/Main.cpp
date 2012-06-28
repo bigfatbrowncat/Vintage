@@ -13,7 +13,7 @@ bool quit_pending = false;
 
 void blendPixel24(SDL_Surface *surface, int x, int y, Uint8 r, Uint8 g, Uint8 b, float a)
 {
-//	if(x >= 0 && y >= 0 && x < surface->w && y < surface->h)
+	if(x >= 0 && y >= 0 && x < surface->w && y < surface->h)
 	{
 		assert(surface->format->BytesPerPixel == 3);
 		Uint8 *p = (Uint8 *)surface->pixels + y * surface->pitch + x * 3;
@@ -90,7 +90,7 @@ int symbol_preview_frame_width = 10;
 /*int symbol_w = 10;
 int symbol_h = 16;*/
 
-int cell_size = 10;
+int cell_size = 9;
 
 wchar_t* encoding = L" "
                      "ABCDEFGHIJKLMNOPQRSTUVWXYZ"

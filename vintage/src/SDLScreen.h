@@ -9,6 +9,7 @@ class SDLScreen;
 #include <assert.h>
 
 #include "HardwareDevice.h"
+#include "SDLScreen.h"
 #include "../../FontEditor/include/Font.h"
 
 using namespace std;
@@ -44,11 +45,13 @@ public:
 
 class SDLScreen : public SDLBuffer
 {
+	friend class SDLTerminal;
 private:
 	pthread_mutex_t printing_mutex;
     Uint32 selected_fore_color, selected_back_color;
     int cursor_x, cursor_y;
     KeyboardController* keyboardController;
+    volatile bool activity;
 
 protected:
     static wchar_t* encoding;
@@ -59,7 +62,16 @@ protected:
 	void putSymbol(SDL_Surface *surface, Font& font, vector<bool*>::const_iterator iter, int sx, int sy, int x_left, int y_top, Uint8 r, Uint8 g, Uint8 b);
 	void putChar(SDL_Surface *surface, Font& font, wchar_t ch, int sx, int sy, int x_left, int y_top, wchar_t* encoding,  Uint8 r, Uint8 g, Uint8 b);
 
+	void setActivity(bool value)
+	{
+		activity = value;
+	}
 public:
+	bool isActive()
+	{
+		return activity;
+	}
+
     SymbolPlace createSymbolPlaceWithCurrentColors(wchar_t ch)
     {
     	SymbolPlace res;

@@ -18,7 +18,7 @@ using namespace std;
 bool handleTerminalCustomEvents(void* data)
 {
 	CPU* cpu = (CPU*)data;
-	if (cpu->isHalted())
+	if (cpu->isTerminated())
 	{
 		return false;
 	}
@@ -34,8 +34,8 @@ int main(int argc, char* argv[])
 
 	CPUKeyboardController kbd(cpu, 2, 256);
 
-	Font font("res/font.txt");
-	Font curfont("res/curfont.txt");
+	CachedFont font("res/font.txt");
+	CachedFont curfont("res/curfont.txt");
 	SDLTerminal window(font, curfont);
 	window.setCustomEventsHandler(handleTerminalCustomEvents, &cpu);
 

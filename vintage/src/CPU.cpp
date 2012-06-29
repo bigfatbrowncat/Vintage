@@ -43,7 +43,7 @@ void CPU::ActivityFunction()
 
 			if (order == Halt)
 			{
-				break;
+				terminationPending = true;
 			}
 		}
 
@@ -896,5 +896,5 @@ void CPU::ActivityFunction()
 
 	}
 
-	halted = true;
+	terminated = true;
 }

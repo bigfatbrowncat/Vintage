@@ -66,32 +66,20 @@ void SDLScreen::addPixel24(SDL_Surface *surface, int x, int y, Uint8 r, Uint8 g,
 	}
 }
 
-void SDLScreen::putSymbol(SDL_Surface *surface, Font& font, vector<bool*>::const_iterator iter, int sx, int sy, int x_left, int y_top, Uint8 r, Uint8 g, Uint8 b)
+void SDLScreen::putSymbol(SDL_Surface *surface, CachedFont& font, vector<unsigned char*>::const_iterator iter, int sx, int sy, int x_left, int y_top, Uint8 r, Uint8 g, Uint8 b)
 {
 	// Drawing it
 	for (int j = 0; j < font.getLetterHeight(); j++)
 	for (int i = 0; i < font.getLetterWidth(); i++)
 	{
-		float v = 0;
-		for (int p = 0; p < font.getOverSize(); p++)
-		for (int q = 0; q < font.getOverSize(); q++)
-		{
-			int ii = i * font.getOverSize() + p;
-			int jj = j * font.getOverSize() + q;
-
-			if ((*iter)[jj * font.getLetterWidth() * font.getOverSize() + ii])
-			{
-				v += 1;
-			}
-		}
 		addPixel24(surface, x_left + sx * font.getLetterWidth() + i,
-							y_top + sy * font.getLetterHeight() + j, r, g, b, v / font.getOverSize() / font.getOverSize());
+							y_top + sy * font.getLetterHeight() + j, r, g, b, ((float)(*iter)[j * font.getLetterWidth() + i]) / 255 );
 	}
 }
-void SDLScreen::putChar(SDL_Surface *surface, Font& font, wchar_t ch, int sx, int sy, int x_left, int y_top, wchar_t* encoding,  Uint8 r, Uint8 g, Uint8 b)
+void SDLScreen::putChar(SDL_Surface *surface, CachedFont& font, wchar_t ch, int sx, int sy, int x_left, int y_top, wchar_t* encoding,  Uint8 r, Uint8 g, Uint8 b)
 {
 	wchar_t* pcur_ch = encoding;
-	for (vector<bool*>::const_iterator iter = font.getLettersBegin(); iter != font.getLettersEnd(); iter++)
+	for (vector<unsigned char*>::const_iterator iter = font.getCachedLettersBegin(); iter != font.getCachedLettersEnd(); iter++)
 	{
 		if (*pcur_ch == ch)
 		{
@@ -209,7 +197,7 @@ SDLScreen::~SDLScreen()
 	pthread_mutex_destroy(&printing_mutex);
 }
 
-void SDLScreen::draw_framebuffer(Font& font, int xLeft, int yTop, SDL_Surface* surface)
+void SDLScreen::draw_framebuffer(CachedFont& font, int xLeft, int yTop, SDL_Surface* surface)
 {
 	const SymbolPlace* frame_buffer = lockFrameBufferReadOnly();
 	{
@@ -244,7 +232,7 @@ void SDLScreen::draw_framebuffer(Font& font, int xLeft, int yTop, SDL_Surface* s
 	clearFrameBufferModified();
 }
 
-void SDLScreen::drawCursor(Font& cursorFont, int xLeft, int yTop, SDL_Surface* surface)
+void SDLScreen::drawCursor(CachedFont& cursorFont, int xLeft, int yTop, SDL_Surface* surface)
 {
 	const SymbolPlace* frame_buffer = lockFrameBufferReadOnly();
 	{

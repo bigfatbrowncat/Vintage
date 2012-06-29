@@ -20,7 +20,7 @@ class SDLTerminal
 private:
 	int frame_buffer_width, frame_buffer_height;
 
-    Font &font, &curFont;
+	CachedFont &font, &curFont;
 
 	bool quit_pending;
 	int fps;
@@ -45,9 +45,6 @@ private:
 	bool handleSpecialKeyDown(SDL_keysym* keysym);
 	bool handleSpecialKeyUp(SDL_keysym* keysym);
 
-	void addpixel24(SDL_Surface *surface, int x, int y, Uint8 r, Uint8 g, Uint8 b, float a);
-	void putSymbol(SDL_Surface *surface, vector<bool*>::const_iterator iter, int sx, int sy, int x_left, int y_top, Uint8 r, Uint8 g, Uint8 b);
-	void putChar(SDL_Surface *surface, Font& font, wchar_t ch, int sx, int sy, int x_left, int y_top, wchar_t* encoding,  Uint8 r, Uint8 g, Uint8 b);
 	void draw_framebuffer(SDL_Surface* surface);
 	void draw(SDL_Surface* surface);
 	void cinescope_sim(SDL_Surface *surface, float interlacing, float sliding, float blur);
@@ -89,7 +86,7 @@ protected:
 	}
 
 public:
-	SDLTerminal(Font& font, Font& curFont);
+	SDLTerminal(CachedFont& font, CachedFont& curFont);
 	void setCustomEventsHandler(CustomEventsHandler* handler, void* data)
 	{
 		customEventsHandler = handler;

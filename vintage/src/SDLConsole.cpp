@@ -134,7 +134,7 @@ void SDLTerminal::process_events()
 	}
 }
 
-SDLTerminal::SDLTerminal(Font& font, Font& curFont):
+SDLTerminal::SDLTerminal(CachedFont& font, CachedFont& curFont):
 		frame_buffer_width(96),
 		frame_buffer_height(40),
 		font(font),

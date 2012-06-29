@@ -279,4 +279,54 @@ public:
 	}
 };
 
+class CachedFont : public Font
+{
+private:
+	vector<unsigned char*> cache;
+
+public:
+	const vector<unsigned char*>::const_iterator getCachedLettersBegin() const { return cache.begin(); }
+	const vector<unsigned char*>::const_iterator getCachedLettersEnd() const { return cache.end(); }
+	const vector<unsigned char*>::iterator getCachedLettersBegin() { return cache.begin(); }
+	const vector<unsigned char*>::iterator getCachedLettersEnd() { return cache.end(); }
+
+
+	CachedFont(const string& fileName) : Font(fileName)
+	{
+		for (vector<bool*>::const_iterator iter = this->getLettersBegin(); iter != getLettersEnd(); iter++)
+		{
+			unsigned char* charCache = new unsigned char[getLetterWidth() * getLetterHeight()];
+
+			for (int j = 0; j < getLetterHeight(); j++)
+			for (int i = 0; i < getLetterWidth(); i++)
+			{
+				float v = 0;
+				for (int p = 0; p < getOverSize(); p++)
+				for (int q = 0; q < getOverSize(); q++)
+				{
+					int ii = i * getOverSize() + p;
+					int jj = j * getOverSize() + q;
+
+					if ((*iter)[jj * getLetterWidth() * getOverSize() + ii])
+					{
+						v += 1;
+					}
+				}
+				charCache[j * getLetterWidth() + i] = (unsigned char)((v * 255) / getOverSize() / getOverSize());
+			}
+
+			cache.push_back(charCache);
+		}
+	}
+
+	~CachedFont()
+	{
+		for (vector<unsigned char*>::iterator iter = cache.begin(); iter != cache.end(); iter++)
+		{
+			delete[] (*iter);
+		}
+		cache.clear();
+	}
+};
+
 #endif

@@ -89,7 +89,7 @@ timer_handler: ; port in handler, should free 8 additional bytes on end
               
                hret
 
-kbd_key:       data "Key: XXX is XXXX, modifiers: XXXXXXXXXXX" 0
+kbd_key:       data "Key: XXX is XXXX, modifiers: XXXXXXXXXXX" 10 0
 kbd_down_str:  data "down" 0
 kbd_up_str:    data " up " 0
               

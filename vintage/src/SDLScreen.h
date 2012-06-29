@@ -59,8 +59,8 @@ protected:
 
     void addPixel24(SDL_Surface *surface, int x, int y, Uint8 r, Uint8 g, Uint8 b, float a);
 
-	void putSymbol(SDL_Surface *surface, Font& font, vector<bool*>::const_iterator iter, int sx, int sy, int x_left, int y_top, Uint8 r, Uint8 g, Uint8 b);
-	void putChar(SDL_Surface *surface, Font& font, wchar_t ch, int sx, int sy, int x_left, int y_top, wchar_t* encoding,  Uint8 r, Uint8 g, Uint8 b);
+    void putSymbol(SDL_Surface *surface, CachedFont& font, vector<unsigned char*>::const_iterator iter, int sx, int sy, int x_left, int y_top, Uint8 r, Uint8 g, Uint8 b);
+	void putChar(SDL_Surface *surface, CachedFont& font, wchar_t ch, int sx, int sy, int x_left, int y_top, wchar_t* encoding,  Uint8 r, Uint8 g, Uint8 b);
 
 	void setActivity(bool value)
 	{
@@ -102,8 +102,8 @@ public:
 
 	SDLScreen(int frameBufferWidth, int frameBufferHeight);
 	~SDLScreen();
-	void draw_framebuffer(Font& font, int xLeft, int yTop, SDL_Surface* surface);
-	void drawCursor(Font& cursorFont, int xLeft, int yTop, SDL_Surface* surface);
+	void draw_framebuffer(CachedFont& font, int xLeft, int yTop, SDL_Surface* surface);
+	void drawCursor(CachedFont& cursorFont, int xLeft, int yTop, SDL_Surface* surface);
 };
 
 #endif

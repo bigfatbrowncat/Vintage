@@ -4,6 +4,7 @@ class CPU;
 #define CPU_H_
 
 #include <pthread.h>
+#include <unistd.h>
 
 #include "instructions.h"
 #include "chain.h"
@@ -30,14 +31,14 @@ private:
 	int4 port_data_length;
 
 	HardwareDevice** devices;
-	int4* inputPortHandlersAddresses;
+	volatile int4* inputPortHandlersAddresses;
 
 	bool* inputPortIsWaiting;
 	int1* portInWaitingData;
 	int4* portInWaitingDataLength;
 
-	volatile int4* inputPortsCurrentlyHandlingStack;
-	int4 inputPortsCurrentlyHandlingCount;
+	int4* inputPortsCurrentlyHandlingStack;
+	volatile int4 inputPortsCurrentlyHandlingCount;
 
 	volatile bool someInputPortIsWaiting;
 
@@ -48,16 +49,16 @@ private:
 
 	void ActivityFunction();
 	volatile bool terminationPending;
-	volatile bool halted;
+	volatile bool terminated;
 public:
 	void TurnOff()
 	{
 		terminationPending = true;
 	}
 
-	bool isHalted()
+	bool isTerminated()
 	{
-		return halted;
+		return terminated;
 	}
 
 	void handleInputPort(int4 port, const int1* data, int4 data_len)
@@ -68,6 +69,34 @@ public:
 		memcpy(&portInWaitingData[port * port_data_length], data, data_len);
 		portInWaitingDataLength[port] = data_len;
 		pthread_mutex_unlock(&portReadingMutex);
+
+		// Checking if we have a handler for the port
+		if (inputPortHandlersAddresses[port] != 0)
+		{
+			// Waiting until for the CPU to handle the port
+			bool notHandledYet;
+
+			do
+			{
+				notHandledYet = false;
+				pthread_mutex_lock(&portReadingMutex);
+				// Checking if the port is still waiting to be handled
+				if (inputPortIsWaiting[port]) notHandledYet = true;
+
+				// Checking if our port handling is in progress
+				for (int i = 0; i < inputPortsCurrentlyHandlingCount; i++)
+				{
+					if (inputPortsCurrentlyHandlingStack[i] == port)
+					{
+						notHandledYet = true;
+					}
+				}
+				pthread_mutex_unlock(&portReadingMutex);
+
+				usleep(100);
+			}
+			while (notHandledYet && !terminated);
+		}
 	}
 
 	void setDebugger(Debugger& debugger) { this->pDebugger = &debugger; }

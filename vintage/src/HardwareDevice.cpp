@@ -120,17 +120,28 @@ void CPUKeyboardController::ActivityFunction()
 	{
 		while (!TurnOffPending() && (current == last))
 			usleep(100);	// 0.1 millisecond
+
+		// Taking the event away from the buffer.
+		// This is synchronized with adding event to the buffer
 		pthread_mutex_lock(&keyBufferLock);
-		if (current != last)
+		bool notEmpty = (current != last);
+		int1 msg[7];
+		if (notEmpty)
 		{
-			int1 msg[7];
 			msg[0] = keyDown[current];
 			*((int2*)&msg[1]) = (int2)(modifiers[current]);
 			*((int4*)&msg[3]) = keyCode[current];
-			GetCPU().handleInputPort(GetPort(), msg, 7);
 			current = (current + 1) % bufferLength;
 		}
 		pthread_mutex_unlock(&keyBufferLock);
+
+		// After taking the last event from the buffer,
+		// we send it to the CPU.
+		if (notEmpty)
+		{
+			GetCPU().handleInputPort(GetPort(), msg, 7);
+		}
+
 	}
 }
 

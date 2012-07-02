@@ -46,7 +46,7 @@ private:
 	bool handleSpecialKeyUp(SDL_keysym* keysym);
 
 	void draw_framebuffer(SDL_Surface* surface);
-	void draw(SDL_Surface* surface);
+	void draw();
 	void cinescope_sim(SDL_Surface *surface, float interlacing, float sliding, float blur);
 protected:
 	void setActiveScreen(int index)

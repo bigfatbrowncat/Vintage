@@ -75,12 +75,14 @@ private:
 	SDLScreen& screen;
 	volatile bool running;
 	volatile bool haltPending;
-	volatile bool stepPending;
+	volatile bool stepOverPending;
+	volatile bool stepInPending;
+	volatile bool stepOutPending;
 	pthread_mutex_t printingMutex;
 
 	int4 flow;
 	int1* stack;
-	int4 stackSize;
+	int4 stackAllocatedSize;
 	int4 stackMaxSize;
 	int1* heap;
 	int4 heapSize;
@@ -92,6 +94,7 @@ public:
 	void updateUI();
 	void handleControlKey(ControlKey ck)
 	{
+		pthread_mutex_lock(&printingMutex);
 		int heapLines = heapSize / wHeapBytes;
 		int stackLines = stackMaxSize / wStackBytes;
 
@@ -138,6 +141,7 @@ public:
 		if (wStackTopRow < 0) wStackTopRow = 0;
 		if (wHeapTopRow > heapLines) wHeapTopRow = heapLines;
 		if (wStackTopRow > stackLines) wStackTopRow = stackLines;
+		pthread_mutex_unlock(&printingMutex);
 
 		updateUI();
 	}
@@ -147,6 +151,7 @@ public:
 	virtual ~Debugger();
 	int findLine(int4 mem_pos) const;
 	void flowChanged(int4 flow, int1* stack, int4 stackMaxSize, int4 stackSize, int1* heap, int4 heapSize);
+
 	const DebuggerOrder askForOrder(int4 flow)
 	{
 		if (haltPending)
@@ -155,9 +160,9 @@ public:
 		}
 		else if (!running)
 		{
-			if (stepPending)
+			if (stepOverPending)
 			{
-				stepPending = false;
+				stepOverPending = false;
 				return Go;
 			}
 			else
@@ -170,6 +175,7 @@ public:
 			return Go;
 		}
 	}
+
 	void run()
 	{
 		pthread_mutex_lock(&printingMutex);
@@ -188,7 +194,7 @@ public:
 	{
 		pthread_mutex_lock(&printingMutex);
 		running = false;
-		stepPending = true;
+		stepOverPending = true;
 		printMenu();
 		pthread_mutex_unlock(&printingMutex);
 	}

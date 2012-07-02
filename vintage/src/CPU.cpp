@@ -12,7 +12,7 @@
 
 //#define OUTPUT_INSTRUCTIONS
 
-void* CPU_activity_function(void* arg)
+void* CPUActivityFunction(void* arg)
 {
 	((CPU*)arg)->ActivityFunction();
 	return NULL;
@@ -21,22 +21,26 @@ void* CPU_activity_function(void* arg)
 void CPU::TurnOn()
 {
 	terminationPending = false;
-	pthread_create(&this->activity, NULL, &CPU_activity_function, this);
+	pthread_create(&this->activity, NULL, &CPUActivityFunction, this);
 }
 
 void CPU::ActivityFunction()
 {
-	int4 flow = 0;
+	int4 flow = heapStart;
 	int4 addr;
+
+	int1* stack = &memory[stackStart];
+	int1* heap = &memory[heapStart];
 
 	while (!terminationPending)
 	{
+
 		// Logging to debugger
-		if (pDebugger != NULL)
+		if (debugger != NULL)
 		{
-			pDebugger->flowChanged(flow, &stack[stackPtr], stackSize, stackSize - stackPtr, heap, heapSize);
+			debugger->flowChanged(flow, &stack[stackPtr], stackSize, stackSize - stackPtr, heap, heapSize);
 			DebuggerOrder order;
-			while ((order = pDebugger->askForOrder(flow)) == Wait)
+			while ((order = debugger->askForOrder(flow)) == Wait)
 			{
 				Sleep(50);
 			}
@@ -68,7 +72,7 @@ void CPU::ActivityFunction()
 
 			// And we start handling for the highest priority
 			// (i.e. the least index) port
-			for (int i = 0; i < ports_count; i++)
+			for (int i = 0; i < portsCount; i++)
 			{
 				if (inputPortIsWaiting[i] && inputPortHandlersAddresses[i] > 0)
 				{
@@ -111,7 +115,7 @@ void CPU::ActivityFunction()
 
 				for (int i = 0; i < portInWaitingDataLength[portToHandle]; i++)
 				{
-					*((int1*)&stack[stackPtr + i]) = *((int1*)&portInWaitingData[portToHandle * port_data_length + i]);
+					*((int1*)&stack[stackPtr + i]) = *((int1*)&portInWaitingData[portToHandle * portDataLength + i]);
 				}
 
 				if (inputPortsWaitingCount == 1) someInputPortIsWaiting = false;

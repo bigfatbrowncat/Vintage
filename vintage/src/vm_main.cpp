@@ -30,22 +30,25 @@ bool handleTerminalCustomEvents(void* data)
 
 int main(int argc, char* argv[])
 {
-	CPU cpu(1024 * 1024, 1024 * 1024, 256, 64);			// 1MB heap and 1MB stack
+	int4 heapSize = 1024 * 1024;										// 1MB
+	int4 stackSize = 1024 * 1024;										// 1MB
 
-	CPUKeyboardController kbd(cpu, 2, 256);
+	CPU cpu(heapSize + stackSize, 0, heapSize, heapSize, stackSize, 256, 64);		// 256 ports with buffer length of 64
 
 	CachedFont font("res/font.txt");
 	CachedFont curfont("res/curfont.txt");
 	SDLTerminal window(font, curfont);
 	window.setCustomEventsHandler(handleTerminalCustomEvents, &cpu);
 
-	SDLScreen& cpuScreen = window.getScreen(0);
-	SDLScreen& debuggerScreen = window.getScreen(1);
+	SDLScreen& cpuScreen = window.getScreen(0);			// Ctrl + F1
+	SDLScreen& debuggerScreen = window.getScreen(1);	// Ctrl + F2
+
+
+	HardwareTimer ht(cpu, 1);							// Hardware timer on port 1 -- the highest priority
+	Console term(cpu, 2, &cpuScreen);					// Terminal on port 2
+	CPUKeyboardController kbd(cpu, 3, 256);				// Keyboard on the port 3
 
 	cpuScreen.setKeyboardController(&kbd);
-
-	HardwareTimer ht(cpu, 3);
-	Console term(cpu, 1, &cpuScreen);
 
 	Debugger* dbg = NULL;
 	DebuggerKeyboardController* dbg_kbd = NULL;
@@ -73,7 +76,7 @@ int main(int argc, char* argv[])
 			printf("VM loader error: can't open the binary file\n");
 
 			int4 act_read;
-			act_read = fread(cpu.GetHeap(), 1, cpu.GetHeapSize(), binfile);
+			act_read = fread(cpu.GetMemory(), 1, cpu.GetMemorySize(), binfile);
 			printf("Loaded %d bytes binary\n", act_read);
 
 			if (dbg_symbols_file != NULL)

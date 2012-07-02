@@ -19,16 +19,18 @@ class CPU
 private:
 	pthread_mutex_t portReadingMutex;
 
-	int1* heap;
+	int1* memory;
+	int4 memorySize;
+
+	int4 heapStart;
 	int4 heapSize;
 
-	int1* stack;
+	int4 stackStart;
 	int4 stackSize;
-
 	int4 stackPtr;
 
-	int4 ports_count;
-	int4 port_data_length;
+	int4 portsCount;
+	int4 portDataLength;
 
 	HardwareDevice** devices;
 	volatile int4* inputPortHandlersAddresses;
@@ -43,9 +45,9 @@ private:
 	volatile bool someInputPortIsWaiting;
 
 	pthread_t activity;
-	friend void* CPU_activity_function(void* arg);
+	friend void* CPUActivityFunction(void* arg);
 
-	Debugger* pDebugger;
+	Debugger* debugger;
 
 	void ActivityFunction();
 	volatile bool terminationPending;
@@ -66,7 +68,7 @@ public:
 		pthread_mutex_lock(&portReadingMutex);
 		someInputPortIsWaiting = true;
 		inputPortIsWaiting[port] = true;
-		memcpy(&portInWaitingData[port * port_data_length], data, data_len);
+		memcpy(&portInWaitingData[port * portDataLength], data, data_len);
 		portInWaitingDataLength[port] = data_len;
 		pthread_mutex_unlock(&portReadingMutex);
 
@@ -99,54 +101,61 @@ public:
 		}
 	}
 
-	void setDebugger(Debugger& debugger) { this->pDebugger = &debugger; }
-
-	CPU(int4 heap_size, int4 stack_size, int4 ports_count, int4 port_data_length) : pDebugger(NULL)
+	void setDebugger(Debugger& debugger)
 	{
-		heap = new int1[heap_size];
-		this->heapSize = heap_size;
-		heap[0] = halt;
+		this->debugger = &debugger;
+	}
 
-		stack = new int1[stack_size];
-		this->stackSize = stack_size;
+	CPU(int4 memorySize, int4 heapStart, int4 heapSize, int4 stackStart, int4 stackSize, int4 portsCount, int4 portDataLength) : debugger(NULL)
+	{
+		// Getting memory
+		memory = new int1[memorySize];
+		this->memorySize = memorySize;
 
-		this->ports_count = ports_count;
-		this->port_data_length = port_data_length;
+		// Initiating heap
+		this->heapStart = heapStart;
+		this->heapSize = heapSize;
 
-		devices = new HardwareDevice*[ports_count];
-		inputPortHandlersAddresses = new int4[ports_count];
-		for (int i = 0; i < ports_count; i++) inputPortHandlersAddresses[i] = 0;
+		// Initiating stack
+		this->stackStart = stackStart;
+		this->stackSize = stackSize;
+		stackPtr = stackSize;
 
-		inputPortIsWaiting = new bool[ports_count];
-		for (int i = 0; i < ports_count; i++) inputPortIsWaiting[i] = false;
+		this->portsCount = portsCount;
+		this->portDataLength = portDataLength;
 
-		portInWaitingData = new int1[ports_count * port_data_length];
-		portInWaitingDataLength = new int4[ports_count];
+		devices = new HardwareDevice*[portsCount];
+		inputPortHandlersAddresses = new int4[portsCount];
+		for (int i = 0; i < portsCount; i++) inputPortHandlersAddresses[i] = 0;
+
+		inputPortIsWaiting = new bool[portsCount];
+		for (int i = 0; i < portsCount; i++) inputPortIsWaiting[i] = false;
+
+		portInWaitingData = new int1[portsCount * portDataLength];
+		portInWaitingDataLength = new int4[portsCount];
 
 		someInputPortIsWaiting = false;
 
 		inputPortsCurrentlyHandlingCount = 0;
-		inputPortsCurrentlyHandlingStack = new int4[ports_count];
+		inputPortsCurrentlyHandlingStack = new int4[portsCount];
 
-		stackPtr = stack_size;
 
 		pthread_mutex_init(&portReadingMutex, NULL);
 	}
 
-	int1* GetHeap()
+	int1* GetMemory()
 	{
-		return heap;
+		return memory;
 	}
 
-	int4 GetHeapSize()
+	int4 GetMemorySize()
 	{
-		return heapSize;
+		return memorySize;
 	}
 
 	virtual ~CPU()
 	{
-		delete[] heap;
-		delete[] stack;
+		delete[] memory;
 		delete[] devices;
 		delete[] inputPortHandlersAddresses;
 		delete[] inputPortIsWaiting;

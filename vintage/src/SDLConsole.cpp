@@ -1,4 +1,6 @@
 #include <SDL.h>
+#include <GL/glew.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -8,27 +10,6 @@
 #include "SDLConsole.h"
 #include "HardwareDevice.h"
 //#include "font2.h"
-
-/*void addPixel24(SDL_Surface *surface, int x, int y, Uint8 r, Uint8 g, Uint8 b, float a)
-{
-	assert(surface->format->BytesPerPixel == 3);
-	Uint8 *p = (Uint8 *)surface->pixels + y * surface->pitch + x * 3;
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-	int p0 = p[0] + (int)(r * a);
-	int p1 = p[1] + (int)(g * a);
-	int p2 = p[2] + (int)(b * a);
-	p[0] = p0 < 255 ? p0 : 255;
-	p[1] = p1 < 255 ? p1 : 255;
-	p[2] = p2 < 255 ? p2 : 255;
-#else
-	int p2 = p[2] + (int)(r * a);
-	int p1 = p[1] + (int)(g * a);
-	int p0 = p[0] + (int)(b * a);
-	p[2] = p2 < 255 ? p2 : 255;
-	p[1] = p1 < 255 ? p1 : 255;
-	p[0] = p0 < 255 ? p0 : 255;
-#endif
-}*/
 
 wchar_t* SDLScreen::encoding = L" "
 					            "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -134,8 +115,123 @@ void SDLTerminal::process_events()
 	}
 }
 
+char *file2string(const char *path)
+{
+	FILE *fd;
+	long len,
+		 r;
+	char *str;
+
+	if (!(fd = fopen(path, "r")))
+	{
+		fprintf(stderr, "Can't open file '%s' for reading\n", path);
+		return NULL;
+	}
+
+	fseek(fd, 0, SEEK_END);
+	len = ftell(fd);
+
+	printf("File '%s' is %ld long\n", path, len);
+
+	fseek(fd, 0, SEEK_SET);
+
+	if (!(str = (char*)malloc(len * sizeof(char))))
+	{
+		fprintf(stderr, "Can't malloc space for '%s'\n", path);
+		return NULL;
+	}
+
+	r = fread(str, sizeof(char), len, fd);
+
+	str[r - 1] = '\0'; /* Shader sources have to term with null */
+
+	fclose(fd);
+
+	return str;
+}
+
+void printLog(GLuint obj)
+{
+    int infologLength = 0;
+    char infoLog[1024];
+
+	if (glIsShader(obj))
+		glGetShaderInfoLog(obj, 1024, &infologLength, infoLog);
+	else
+		glGetProgramInfoLog(obj, 1024, &infologLength, infoLog);
+
+    if (infologLength > 0)
+		printf("%s\n", infoLog);
+}
+
+GLuint vs, /* Vertex Shader */
+	   fs, /* Fragment Shader */
+	   sp; /* Shader Program */
+
+bool InitSDL_GL(int windowWidth, int windowHeight)
+{
+	SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 5);
+	SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 5);
+	SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 5);
+	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 16);
+
+	glShadeModel(GL_SMOOTH);
+	glViewport(0, 0, windowWidth, windowHeight);
+
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluOrtho2D(0, 1, 1, 0);
+
+	glMatrixMode(GL_MODELVIEW);
+
+	printf("Initializing glew\n");
+	glewInit();
+	if (GLEW_VERSION_2_0)
+		fprintf(stderr, "INFO: OpenGL 2.0 supported, proceeding\n");
+	else
+	{
+		fprintf(stderr, "INFO: OpenGL 2.0 not supported. Exit\n");
+		return false;
+	}
+	printf("Success.\n");
+
+	/* The vertex shader */
+	GLchar *vsSource = (GLchar*)file2string("wave.vert");
+	GLchar *fsSource = (GLchar*)file2string("wave.frag");
+
+	const GLchar *cvsSource = vsSource;
+	const GLchar *cfsSource = fsSource;
+
+	/* Compile and load the program */
+
+	vs = glCreateShader(GL_VERTEX_SHADER);
+	glShaderSource(vs, 1, &cvsSource, NULL);
+	glCompileShader(vs);
+	printLog(vs);
+
+	fs = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(fs, 1, &cfsSource, NULL);
+	glCompileShader(fs);
+	printLog(fs);
+
+	free(vsSource);
+	free(fsSource);
+
+	sp = glCreateProgram();
+	glAttachShader(sp, vs);
+	glAttachShader(sp, fs);
+	glLinkProgram(sp);
+	printLog(sp);
+
+	glUseProgram(sp);
+
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    glEnable(GL_TEXTURE_2D);
+
+}
+
 SDLTerminal::SDLTerminal(CachedFont& font, CachedFont& curFont):
-		frame_buffer_width(96),
+		frame_buffer_width(100),
 		frame_buffer_height(40),
 		font(font),
 		curFont(curFont),
@@ -161,23 +257,69 @@ SDLTerminal::SDLTerminal(CachedFont& font, CachedFont& curFont):
 
     printf("Initializing SDL.\n");
 
-    if((SDL_Init(SDL_INIT_VIDEO|SDL_INIT_AUDIO|SDL_INIT_TIMER)==-1)) {
+
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER) == -1)
+    {
         printf("Could not initialize SDL: %s.\n", SDL_GetError());
         exit(-1);
     }
 
+	int distance = 0;
+
     printf("SDL initialized.\n");
-
-    /* Clean up on exit */
-//    atexit(SDL_Quit);
-
-
 }
 
 SDLTerminal::~SDLTerminal()
 {
 	SDL_FreeSurface(slow_surface);
 	SDL_Quit();
+}
+
+void setGLTextureFromSurface(SDL_Surface* surface, GLuint sp)
+{
+	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+
+	int texture_format;
+	int nOfColors = surface->format->BytesPerPixel;
+	if (nOfColors == 4)     // contains an alpha channel
+	{
+	    if (surface->format->Rmask == 0x000000ff)
+	        texture_format = GL_RGBA;
+	    else
+	                texture_format = GL_BGRA;
+	} else if (nOfColors == 3)     // no alpha channel
+	{
+	    if (surface->format->Rmask == 0x000000ff)
+	        texture_format = GL_RGB;
+	    else
+	        texture_format = GL_BGR;
+	} else {
+	    printf("warning: the image is not truecolor..  this will probably break\n");
+	    // this error should not go unhandled
+	}
+
+	// Have OpenGL generate a texture object handle for us
+	unsigned int texture;
+	glGenTextures( 0, &texture );
+
+	// Bind the texture object
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture( GL_TEXTURE_2D, texture );
+
+	// Set the texture's stretching properties
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+
+	// Edit the texture object's image data using the information SDL_Surface gives us
+	glTexImage2D(GL_TEXTURE_2D, 0, nOfColors, surface->w, surface->h, 0,
+	             texture_format, GL_UNSIGNED_BYTE, surface->pixels);
+
+
+	GLint RTScene = glGetUniformLocation(sp, "RTScene");
+	GLint phase = glGetUniformLocation(sp, "phase");
+//	printf("phase is at %d\n", phase);
+	glUniform1i(RTScene, 0);	//use texture bound to GL_TEXTURE0
+	glUniform1f(phase, (float)SDL_GetTicks() / 1000);
 }
 
 void SDLTerminal::Run()
@@ -187,13 +329,17 @@ void SDLTerminal::Run()
 	int distance = 0;
     mainSurface = SDL_SetVideoMode(
     		(font.getLetterWidth() + distance) * frame_buffer_width + 2 * window_frame,
-    		(font.getLetterHeight() + distance) * frame_buffer_height + 2 * window_frame, 24, SDL_SWSURFACE);
+    		(font.getLetterHeight() + distance) * frame_buffer_height + 2 * window_frame, 24, SDL_OPENGL);
 
-    if ( mainSurface == NULL ) {
+    if (mainSurface == NULL)
+    {
         fprintf(stderr, "Couldn't set the video mode: %s\n",
                         SDL_GetError());
         throw 1;
     }
+
+    InitSDL_GL((font.getLetterWidth() + distance) * frame_buffer_width + 2 * window_frame,
+    		(font.getLetterHeight() + distance) * frame_buffer_height + 2 * window_frame);
 
     slow_surface = SDL_CreateRGBSurface(SDL_SWSURFACE,
     		(font.getLetterWidth() + distance) * frame_buffer_width + 2 * window_frame,
@@ -214,28 +360,57 @@ void SDLTerminal::Run()
         	cursorIsOn = !cursorIsOn;
     	}
         /* Process incoming events. */
-        process_events( );
+        process_events();
 
         if (!handleCustomEvents())
         {
         	quit_pending = true;
         }
 
+		glClear(GL_COLOR_BUFFER_BIT);
+		glLoadIdentity();
+
+    	draw();
+		setGLTextureFromSurface(slow_surface, sp);
+
+		glBegin(GL_QUADS);
+
+		glTexCoord2f(0, 0);
+		glVertex2f(0, 0);
+
+		glTexCoord2f(1, 0);
+		glVertex2f(1, 0);
+
+		glTexCoord2f(1, 1);
+		glVertex2f(1, 1);
+
+		glTexCoord2f(0, 1);
+		glVertex2f(0, 1);
+
+		glEnd();
+
+		SDL_GL_SwapBuffers();
+
         /* Draw the screen. */
-    	draw(mainSurface);
     }
+	SDL_FreeSurface(slow_surface);
+
+	glDeleteShader(vs);
+	glDeleteShader(fs);
+	glDeleteProgram(sp);
 }
 
-void SDLTerminal::draw(SDL_Surface* surface)
+void SDLTerminal::draw()
 {
-	if ( SDL_MUSTLOCK(surface) ) {
-		if ( SDL_LockSurface(surface) < 0 ) {
+	if ( SDL_MUSTLOCK(slow_surface) ) {
+		if ( SDL_LockSurface(slow_surface) < 0 )
+		{
 			fprintf(stderr, "Can't lock screen: %s\n", SDL_GetError());
 			throw 1;
 		}
 	}
 
-	if (screens[activeScreen]->getFrameBufferModified() || activeScreenChanged)
+	//if (screens[activeScreen]->getFrameBufferModified() || activeScreenChanged)
 	{
 		screens[activeScreen]->draw_framebuffer(font, window_frame, window_frame, slow_surface);
 	}
@@ -246,11 +421,11 @@ void SDLTerminal::draw(SDL_Surface* surface)
 		activeScreenChanged = false;
 	}
 
-	SDL_BlitSurface(slow_surface, NULL, mainSurface, NULL);
+	//SDL_BlitSurface(slow_surface, NULL, mainSurface, NULL);
 
 	if (cursorIsOn)
 	{
-		screens[activeScreen]->drawCursor(curFont, window_frame, window_frame, mainSurface);
+		screens[activeScreen]->drawCursor(curFont, window_frame, window_frame, slow_surface);
 	}
 
 	float p = (float)(rand()) / RAND_MAX;
@@ -261,13 +436,13 @@ void SDLTerminal::draw(SDL_Surface* surface)
 	}
 
 	float blur = 0.7 + 0.15 * sin(0.123 * frame);
-	cinescope_sim(mainSurface, 0.15, sliding, blur);
+	//cinescope_sim(mainSurface, 0.15, sliding, blur);
 
-	if ( SDL_MUSTLOCK(surface) ) {
-		SDL_UnlockSurface(surface);
+	if ( SDL_MUSTLOCK(slow_surface) ) {
+		SDL_UnlockSurface(slow_surface);
 	}
 
-	SDL_UpdateRect(mainSurface, 0, 0, mainSurface->w, mainSurface->h);
+	//SDL_UpdateRect(mainSurface, 0, 0, mainSurface->w, mainSurface->h);
 	frame++;
 }
 
@@ -298,7 +473,7 @@ void SDLTerminal::cinescope_sim(SDL_Surface *surface, float interlacing, float s
 		pij[1] = (Uint8)((float)pij[1] * (1 - a) * deint_line + pipj[1] * a * deint_line);
 		pij[2] = (Uint8)((float)pij[2] * (1 - a) * deint_line + pipj[2] * a * deint_line);
 
-		Uint8 pij0n = (Uint8)(((float)pij[0] + blur * (float)(pimj[0] + pipj[0] + pijm[0] + pijp[0])) / (1 + 4 * blur));
+		/*Uint8 pij0n = (Uint8)(((float)pij[0] + blur * (float)(pimj[0] + pipj[0] + pijm[0] + pijp[0])) / (1 + 4 * blur));
 		Uint8 pij1n = (Uint8)(((float)pij[1] + blur * (float)(pimj[1] + pipj[1] + pijm[1] + pijp[1])) / (1 + 4 * blur));
 		Uint8 pij2n = (Uint8)(((float)pij[2] + blur * (float)(pimj[2] + pipj[2] + pijm[2] + pijp[2])) / (1 + 4 * blur));
 
@@ -307,7 +482,7 @@ void SDLTerminal::cinescope_sim(SDL_Surface *surface, float interlacing, float s
 			pij[0] = pij0n;
 			pij[1] = pij1n;
 			pij[2] = pij2n;
-		}
+		}*/
 	}
 	frame++;
 }

@@ -6,7 +6,12 @@ SDL_LIBS_PATH =			../../SDL-1.2.14/lib
 SDL_BIN_PATH =			../../SDL-1.2.14/bin
 SDL_DLL	= 				SDL.dll
 
-SRC_PATH = 			src
+GLEW_INCLUDE_PATH =		../../glew-1.7.0/include
+GLEW_LIBS_PATH =		../../glew-1.7.0/lib
+GLEW_DLL = 				glew32.dll 
+GLEW_MX_DLL =				glew32mx.dll
+
+SRC_PATH = 				src
 
 ifdef DEBUG
 	CXXFLAGS =			-O0 -g2 -Wall -Wno-write-strings -fmessage-length=0 -static-libgcc -static-libstdc++ -DDEBUG
@@ -37,12 +42,12 @@ VM_HEADERS = 		$(SRC_PATH)/SDLConsole.h $(SRC_PATH)/SDLScreen.h \
 ASM_HEADERS = 		$(SRC_PATH)/asm.h $(SRC_PATH)/instructions.h \
 					$(SRC_PATH)/chain.h $(SRC_PATH)/globals.h 
 					
-VM_LIBS =			-lmingw32 -lSDLmain -lSDL -lpthread.dll
+VM_LIBS =			-lmingw32 -lSDLmain -lSDL -lopengl32 -lglu32 -lglew32 -lglew32mx -lpthread.dll
 
 ASM_LIBS =			-lpthread.dll
 
-LIBS_PATH =			-L$(SDL_LIBS_PATH)
-INCLUDES_PATH = 	-I$(SDL_INCLUDE_PATH)
+LIBS_PATH =			-L$(SDL_LIBS_PATH) -L$(GLEW_LIBS_PATH)
+INCLUDES_PATH = 	-I$(SDL_INCLUDE_PATH) -I$(GLEW_INCLUDE_PATH)
 
 VM_TARGET =			vintage-vm
 ASM_TARGET =		vintage-asm
@@ -101,12 +106,24 @@ $(OUT_PATH)/$(ASM_TARGET): $(ASM_OBJS) $(OUT_PATH)
 
 ##### Externals #####
 
-externals: $(OUT_PATH)/$(SDL_DLL) $(OUT_PATH)/$(PTHREADS_DLL) 
+externals: $(OUT_PATH)/$(SDL_DLL) $(OUT_PATH)/$(GLEW_DLL) $(OUT_PATH)/$(GLEW_MX_DLL) $(OUT_PATH)/$(PTHREADS_DLL) $(OUT_PATH)/wave.frag $(OUT_PATH)/wave.vert
 
-$(OUT_PATH)/$(SDL_DLL): $(OUT_PATH) $(SDL_BIN_PATH)/$(SDL_DLL)
+$(OUT_PATH)/wave.frag: wave.frag
+	cp -f wave.frag $(OUT_PATH)/
+
+$(OUT_PATH)/wave.vert: wave.vert
+	cp -f wave.vert $(OUT_PATH)/
+
+$(OUT_PATH)/$(GLEW_DLL): $(GLEW_LIBS_PATH)/$(GLEW_DLL)
+	cp -f $(GLEW_LIBS_PATH)/$(GLEW_DLL) $(OUT_PATH)/
+
+$(OUT_PATH)/$(GLEW_MX_DLL): $(GLEW_LIBS_PATH)/$(GLEW_MX_DLL)
+	cp -f $(GLEW_LIBS_PATH)/$(GLEW_MX_DLL) $(OUT_PATH)/
+
+$(OUT_PATH)/$(SDL_DLL): $(SDL_BIN_PATH)/$(SDL_DLL)
 	cp -f $(SDL_BIN_PATH)/$(SDL_DLL) $(OUT_PATH)/
 
-$(OUT_PATH)/$(PTHREADS_DLL): $(OUT_PATH) $(PTHREADS_BIN_PATH)/$(PTHREADS_DLL)
+$(OUT_PATH)/$(PTHREADS_DLL): $(PTHREADS_BIN_PATH)/$(PTHREADS_DLL)
 	cp -f $(PTHREADS_BIN_PATH)/$(PTHREADS_DLL) $(OUT_PATH)/
 
 ##### Res #####

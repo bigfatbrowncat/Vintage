@@ -1,7 +1,9 @@
 #include "Debugger.h"
 
 Debugger::Debugger(FILE* debug_symbols, SDLScreen& screen) :
-	screen(screen), running(false), haltPending(false), stepPending(false), topSpace(20), wStackBytes(8), wHeapBytes(10), wStackTopRow(0), wHeapTopRow(0)
+	screen(screen), running(false), haltPending(false),
+	stepOverPending(false),
+	topSpace(19), wStackBytes(8), wHeapBytes(10), wStackTopRow(0), wHeapTopRow(0)
 {
 	pthread_mutex_init(&printingMutex, NULL);
 
@@ -64,10 +66,11 @@ void Debugger::printMenu()
 	{
 		screen.SelectBackColor(128, 128, 128);
 	}
-	screen.Write(L" F1 Run ");
+	screen.Write(L"F1 Run");
 	screen.SelectBackColor(0, 0, 0);
 	screen.Write(L" ");
-	if (!this->running && !this->stepPending)
+
+	if (!this->running && !this->stepOverPending && !stepInPending && !stepOutPending)
 	{
 		screen.SelectBackColor(192, 192, 192);
 	}
@@ -75,10 +78,11 @@ void Debugger::printMenu()
 	{
 		screen.SelectBackColor(128, 128, 128);
 	}
-	screen.Write(L" F2 Pause ");
+	screen.Write(L"F2 Pause");
 	screen.SelectBackColor(0, 0, 0);
 	screen.Write(L" ");
-	if (this->stepPending)
+
+	if (this->stepOverPending)
 	{
 		screen.SelectBackColor(192, 192, 192);
 	}
@@ -86,12 +90,36 @@ void Debugger::printMenu()
 	{
 		screen.SelectBackColor(128, 128, 128);
 	}
-	screen.Write(L" F3 Step ");
+	screen.Write(L"F3 Step over");
+	screen.SelectBackColor(0, 0, 0);
+	screen.Write(L" ");
+
+	if (this->stepInPending)
+	{
+		screen.SelectBackColor(192, 192, 192);
+	}
+	else
+	{
+		screen.SelectBackColor(128, 128, 128);
+	}
+	screen.Write(L"F4 Step in");
+	screen.SelectBackColor(0, 0, 0);
+	screen.Write(L" ");
+
+	if (this->stepOutPending)
+	{
+		screen.SelectBackColor(192, 192, 192);
+	}
+	else
+	{
+		screen.SelectBackColor(128, 128, 128);
+	}
+	screen.Write(L"F4 Step out");
 	screen.SelectBackColor(0, 0, 0);
 	screen.Write(L" ");
 
 	screen.SelectBackColor(128, 128, 128);
-	screen.Write(L" F4 Halt CPU ");
+	screen.Write(L"F4 Halt CPU");
 	screen.SelectBackColor(0, 0, 0);
 	screen.Write(L" ");
 	screen.SetCursorPosition(0, screen.getFrameBufferHeight() - 1);
@@ -241,7 +269,7 @@ void Debugger::updateUI()
 
 			for (; stack_addr < (row + 1) * wStackBytes; stack_addr ++)
 			{
-				if (stack_addr < stackSize)
+				if (stack_addr < stackAllocatedSize)
 				{
 					unsigned char i1 = *((unsigned char*)(&stack[stack_addr]));
 
@@ -255,7 +283,14 @@ void Debugger::updateUI()
 					num[0] = hexchars[i1 / 16];
 
 					wchar_t ch[2];
-					ch[0] = i1;
+					if (i1 == 0)
+					{
+						ch[0] = ' ';
+					}
+					else
+					{
+						ch[0] = i1;
+					}
 					ch[1] = 0;
 
 					screen.SelectForeColor(192, 192, 192);
@@ -360,12 +395,12 @@ void Debugger::updateUI()
 	}
 }
 
-void Debugger::flowChanged(int4 flow, int1* stack, int4 stackMaxSize, int4 stackSize, int1* heap, int4 heapSize)
+void Debugger::flowChanged(int4 flow, int1* stack, int4 stackMaxSize, int4 stackAllocatedSize, int1* heap, int4 heapSize)
 {
 	this->flow = flow;
 
 	this->stack = stack;
-	this->stackSize = stackSize;
+	this->stackAllocatedSize = stackAllocatedSize;
 
 	this->stackMaxSize = stackMaxSize;
 

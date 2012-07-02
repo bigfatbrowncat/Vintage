@@ -28,6 +28,7 @@
 							<tool id="cdt.managedbuild.tool.gnu.assembler.mingw.base.10642412" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.mingw.base">
 								<option id="gnu.both.asm.option.include.paths.82926770" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="../../../SDL-1.2.14/include/SDL"/>
+									<listOptionValue builtIn="false" value="../../../glew-1.7.0/include"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.1882138130" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
@@ -35,6 +36,7 @@
 							<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.base.1443440459" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.base">
 								<option id="gnu.cpp.compiler.option.include.paths.1837725706" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="../../../SDL-1.2.14/include/SDL"/>
+									<listOptionValue builtIn="false" value="../../../glew-1.7.0/include"/>
 								</option>
 								<option id="gnu.cpp.compiler.option.preprocessor.def.1478439543" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="DEBUG"/>
@@ -44,6 +46,7 @@
 							<tool id="cdt.managedbuild.tool.gnu.c.compiler.mingw.base.1760152321" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.mingw.base">
 								<option id="gnu.c.compiler.option.include.paths.1355486974" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="../../../SDL-1.2.14/include/SDL"/>
+									<listOptionValue builtIn="false" value="../../../glew-1.7.0/include"/>
 								</option>
 								<option id="gnu.c.compiler.option.preprocessor.def.symbols.1741932237" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="DEBUG=1"/>
@@ -91,6 +94,7 @@
 							<tool id="cdt.managedbuild.tool.gnu.assembler.mingw.base.110587489" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.mingw.base">
 								<option id="gnu.both.asm.option.include.paths.1210779118" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="../../../SDL-1.2.14/include/SDL"/>
+									<listOptionValue builtIn="false" value="../../../glew-1.7.0/include"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.744836146" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
@@ -98,12 +102,14 @@
 							<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.base.1538774055" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.base">
 								<option id="gnu.cpp.compiler.option.include.paths.700548895" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="../../../SDL-1.2.14/include/SDL"/>
+									<listOptionValue builtIn="false" value="../../../glew-1.7.0/include"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.1779247653" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.c.compiler.mingw.base.339934565" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.mingw.base">
 								<option id="gnu.c.compiler.option.include.paths.1848753949" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="../../../SDL-1.2.14/include/SDL"/>
+									<listOptionValue builtIn="false" value="../../../glew-1.7.0/include"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.1260090646" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>

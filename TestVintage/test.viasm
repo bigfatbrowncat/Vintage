@@ -61,18 +61,18 @@ timer_handler: ; port in handler, should free 8 additional bytes on end
                mov {0}, 2
                mov 2, {4}, 0
                mov 2, {6}, 3
-               out 1
+               out 2
               
                ; printing out "timer: "
                mov {0}, 1                        ; 1 means "print the text out"
                mov {4}, timer_calls              ; address of the text buffer
-               out 1                             ; call terminal
+               out 2                             ; call terminal
 
                ; moving the cursor to 7,3 (after "Timer: ")
                mov {0}, 2                        ; 2 means "set cursor position"
                mov 2, {4}, 7                     ; X
                mov 2, {6}, 3                     ; Y
-               out 1
+               out 2
               
                ; converting timer value to string
                mov {0}, {10}
@@ -83,7 +83,7 @@ timer_handler: ; port in handler, should free 8 additional bytes on end
                ; printing out the timer
                mov {4}, {0}
                mov {0}, 1
-               out 1
+               out 2
               
                free 10
               
@@ -102,18 +102,18 @@ kbd_next:
                mov {0}, 2                        ; 2 means "set cursor position"
                mov 2, {4}, 0                     ; X
                mov 2, {6}, 4                     ; Y
-               out 1
+               out 2
               
                ; printing the text out
                mov {0}, 1                        ; 1 means "print the text out"
                mov {4}, kbd_key                  ; address of the text buffer
-               out 1                             ; call terminal
+               out 2                             ; call terminal
 
                ; moving the cursor to 5,4 (after "Key: ")
                mov {0}, 2                        ; 2 means "set cursor position"
                mov 2, {4}, 5                     ; X
                mov 2, {6}, 4                     ; Y
-               out 1
+               out 2
               
                ; converting key code to string
                mov {0}, {13}                     ; 8 + 3
@@ -124,13 +124,13 @@ kbd_next:
                ; printing out the key code
                mov {4}, {0}
                mov {0}, 1
-               out 1
+               out 2
 
                ; moving the cursor to 12,4 
                mov {0}, 2                        ; 2 means "set cursor position"
                mov 2, {4}, 12                    ; X
                mov 2, {6}, 4                     ; Y
-               out 1
+               out 2
 
                if 1, {10}, kbd_down 
 kbd_up:        mov {4}, kbd_up_str
@@ -138,13 +138,13 @@ kbd_up:        mov {4}, kbd_up_str
 kbd_down:      mov {4}, kbd_down_str
 
 kbd_print_ud:  mov {0}, 1
-               out 1
+               out 2
               
                ; moving the cursor to 29,4 
                mov {0}, 2
                mov 2, {4}, 29
                mov 2, {6}, 4
-               out 1
+               out 2
               
                ; converting modifiers to string
                mov 2, {0}, {11}                  ; 8 + 3
@@ -157,7 +157,7 @@ kbd_print_ud:  mov {0}, 1
                ; printing out the key code
                mov {4}, {0}
                mov {0}, 1
-               out 1
+               out 2
               
 kbd_exit:      free 10
               
@@ -170,25 +170,20 @@ start:         alloc 8                           ; 4 * 2
                ; printing the text out
                mov {0}, 1                        ; 1 means "print the text out"
                mov {4}, fox                      ; address of the text buffer
-               out 1                             ; call terminal
+               out 2                             ; call terminal
 
                ; printing the text out
                mov {0}, 1                        ; 1 means "print the text out"
                mov {4}, hello                    ; address of the text buffer
-               out 1                             ; call terminal
-
-               ;mov {0}, 987654
-               ;mov 1, {4}, 10                   ; radix
-               ;mov 1, {5}, 0                    ; digits -- as much as it can 
-               ;call inttostr
+               out 2                             ; call terminal
 
                ; printing out the value
                mov {4}, {0}
                mov {0}, 1
-               out 1              
+               out 2              
 
-               regin 3, timer_handler
-               regin 2, kbd_handler
+               regin 1, timer_handler            ; timer is on the port #1
+               regin 3, kbd_handler              ; keyboard is on the port #3
 
                free 8
 

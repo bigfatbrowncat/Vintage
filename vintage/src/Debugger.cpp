@@ -7,8 +7,8 @@ Debugger::Debugger(FILE* debug_symbols, SDLScreen& screen) :
 	stepOverPending(false),
 	stepIntoPending(false),
 	stepOutPending(false),
-	steppingOut(false),
-	steppingOver(false),
+	runningOut(false),
+	runningOver(false),
 	topSpace(19), wStackBytes(8), wHeapBytes(10), wStackTopRow(0), wHeapTopRow(0),
 	flowLevel(0)
 {
@@ -73,11 +73,12 @@ void Debugger::printMenu()
 	{
 		screen.SelectBackColor(128, 128, 128);
 	}
-	screen.Write(L"1 Run");
+	screen.Write(L"1 Run      ");
 	screen.SelectBackColor(0, 0, 0);
 	screen.Write(L" ");
 
-	if (!this->running && !this->stepOverPending && !stepIntoPending && !stepOutPending)
+	if (!running && !stepOverPending && !stepIntoPending && !stepOutPending
+		               && !runningOut && !runningOver)
 	{
 		screen.SelectBackColor(192, 192, 192);
 	}
@@ -85,11 +86,11 @@ void Debugger::printMenu()
 	{
 		screen.SelectBackColor(128, 128, 128);
 	}
-	screen.Write(L"2 Pause");
+	screen.Write(L"2 Pause    ");
 	screen.SelectBackColor(0, 0, 0);
 	screen.Write(L" ");
 
-	if (this->stepOverPending)
+	if (stepOverPending || runningOver)
 	{
 		screen.SelectBackColor(192, 192, 192);
 	}
@@ -109,11 +110,11 @@ void Debugger::printMenu()
 	{
 		screen.SelectBackColor(128, 128, 128);
 	}
-	screen.Write(L"4 Step in");
+	screen.Write(L"4 Step into");
 	screen.SelectBackColor(0, 0, 0);
 	screen.Write(L" ");
 
-	if (this->stepOutPending)
+	if (stepOutPending || runningOut)
 	{
 		screen.SelectBackColor(192, 192, 192);
 	}
@@ -121,12 +122,12 @@ void Debugger::printMenu()
 	{
 		screen.SelectBackColor(128, 128, 128);
 	}
-	screen.Write(L"5 Step out");
+	screen.Write(L"5 Step out ");
 	screen.SelectBackColor(0, 0, 0);
 	screen.Write(L" ");
 
 	screen.SelectBackColor(128, 128, 128);
-	screen.Write(L"6 Halt CPU");
+	screen.Write(L"6 Halt CPU ");
 	screen.SelectBackColor(0, 0, 0);
 	screen.Write(L" ");
 	screen.SetCursorPosition(0, screen.getFrameBufferHeight() - 1);

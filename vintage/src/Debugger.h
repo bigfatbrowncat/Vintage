@@ -79,8 +79,8 @@ private:
 	volatile bool stepIntoPending;
 	volatile bool stepOutPending;
 
-	volatile bool steppingOut;
-	volatile bool steppingOver;
+	volatile bool runningOut;
+	volatile bool runningOver;
 
 	pthread_mutex_t printingMutex;
 
@@ -181,16 +181,16 @@ public:
 			}
 			else if (stepOutPending)
 			{
-				steppingOut = true;
+				runningOut = true;
 				stepOutPending = false;
 				savedFlowLevel = flowLevel;
 				res = doGo;
 			}
-			else if (steppingOut)
+			else if (runningOut)
 			{
 				if (flowLevel < savedFlowLevel)
 				{
-					steppingOut = false;
+					runningOut = false;
 					res = doWait;
 				}
 				else
@@ -200,16 +200,16 @@ public:
 			}
 			else if (stepOverPending)
 			{
-				steppingOver = true;
+				runningOver = true;
 				stepOverPending = false;
 				savedFlowLevel = flowLevel;
 				res = doGo;
 			}
-			else if (steppingOver)
+			else if (runningOver)
 			{
 				if (flowLevel == savedFlowLevel)
 				{
-					steppingOver = false;
+					runningOver = false;
 					res = doWait;
 				}
 				else
@@ -232,41 +232,56 @@ public:
 
 	void run()
 	{
-		pthread_mutex_lock(&printingMutex);
-		running = true;
-		printMenu();
-		pthread_mutex_unlock(&printingMutex);
+		if (!running && !runningOut && !runningOver)
+		{
+			pthread_mutex_lock(&printingMutex);
+			running = true;
+			printMenu();
+			pthread_mutex_unlock(&printingMutex);
+		}
 	}
 	void stop()
 	{
-		pthread_mutex_lock(&printingMutex);
-		running = false;
-		printMenu();
-		pthread_mutex_unlock(&printingMutex);
+		if (running)
+		{
+			pthread_mutex_lock(&printingMutex);
+			running = false;
+			printMenu();
+			pthread_mutex_unlock(&printingMutex);
+		}
 	}
 	void stepOver()
 	{
-		pthread_mutex_lock(&printingMutex);
-		running = false;
-		stepOverPending = true;
-		printMenu();
-		pthread_mutex_unlock(&printingMutex);
+		if (!runningOut && !runningOver)
+		{
+			pthread_mutex_lock(&printingMutex);
+			running = false;
+			stepOverPending = true;
+			printMenu();
+			pthread_mutex_unlock(&printingMutex);
+		}
 	}
 	void stepInto()
 	{
-		pthread_mutex_lock(&printingMutex);
-		running = false;
-		stepIntoPending = true;
-		printMenu();
-		pthread_mutex_unlock(&printingMutex);
+		if (!runningOut && !runningOver)
+		{
+			pthread_mutex_lock(&printingMutex);
+			running = false;
+			stepIntoPending = true;
+			printMenu();
+			pthread_mutex_unlock(&printingMutex);
+		}
 	}
 	void stepOut()
 	{
-		pthread_mutex_lock(&printingMutex);
-		running = false;
-		stepOutPending = true;
-		printMenu();
-		pthread_mutex_unlock(&printingMutex);
+		if (!runningOut && !runningOver)
+		{
+			pthread_mutex_lock(&printingMutex);
+			running = false;
+			stepOutPending = true;
+			printMenu();
+			pthread_mutex_unlock(&printingMutex);
+		}
 	}
 	void halt()
 	{

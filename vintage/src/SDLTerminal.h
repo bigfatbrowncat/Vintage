@@ -4,6 +4,8 @@ class SDLTerminal;
 #define SDLCONSOLE_H_
 
 #include <SDL.h>
+#include <GL/glew.h>
+
 #include <pthread.h>
 #include <assert.h>
 #include "SDLScreen.h"
@@ -18,36 +20,37 @@ typedef bool CustomEventsHandler(void* data);
 class SDLTerminal
 {
 private:
-	int frame_buffer_width, frame_buffer_height;
+	int frameBufferWidth, frameBufferHeight;
 
-	CachedFont &font, &curFont;
+	CachedFont &font, &cursorFont;
 
-	bool quit_pending;
-	int fps;
+	bool quitPending;
 	int frame;
-    SDL_Surface* mainSurface;
-    SDL_Surface* slow_surface;
 
     SDLScreen* screens[SCREENS_COUNT];
     int activeScreen;
     bool activeScreenChanged;
 
-    int window_frame;
-    int cursor_blink_rate;
+    int windowFrame;
+    int cursorBlinkRate;
+    int frameRate;
     bool cursorIsOn;
-    wchar_t cursor_symbol;
-    int cursor_x, cursor_y;
+    wchar_t cursorSymbol;
+    int cursorX, cursorY;
+
+    GLuint vertexShader, /* Vertex Shader */
+    	   fragmentShader, /* Fragment Shader */
+    	   shaderProgramId; /* Shader Program */
+    GLint texture, phase;
 
     CustomEventsHandler* customEventsHandler;
     void* customEventsHandlerData;
 
-	void process_events();
+	void processEvents();
 	bool handleSpecialKeyDown(SDL_keysym* keysym);
 	bool handleSpecialKeyUp(SDL_keysym* keysym);
 
-	void draw_framebuffer(SDL_Surface* surface);
-	void draw();
-	void cinescope_sim(SDL_Surface *surface, float interlacing, float sliding, float blur);
+	void draw(SDL_Surface* frameSurface);
 protected:
 	void setActiveScreen(int index)
 	{
@@ -84,6 +87,7 @@ protected:
 		}
 		return true;
 	}
+	bool setGLTextureFromSurface(SDL_Surface* surface, GLuint sp);
 
 public:
 	SDLTerminal(CachedFont& font, CachedFont& curFont);
@@ -92,7 +96,7 @@ public:
 		customEventsHandler = handler;
 		customEventsHandlerData = data;
 	}
-	void Run();
+	bool Run();
 
 	SDLScreen& getScreen(int index)
 	{

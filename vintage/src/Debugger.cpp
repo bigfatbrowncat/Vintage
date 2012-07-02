@@ -66,11 +66,11 @@ void Debugger::printMenu()
 	{
 		screen.SelectBackColor(128, 128, 128);
 	}
-	screen.Write(L"F1 Run");
+	screen.Write(L"1 Run");
 	screen.SelectBackColor(0, 0, 0);
 	screen.Write(L" ");
 
-	if (!this->running && !this->stepOverPending && !stepInPending && !stepOutPending)
+	if (!this->running && !this->stepOverPending && !stepIntoPending && !stepOutPending)
 	{
 		screen.SelectBackColor(192, 192, 192);
 	}
@@ -78,7 +78,7 @@ void Debugger::printMenu()
 	{
 		screen.SelectBackColor(128, 128, 128);
 	}
-	screen.Write(L"F2 Pause");
+	screen.Write(L"2 Pause");
 	screen.SelectBackColor(0, 0, 0);
 	screen.Write(L" ");
 
@@ -90,11 +90,11 @@ void Debugger::printMenu()
 	{
 		screen.SelectBackColor(128, 128, 128);
 	}
-	screen.Write(L"F3 Step over");
+	screen.Write(L"3 Step over");
 	screen.SelectBackColor(0, 0, 0);
 	screen.Write(L" ");
 
-	if (this->stepInPending)
+	if (this->stepIntoPending)
 	{
 		screen.SelectBackColor(192, 192, 192);
 	}
@@ -102,7 +102,7 @@ void Debugger::printMenu()
 	{
 		screen.SelectBackColor(128, 128, 128);
 	}
-	screen.Write(L"F4 Step in");
+	screen.Write(L"4 Step in");
 	screen.SelectBackColor(0, 0, 0);
 	screen.Write(L" ");
 
@@ -114,12 +114,12 @@ void Debugger::printMenu()
 	{
 		screen.SelectBackColor(128, 128, 128);
 	}
-	screen.Write(L"F4 Step out");
+	screen.Write(L"5 Step out");
 	screen.SelectBackColor(0, 0, 0);
 	screen.Write(L" ");
 
 	screen.SelectBackColor(128, 128, 128);
-	screen.Write(L"F4 Halt CPU");
+	screen.Write(L"6 Halt CPU");
 	screen.SelectBackColor(0, 0, 0);
 	screen.Write(L" ");
 	screen.SetCursorPosition(0, screen.getFrameBufferHeight() - 1);

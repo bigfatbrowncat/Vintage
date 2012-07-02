@@ -33,12 +33,6 @@ struct DebugEntry
 	wstring lines;
 };
 
-struct WatchEntry
-{
-	int4 stack_pos;
-	int1 length;
-};
-
 enum DebuggerActiveWindow
 {
 	dawCode		= 0,
@@ -76,7 +70,7 @@ private:
 	volatile bool running;
 	volatile bool haltPending;
 	volatile bool stepOverPending;
-	volatile bool stepInPending;
+	volatile bool stepIntoPending;
 	volatile bool stepOutPending;
 	pthread_mutex_t printingMutex;
 

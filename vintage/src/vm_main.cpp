@@ -3,7 +3,7 @@
 #include <pthread.h>
 #include <wchar.h>
 
-#include "SDLConsole.h"
+#include "SDLTerminal.h"
 #include "Debugger.h"
 #include "CPU.h"
 #include "../../FontEditor/include/Font.h"

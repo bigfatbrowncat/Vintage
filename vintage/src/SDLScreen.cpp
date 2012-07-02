@@ -222,7 +222,7 @@ void SDLScreen::draw_framebuffer(CachedFont& font, int xLeft, int yTop, SDL_Surf
 								i / getFrameBufferWidth(),
 								xLeft,
 								yTop,
-								encoding,
+								fontEncoding,
 								frame_buffer[i].fore_r,
 								frame_buffer[i].fore_g,
 								frame_buffer[i].fore_b);
@@ -240,7 +240,7 @@ void SDLScreen::drawCursor(CachedFont& cursorFont, int xLeft, int yTop, SDL_Surf
 							cursor_x,
 							cursor_y,
 							xLeft,
-							yTop, cursor_encoding,
+							yTop, cursorEncoding,
 							frame_buffer[cursor_y * getFrameBufferWidth() + cursor_x].fore_r,
 							frame_buffer[cursor_y * getFrameBufferWidth() + cursor_x].fore_g,
 							frame_buffer[cursor_y * getFrameBufferWidth() + cursor_x].fore_b);

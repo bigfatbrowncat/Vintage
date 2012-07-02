@@ -26,14 +26,14 @@ else
 endif
 
 
-VM_OBJS =			$(OBJ_PATH)/SDLConsole.o $(OBJ_PATH)/SDLScreen.o $(OBJ_PATH)/vm_main.o \
+VM_OBJS =			$(OBJ_PATH)/SDLTerminal.o $(OBJ_PATH)/SDLScreen.o $(OBJ_PATH)/vm_main.o \
 					$(OBJ_PATH)/HardwareDevice.o \
 					$(OBJ_PATH)/CPU.o $(OBJ_PATH)/globals.o $(OBJ_PATH)/Debugger.o
 					
 ASM_OBJS =			$(OBJ_PATH)/asm.o $(OBJ_PATH)/asm_main.o \
 					$(OBJ_PATH)/globals.o
 					
-VM_HEADERS = 		$(SRC_PATH)/SDLConsole.h $(SRC_PATH)/SDLScreen.h \
+VM_HEADERS = 		$(SRC_PATH)/SDLTerminal.h $(SRC_PATH)/SDLScreen.h \
 					$(SRC_PATH)/../../FontEditor/include/Font.h \
 					$(SRC_PATH)/HardwareDevice.h \
 					$(SRC_PATH)/CPU.h $(SRC_PATH)/instructions.h \
@@ -64,8 +64,8 @@ $(OBJ_PATH):
 
 ##### Objects #####
 
-$(OBJ_PATH)/SDLConsole.o : $(SRC_PATH)/SDLConsole.cpp $(VM_HEADERS) $(OBJ_PATH)
-	$(CXX) $(CXXFLAGS) -c -o $@ $(INCLUDES_PATH) $(LIBS_PATH) $(VM_LIBS) $(SRC_PATH)/SDLConsole.cpp 
+$(OBJ_PATH)/SDLTerminal.o : $(SRC_PATH)/SDLTerminal.cpp $(VM_HEADERS) $(OBJ_PATH)
+	$(CXX) $(CXXFLAGS) -c -o $@ $(INCLUDES_PATH) $(LIBS_PATH) $(VM_LIBS) $(SRC_PATH)/SDLTerminal.cpp 
 
 $(OBJ_PATH)/SDLScreen.o : $(SRC_PATH)/SDLScreen.cpp $(VM_HEADERS) $(OBJ_PATH)
 	$(CXX) $(CXXFLAGS) -c -o $@ $(INCLUDES_PATH) $(LIBS_PATH) $(VM_LIBS) $(SRC_PATH)/SDLScreen.cpp 

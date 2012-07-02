@@ -54,8 +54,8 @@ private:
     volatile bool activity;
 
 protected:
-    static wchar_t* encoding;
-    static wchar_t* cursor_encoding;
+    static wchar_t* fontEncoding;
+    static wchar_t* cursorEncoding;
 
     void addPixel24(SDL_Surface *surface, int x, int y, Uint8 r, Uint8 g, Uint8 b, float a);
 

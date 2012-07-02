@@ -1,6 +1,6 @@
 #version 120
 
-uniform sampler2D RTScene; // the texture with the scene you want to blur
+uniform sampler2D texture; // the texture with the scene you want to blur
 uniform float phase;
 
 const float texSizeX = 1024.0;
@@ -20,26 +20,26 @@ void main(void)
    vec4 p = vec4(0.0); 
    vec4 n0 = vec4(0.0);
  
-   n0 = texture2D(RTScene, vec2(vTexCoord.x, vTexCoord.y)) * 1;
+   n0 = texture2D(texture, vec2(vTexCoord.x, vTexCoord.y)) * 1;
    sum = n0;
    p += 1;
   
-   n = texture2D(RTScene, vec2(vTexCoord.x - 1.0 * blurSizeX, vTexCoord.y)) * 0.125 * q;
+   n = texture2D(texture, vec2(vTexCoord.x - 1.0 * blurSizeX, vTexCoord.y)) * 0.125 * q;
    if (n.x + n.y + n.z < n0.x + n0.y + n0.z) { sum += n; p += 0.125 * q; } 
-   n = texture2D(RTScene, vec2(vTexCoord.x + 1.0 * blurSizeX, vTexCoord.y)) * 0.125 * q;
+   n = texture2D(texture, vec2(vTexCoord.x + 1.0 * blurSizeX, vTexCoord.y)) * 0.125 * q;
    if (n.x + n.y + n.z < n0.x + n0.y + n0.z) { sum += n; p += 0.125 * q; } 
-   n = texture2D(RTScene, vec2(vTexCoord.x, vTexCoord.y - 1.0 * blurSizeY)) * 0.125 * q;
+   n = texture2D(texture, vec2(vTexCoord.x, vTexCoord.y - 1.0 * blurSizeY)) * 0.125 * q;
    if (n.x + n.y + n.z < n0.x + n0.y + n0.z) { sum += n; p += 0.125 * q; } 
-   n = texture2D(RTScene, vec2(vTexCoord.x, vTexCoord.y + 1.0 * blurSizeY)) * 0.125 * q;
+   n = texture2D(texture, vec2(vTexCoord.x, vTexCoord.y + 1.0 * blurSizeY)) * 0.125 * q;
    if (n.x + n.y + n.z < n0.x + n0.y + n0.z) { sum += n; p += 0.125 * q; } 
    
-   n = texture2D(RTScene, vec2(vTexCoord.x + 1.0 * blurSizeX, vTexCoord.y + 1.0 * blurSizeY)) * 0.0625 * q;
+   n = texture2D(texture, vec2(vTexCoord.x + 1.0 * blurSizeX, vTexCoord.y + 1.0 * blurSizeY)) * 0.0625 * q;
    if (n.x + n.y + n.z < n0.x + n0.y + n0.z) { sum += n; p += 0.0625 * q; } 
-   n = texture2D(RTScene, vec2(vTexCoord.x - 1.0 * blurSizeX, vTexCoord.y + 1.0 * blurSizeY)) * 0.0625 * q;
+   n = texture2D(texture, vec2(vTexCoord.x - 1.0 * blurSizeX, vTexCoord.y + 1.0 * blurSizeY)) * 0.0625 * q;
    if (n.x + n.y + n.z < n0.x + n0.y + n0.z) { sum += n; p += 0.0625 * q; } 
-   n = texture2D(RTScene, vec2(vTexCoord.x + 1.0 * blurSizeX, vTexCoord.y - 1.0 * blurSizeY)) * 0.0625 * q;
+   n = texture2D(texture, vec2(vTexCoord.x + 1.0 * blurSizeX, vTexCoord.y - 1.0 * blurSizeY)) * 0.0625 * q;
    if (n.x + n.y + n.z < n0.x + n0.y + n0.z) { sum += n; p += 0.0625 * q; } 
-   n = texture2D(RTScene, vec2(vTexCoord.x - 1.0 * blurSizeX, vTexCoord.y - 1.0 * blurSizeY)) * 0.0625 * q;
+   n = texture2D(texture, vec2(vTexCoord.x - 1.0 * blurSizeX, vTexCoord.y - 1.0 * blurSizeY)) * 0.0625 * q;
    if (n.x + n.y + n.z < n0.x + n0.y + n0.z) { sum += n; p += 0.0625 * q; } 
 
    sum /= p;

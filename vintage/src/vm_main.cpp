@@ -67,17 +67,18 @@ int main(int argc, char* argv[])
 			if (dbg_symbols_file == NULL)
 			{
 				printf("VM loader error: can't open the debugging symbols file\n");
+				return 1;
 			}
 		}
 
 		binfile = fopen(binary_name, "rb");
 		if (binfile != NULL)
 		{
-			printf("VM loader error: can't open the binary file\n");
+			printf("Loading the binary...\n");
 
 			int4 act_read;
 			act_read = fread(cpu.GetMemory(), 1, cpu.GetMemorySize(), binfile);
-			printf("Loaded %d bytes binary\n", act_read);
+			printf("Loaded %d bytes.\n", act_read);
 
 			if (dbg_symbols_file != NULL)
 			{
@@ -86,8 +87,13 @@ int main(int argc, char* argv[])
 				debuggerScreen.setKeyboardController(dbg_kbd);
 				cpu.setDebugger(*dbg);
 
-				printf("Loaded debug symbols and source code\n");
+				printf("Debug symbols loaded\n");
 			}
+		}
+		else
+		{
+			printf("VM loader error: can't open the binary file\n");
+			return 2;
 		}
 	}
 

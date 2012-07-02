@@ -32,24 +32,30 @@ void CPU::ActivityFunction()
 	int1* stack = &memory[stackStart];
 	int1* heap = &memory[heapStart];
 
+	FlowState flowState = fsLinear;
+
 	while (!terminationPending)
 	{
-
 		// Logging to debugger
 		if (debugger != NULL)
 		{
 			debugger->flowChanged(flow, &stack[stackPtr], stackSize, stackSize - stackPtr, heap, heapSize);
 			DebuggerOrder order;
-			while ((order = debugger->askForOrder(flow)) == Wait)
+
+
+			while ((order = debugger->askForOrder(flowState)) == doWait)
 			{
-				Sleep(50);
+				Sleep(1);
 			}
 
-			if (order == Halt)
+			if (order == doHalt)
 			{
 				terminationPending = true;
 			}
 		}
+
+		// Linear by default
+		flowState = fsLinear;
 
 		// Checking ports input
 		pthread_mutex_lock(&portReadingMutex);
@@ -105,6 +111,7 @@ void CPU::ActivityFunction()
 
 				inputPortIsWaiting[portToHandle] = false;
 
+				flowState = fsStepIn;
 				stackPtr -= 4;
 				*((int4*)&stack[stackPtr]) = flow;
 
@@ -120,7 +127,6 @@ void CPU::ActivityFunction()
 
 				if (inputPortsWaitingCount == 1) someInputPortIsWaiting = false;
 			}
-
 		}
 		pthread_mutex_unlock(&portReadingMutex);
 
@@ -793,6 +799,7 @@ void CPU::ActivityFunction()
 			printf("call [{%d}]", arg1);
 			fflush(stdout);
 #endif
+			flowState = fsStepIn;
 			stackPtr -= 4;
 			*((int4*)&stack[stackPtr]) = flow;
 			flow = *((int4*)&stack[stackPtr + arg1]);
@@ -804,6 +811,7 @@ void CPU::ActivityFunction()
 			printf("call [%d]", arg1);
 			fflush(stdout);
 #endif
+			flowState = fsStepIn;
 			stackPtr -= 4;
 			*((int4*)&stack[stackPtr]) = flow;
 			flow = (int4)arg1;
@@ -814,6 +822,7 @@ void CPU::ActivityFunction()
 			printf("ret");
 			fflush(stdout);
 #endif
+			flowState = fsStepOut;
 			flow = *((int4*)&stack[stackPtr]);
 			stackPtr += 4;	// removing the callr's address
 			break;
@@ -823,6 +832,7 @@ void CPU::ActivityFunction()
 			printf("hret");
 			fflush(stdout);
 #endif
+			flowState = fsStepOut;
 			if (inputPortsCurrentlyHandlingCount > 0)
 			{
 				pthread_mutex_lock(&portReadingMutex);

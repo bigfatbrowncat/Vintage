@@ -22,9 +22,9 @@ class DebuggerKeyboardController;
 
 enum DebuggerOrder
 {
-	Wait,
-	Go,
-	Halt
+	doWait,
+	doGo,
+	doHalt
 };
 
 struct DebugEntry
@@ -52,6 +52,13 @@ enum ControlKey
 	ckTab
 };
 
+enum FlowState
+{
+	fsLinear,
+	fsStepIn,
+	fsStepOut
+};
+
 class Debugger
 {
 	friend class DebuggerKeyboardController;
@@ -63,7 +70,6 @@ private:
 	int wStackBytes;
 	int wHeapBytes;
 
-
 	DebuggerActiveWindow activeWindow;
 	vector<DebugEntry> entries;
 	SDLScreen& screen;
@@ -72,6 +78,10 @@ private:
 	volatile bool stepOverPending;
 	volatile bool stepIntoPending;
 	volatile bool stepOutPending;
+
+	volatile bool steppingOut;
+	volatile bool steppingOver;
+
 	pthread_mutex_t printingMutex;
 
 	int4 flow;
@@ -80,6 +90,9 @@ private:
 	int4 stackMaxSize;
 	int1* heap;
 	int4 heapSize;
+
+	int flowLevel;
+	int savedFlowLevel;
 
 protected:
 	void printMenu();
@@ -146,28 +159,75 @@ public:
 	int findLine(int4 mem_pos) const;
 	void flowChanged(int4 flow, int1* stack, int4 stackMaxSize, int4 stackSize, int1* heap, int4 heapSize);
 
-	const DebuggerOrder askForOrder(int4 flow)
+	const DebuggerOrder askForOrder(FlowState flowState)
 	{
+		pthread_mutex_lock(&printingMutex);
+		if (flowState == fsStepIn)
+			flowLevel ++;
+		if (flowState == fsStepOut)
+			flowLevel --;
+
+		DebuggerOrder res;
 		if (haltPending)
 		{
-			return Halt;
+			res = doHalt;
 		}
 		else if (!running)
 		{
-			if (stepOverPending)
+			if (stepIntoPending)
 			{
+				stepIntoPending = false;
+				res = doGo;
+			}
+			else if (stepOutPending)
+			{
+				steppingOut = true;
+				stepOutPending = false;
+				savedFlowLevel = flowLevel;
+				res = doGo;
+			}
+			else if (steppingOut)
+			{
+				if (flowLevel < savedFlowLevel)
+				{
+					steppingOut = false;
+					res = doWait;
+				}
+				else
+				{
+					res = doGo;
+				}
+			}
+			else if (stepOverPending)
+			{
+				steppingOver = true;
 				stepOverPending = false;
-				return Go;
+				savedFlowLevel = flowLevel;
+				res = doGo;
+			}
+			else if (steppingOver)
+			{
+				if (flowLevel == savedFlowLevel)
+				{
+					steppingOver = false;
+					res = doWait;
+				}
+				else
+				{
+					res = doGo;
+				}
 			}
 			else
 			{
-				return Wait;
+				res = doWait;
 			}
 		}
 		else
 		{
-			return Go;
+			res = doGo;
 		}
+		pthread_mutex_unlock(&printingMutex);
+		return res;
 	}
 
 	void run()
@@ -184,11 +244,27 @@ public:
 		printMenu();
 		pthread_mutex_unlock(&printingMutex);
 	}
-	void step()
+	void stepOver()
 	{
 		pthread_mutex_lock(&printingMutex);
 		running = false;
 		stepOverPending = true;
+		printMenu();
+		pthread_mutex_unlock(&printingMutex);
+	}
+	void stepInto()
+	{
+		pthread_mutex_lock(&printingMutex);
+		running = false;
+		stepIntoPending = true;
+		printMenu();
+		pthread_mutex_unlock(&printingMutex);
+	}
+	void stepOut()
+	{
+		pthread_mutex_lock(&printingMutex);
+		running = false;
+		stepOutPending = true;
 		printMenu();
 		pthread_mutex_unlock(&printingMutex);
 	}

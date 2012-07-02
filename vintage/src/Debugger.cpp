@@ -1,9 +1,16 @@
 #include "Debugger.h"
 
 Debugger::Debugger(FILE* debug_symbols, SDLScreen& screen) :
-	screen(screen), running(false), haltPending(false),
+	screen(screen),
+	running(true),
+	haltPending(false),
 	stepOverPending(false),
-	topSpace(19), wStackBytes(8), wHeapBytes(10), wStackTopRow(0), wHeapTopRow(0)
+	stepIntoPending(false),
+	stepOutPending(false),
+	steppingOut(false),
+	steppingOver(false),
+	topSpace(19), wStackBytes(8), wHeapBytes(10), wStackTopRow(0), wHeapTopRow(0),
+	flowLevel(0)
 {
 	pthread_mutex_init(&printingMutex, NULL);
 

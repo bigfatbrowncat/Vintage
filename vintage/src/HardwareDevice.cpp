@@ -159,9 +159,15 @@ void DebuggerKeyboardController::ChangeKeyState(bool key_down, KeyModifiers modi
 			debugger.stop();
 			break;
 		case SDLK_F3:
-			debugger.step();
+			debugger.stepOver();
 			break;
 		case SDLK_F4:
+			debugger.stepInto();
+			break;
+		case SDLK_F5:
+			debugger.stepOut();
+			break;
+		case SDLK_F6:
 			debugger.halt();
 			break;
 

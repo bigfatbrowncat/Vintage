@@ -11,6 +11,7 @@ class SDLScreen;
 #include "HardwareDevice.h"
 #include "SDLScreen.h"
 #include "../../FontEditor/include/Font.h"
+#include "KeyboardController.h"
 
 using namespace std;
 

@@ -10,8 +10,7 @@ class CPU;
 #include "chain.h"
 #include "HardwareDevice.h"
 #include "Debugger.h"
-
-#define NO_INDEX		-1
+#include "FlowState.h"
 
 class CPU
 {
@@ -52,17 +51,11 @@ private:
 	void ActivityFunction();
 	volatile bool terminationPending;
 	volatile bool terminated;
+
+protected:
+
+	void synchronizeDebugger(bool ask, int1* stack, int4 stackPtr, int4 stackSize, int1* heap, int4 heapSize, int4 flow, FlowState state);
 public:
-	void TurnOff()
-	{
-		terminationPending = true;
-	}
-
-	bool isTerminated()
-	{
-		return terminated;
-	}
-
 	void handleInputPort(int4 port, const int1* data, int4 data_len)
 	{
 		pthread_mutex_lock(&portReadingMutex);
@@ -99,6 +92,16 @@ public:
 			}
 			while (notHandledYet && !terminated);
 		}
+	}
+
+	void TurnOff()
+	{
+		terminationPending = true;
+	}
+
+	bool isTerminated()
+	{
+		return terminated;
 	}
 
 	void setDebugger(Debugger& debugger)

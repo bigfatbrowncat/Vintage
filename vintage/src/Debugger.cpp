@@ -2,7 +2,7 @@
 
 Debugger::Debugger(FILE* debug_symbols, SDLScreen& screen) :
 	screen(screen),
-	running(true),
+	running(false),
 	haltPending(false),
 	stepOverPending(false),
 	stepIntoPending(false),
@@ -77,8 +77,12 @@ void Debugger::printMenu()
 	screen.SelectBackColor(0, 0, 0);
 	screen.Write(L" ");
 
-	if (!running && !stepOverPending && !stepIntoPending && !stepOutPending
-		               && !runningOut && !runningOver)
+	if (!running &&
+	    !stepOverPending &&
+	    !stepIntoPending &&
+	    !stepOutPending &&
+	    !runningOut &&
+	    !runningOver)
 	{
 		screen.SelectBackColor(192, 192, 192);
 	}
@@ -102,7 +106,7 @@ void Debugger::printMenu()
 	screen.SelectBackColor(0, 0, 0);
 	screen.Write(L" ");
 
-	if (this->stepIntoPending)
+	if (stepIntoPending)
 	{
 		screen.SelectBackColor(192, 192, 192);
 	}
@@ -117,15 +121,24 @@ void Debugger::printMenu()
 	if (stepOutPending || runningOut)
 	{
 		screen.SelectBackColor(192, 192, 192);
+		screen.SelectForeColor(0, 0, 0);
+	}
+	else if (flowLevel > 0)
+	{
+		screen.SelectBackColor(128, 128, 128);
+		screen.SelectForeColor(0, 0, 0);
 	}
 	else
 	{
-		screen.SelectBackColor(128, 128, 128);
+		screen.SelectBackColor(0, 0, 0);
+		screen.SelectForeColor(128, 128, 128);
 	}
+
 	screen.Write(L"5 Step out ");
 	screen.SelectBackColor(0, 0, 0);
 	screen.Write(L" ");
 
+	screen.SelectForeColor(0, 0, 0);
 	screen.SelectBackColor(128, 128, 128);
 	screen.Write(L"6 Halt CPU ");
 	screen.SelectBackColor(0, 0, 0);
@@ -163,9 +176,9 @@ void Debugger::printFixed(int x, int y, const wchar_t* str, int length)
 
 void Debugger::updateUI()
 {
+	pthread_mutex_lock(&printingMutex);
 	if (screen.isActive() || !running)
 	{
-		pthread_mutex_lock(&printingMutex);
 
 		// *** Printing code ***
 
@@ -365,8 +378,8 @@ void Debugger::updateUI()
 					wchar_t num[4];
 					num[3] = 0;
 					num[2] = L' ';
-					num[1] = hexchars[i1 % 16];
-					num[0] = hexchars[i1 / 16];
+					num[1] = hexchars[(i1 / 0x1)  & 0xF];
+					num[0] = hexchars[(i1 / 0x10) & 0xF] ;
 
 					wchar_t ch[2];
 					if (i1 == 0)
@@ -399,12 +412,17 @@ void Debugger::updateUI()
 			printFixed(wStackWindowWidth + 3 + 9, row - wHeapTopRow + 1, strs2.str().c_str(), wHeapWindowWidth - 9);
 		}
 
-		pthread_mutex_unlock(&printingMutex);
 	}
+	pthread_mutex_unlock(&printingMutex);
 }
 
-void Debugger::flowChanged(int4 flow, int1* stack, int4 stackMaxSize, int4 stackAllocatedSize, int1* heap, int4 heapSize)
+void Debugger::flowChanged(int4 flow, FlowState flowState, int1* stack, int4 stackMaxSize, int4 stackAllocatedSize, int1* heap, int4 heapSize)
 {
+	if (flowState == fsStepIn)
+		flowLevel ++;
+	if (flowState == fsStepOut)
+		flowLevel --;
+
 	this->flow = flow;
 
 	this->stack = stack;
@@ -414,5 +432,6 @@ void Debugger::flowChanged(int4 flow, int1* stack, int4 stackMaxSize, int4 stack
 
 	this->heap = heap;
 	this->heapSize = heapSize;
+
 	updateUI();
 }

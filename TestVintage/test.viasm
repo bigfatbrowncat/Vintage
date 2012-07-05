@@ -182,7 +182,7 @@ start:         alloc 8                           ; 4 * 2
                mov {0}, 1
                out 2              
 
-               regin 1, timer_handler            ; timer is on the port #1
+               ;regin 1, timer_handler            ; timer is on the port #1
                regin 3, kbd_handler              ; keyboard is on the port #3
 
                free 8

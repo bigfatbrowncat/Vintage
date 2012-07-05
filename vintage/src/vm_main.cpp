@@ -4,9 +4,14 @@
 #include <wchar.h>
 
 #include "SDLTerminal.h"
+#include "SDLScreen.h"
 #include "Debugger.h"
 #include "CPU.h"
 #include "../../FontEditor/include/Font.h"
+#include "HardwareTimer.h"
+#include "Console.h"
+#include "CPUKeyboardController.h"
+#include "DebuggerKeyboardController.h"
 
 #include <string>
 
@@ -37,15 +42,15 @@ int main(int argc, char* argv[])
 
 	CachedFont font("res/font.txt");
 	CachedFont curfont("res/curfont.txt");
-	SDLTerminal window(font, curfont);
-	window.setCustomEventsHandler(handleTerminalCustomEvents, &cpu);
+	SDLTerminal terminal(font, curfont);
+	terminal.setCustomEventsHandler(handleTerminalCustomEvents, &cpu);
 
-	SDLScreen& cpuScreen = window.getScreen(0);			// Ctrl + F1
-	SDLScreen& debuggerScreen = window.getScreen(1);	// Ctrl + F2
+	SDLScreen& cpuScreen = terminal.getScreen(0);			// Ctrl + F1
+	SDLScreen& debuggerScreen = terminal.getScreen(1);		// Ctrl + F2
 
 
 	HardwareTimer ht(cpu, 1);							// Hardware timer on port 1 -- the highest priority
-	Console term(cpu, 2, &cpuScreen);					// Terminal on port 2
+	Console cpuConsole(cpu, 2, &cpuScreen);				// Terminal on port 2
 	CPUKeyboardController kbd(cpu, 3, 256);				// Keyboard on the port 3
 
 	cpuScreen.setKeyboardController(&kbd);
@@ -97,17 +102,17 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	term.TurnOn();
+	cpuConsole.TurnOn();
 	ht.TurnOn();
 	kbd.TurnOn();
 	cpu.TurnOn();
 
-	window.Run();
+	terminal.Run();
 
 	cpu.TurnOff();
 	kbd.TurnOff();
 	ht.TurnOff();
-	term.TurnOff();
+	cpuConsole.TurnOff();
 
 	if (dbg != NULL)
 	{

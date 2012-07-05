@@ -5,8 +5,8 @@
 #include <iomanip>
 
 #include "instructions.h"
-#include "Debugger.h"
 #include "CPU.h"
+#include "Debugger.h"
 
 #define GET_ARG(arg, flow)			arg = *((int4*)(&heap[flow])); flow += sizeof(int4);
 
@@ -24,6 +24,26 @@ void CPU::TurnOn()
 	pthread_create(&this->activity, NULL, &CPUActivityFunction, this);
 }
 
+void CPU::synchronizeDebugger(bool ask, int1* stack, int4 stackPtr, int4 stackSize, int1* heap, int4 heapSize, int4 flow, FlowState state)
+{
+	if (debugger != NULL)
+	{
+		debugger->flowChanged(flow, state, &stack[stackPtr], stackSize, stackSize - stackPtr, heap, heapSize);
+		DebuggerOrder order;
+
+		while (ask && ((order = debugger->askForOrder()) == doWait))
+		{
+			Sleep(10);
+			debugger->flowChanged(flow, fsLinear, &stack[stackPtr], stackSize, stackSize - stackPtr, heap, heapSize);
+		}
+
+		if (order == doHalt)
+		{
+			terminationPending = true;
+		}
+	}
+}
+
 void CPU::ActivityFunction()
 {
 	int4 flow = heapStart;
@@ -32,32 +52,11 @@ void CPU::ActivityFunction()
 	int1* stack = &memory[stackStart];
 	int1* heap = &memory[heapStart];
 
-	FlowState flowState = fsLinear;
-
 	while (!terminationPending)
 	{
-		// Logging to debugger
-		if (debugger != NULL)
-		{
-			debugger->flowChanged(flow, &stack[stackPtr], stackSize, stackSize - stackPtr, heap, heapSize);
-			DebuggerOrder order;
-
-
-			while ((order = debugger->askForOrder(flowState)) == doWait)
-			{
-				Sleep(1);
-			}
-
-			if (order == doHalt)
-			{
-				terminationPending = true;
-			}
-		}
-
-		// Linear by default
-		flowState = fsLinear;
-
+		synchronizeDebugger(true, stack, stackPtr, stackSize, heap, heapSize, flow, fsLinear);
 		// Checking ports input
+		bool steppedIn = false;
 		pthread_mutex_lock(&portReadingMutex);
 		if (someInputPortIsWaiting)
 		{
@@ -111,12 +110,11 @@ void CPU::ActivityFunction()
 
 				inputPortIsWaiting[portToHandle] = false;
 
-				flowState = fsStepIn;
 				stackPtr -= 4;
 				*((int4*)&stack[stackPtr]) = flow;
 
 				flow = inputPortHandlersAddresses[portToHandle];
-				//pDebugger->flowChanged(flow, &stack[stackPtr], stackSize, stackSize - stackPtr, heap, heapSize);
+				steppedIn = true;
 
 				stackPtr -= portInWaitingDataLength[portToHandle];
 
@@ -129,6 +127,10 @@ void CPU::ActivityFunction()
 			}
 		}
 		pthread_mutex_unlock(&portReadingMutex);
+		if (steppedIn)
+		{
+			synchronizeDebugger(true, stack, stackPtr, stackSize, heap, heapSize, flow, fsStepIn);
+		}
 
 #ifdef OUTPUT_INSTRUCTIONS
 		printf("%d:\t", flow);
@@ -794,24 +796,24 @@ void CPU::ActivityFunction()
 
 
 		case call_m_stp:
+			synchronizeDebugger(false, stack, stackPtr, stackSize, heap, heapSize, flow, fsStepIn);
 			GET_ARG(arg1, flow);
 #ifdef OUTPUT_INSTRUCTIONS
 			printf("call [{%d}]", arg1);
 			fflush(stdout);
 #endif
-			flowState = fsStepIn;
 			stackPtr -= 4;
 			*((int4*)&stack[stackPtr]) = flow;
 			flow = *((int4*)&stack[stackPtr + arg1]);
 			break;
 
 		case call_flow:
+			synchronizeDebugger(false, stack, stackPtr, stackSize, heap, heapSize, flow, fsStepIn);
 			GET_ARG(arg1, flow);
 #ifdef OUTPUT_INSTRUCTIONS
 			printf("call [%d]", arg1);
 			fflush(stdout);
 #endif
-			flowState = fsStepIn;
 			stackPtr -= 4;
 			*((int4*)&stack[stackPtr]) = flow;
 			flow = (int4)arg1;
@@ -822,9 +824,9 @@ void CPU::ActivityFunction()
 			printf("ret");
 			fflush(stdout);
 #endif
-			flowState = fsStepOut;
 			flow = *((int4*)&stack[stackPtr]);
 			stackPtr += 4;	// removing the callr's address
+			synchronizeDebugger(false, stack, stackPtr, stackSize, heap, heapSize, flow, fsStepOut);
 			break;
 
 		case hret_stp:
@@ -832,7 +834,6 @@ void CPU::ActivityFunction()
 			printf("hret");
 			fflush(stdout);
 #endif
-			flowState = fsStepOut;
 			if (inputPortsCurrentlyHandlingCount > 0)
 			{
 				pthread_mutex_lock(&portReadingMutex);
@@ -846,12 +847,13 @@ void CPU::ActivityFunction()
 			{
 				// TODO: Implement some exception here :)
 			}
+			synchronizeDebugger(false, stack, stackPtr, stackSize, heap, heapSize, flow, fsStepOut);
 			break;
 
 		case jmp_flow:
 			GET_ARG(arg1, flow);
 #ifdef OUTPUT_INSTRUCTIONS
-			//printf("jmp [%d]", arg1);
+			printf("jmp [%d]", arg1);
 			fflush(stdout);
 #endif
 			flow = arg1;
@@ -892,7 +894,7 @@ void CPU::ActivityFunction()
 			fflush(stdout);
 #endif
 			// Halt
-			return;		// Close the world...
+			terminationPending = true;		// Close the world...
 			break;
 		}
 
@@ -907,7 +909,6 @@ void CPU::ActivityFunction()
 		fflush(stdout);
 		}
 #endif
-
 	}
 
 	terminated = true;

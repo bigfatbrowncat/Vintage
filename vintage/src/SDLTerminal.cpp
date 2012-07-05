@@ -8,6 +8,7 @@
 
 #include "SDLTerminal.h"
 #include "HardwareDevice.h"
+#include "KeyModifiers.h"
 
 wchar_t* SDLScreen::fontEncoding = L" "
                                     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"

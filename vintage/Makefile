@@ -9,7 +9,7 @@ SDL_DLL	= 				SDL.dll
 GLEW_INCLUDE_PATH =		../../glew-1.7.0/include
 GLEW_LIBS_PATH =		../../glew-1.7.0/lib
 GLEW_DLL = 				glew32.dll 
-GLEW_MX_DLL =				glew32mx.dll
+GLEW_MX_DLL =			glew32mx.dll
 
 SRC_PATH = 				src
 
@@ -28,7 +28,10 @@ endif
 
 VM_OBJS =			$(OBJ_PATH)/SDLTerminal.o $(OBJ_PATH)/SDLScreen.o $(OBJ_PATH)/vm_main.o \
 					$(OBJ_PATH)/HardwareDevice.o \
-					$(OBJ_PATH)/CPU.o $(OBJ_PATH)/globals.o $(OBJ_PATH)/Debugger.o
+					$(OBJ_PATH)/HardwareTimer.o \
+					$(OBJ_PATH)/CPUKeyboardController.o \
+					$(OBJ_PATH)/DebuggerKeyboardController.o \
+					$(OBJ_PATH)/CPU.o $(OBJ_PATH)/Console.o $(OBJ_PATH)/globals.o $(OBJ_PATH)/Debugger.o
 					
 ASM_OBJS =			$(OBJ_PATH)/asm.o $(OBJ_PATH)/asm_main.o \
 					$(OBJ_PATH)/globals.o
@@ -64,32 +67,9 @@ $(OBJ_PATH):
 
 ##### Objects #####
 
-$(OBJ_PATH)/SDLTerminal.o : $(SRC_PATH)/SDLTerminal.cpp $(VM_HEADERS) $(OBJ_PATH)
-	$(CXX) $(CXXFLAGS) -c -o $@ $(INCLUDES_PATH) $(LIBS_PATH) $(VM_LIBS) $(SRC_PATH)/SDLTerminal.cpp 
+$(VM_OBJS) : $(OBJ_PATH)/%.o : $(SRC_PATH)/%.cpp $(VM_HEADERS) $(OBJ_PATH)
+	$(CXX) $(CXXFLAGS) -c -o $@ $(INCLUDES_PATH) $(LIBS_PATH) $(VM_LIBS) $< 
 
-$(OBJ_PATH)/SDLScreen.o : $(SRC_PATH)/SDLScreen.cpp $(VM_HEADERS) $(OBJ_PATH)
-	$(CXX) $(CXXFLAGS) -c -o $@ $(INCLUDES_PATH) $(LIBS_PATH) $(VM_LIBS) $(SRC_PATH)/SDLScreen.cpp 
-
-$(OBJ_PATH)/Debugger.o : $(SRC_PATH)/Debugger.cpp $(VM_HEADERS) $(OBJ_PATH)
-	$(CXX) $(CXXFLAGS) -c -o $@ $(INCLUDES_PATH) $(LIBS_PATH) $(VM_LIBS) $(SRC_PATH)/Debugger.cpp 
-
-$(OBJ_PATH)/HardwareDevice.o : $(SRC_PATH)/HardwareDevice.cpp $(VM_HEADERS) $(OBJ_PATH)
-	$(CXX) $(CXXFLAGS) -c -o $@ $(INCLUDES_PATH) $(LIBS_PATH) $(VM_LIBS) $(SRC_PATH)/HardwareDevice.cpp 
-
-$(OBJ_PATH)/vm_main.o : $(SRC_PATH)/vm_main.cpp $(VM_HEADERS) $(OBJ_PATH)
-	$(CXX) $(CXXFLAGS) -c -o $@ $(INCLUDES_PATH) $(LIBS_PATH) $(VM_LIBS) $(SRC_PATH)/vm_main.cpp 
-
-$(OBJ_PATH)/CPU.o : $(SRC_PATH)/CPU.cpp $(VM_HEADERS) $(OBJ_PATH)
-	$(CXX) $(CXXFLAGS) -c -o $@ $(INCLUDES_PATH) $(LIBS_PATH) $(VM_LIBS) $(SRC_PATH)/CPU.cpp 
-
-$(OBJ_PATH)/globals.o : $(SRC_PATH)/globals.cpp $(VM_HEADERS) $(OBJ_PATH)
-	$(CXX) $(CXXFLAGS) -c -o $@ $(INCLUDES_PATH) $(LIBS_PATH) $(VM_LIBS) $(SRC_PATH)/globals.cpp 
-
-$(OBJ_PATH)/asm.o : $(SRC_PATH)/asm.cpp $(ASM_HEADERS) $(OBJ_PATH)
-	$(CXX) $(CXXFLAGS) -c -o $@ $(INCLUDES_PATH) $(LIBS_PATH) $(ASM_LIBS) $(SRC_PATH)/asm.cpp 
-
-$(OBJ_PATH)/asm_main.o : $(SRC_PATH)/asm_main.cpp $(ASM_HEADERS) $(OBJ_PATH)
-	$(CXX) $(CXXFLAGS) -c -o $@ $(INCLUDES_PATH) $(LIBS_PATH) $(ASM_LIBS) $(SRC_PATH)/asm_main.cpp 
 
 
 ##### Target #####

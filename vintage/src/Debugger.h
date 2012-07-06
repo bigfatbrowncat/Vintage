@@ -59,22 +59,23 @@ class Debugger
 private:
 	int topSpace;
 
-	int wStackTopRow;
-	int wHeapTopRow;
-	int wStackBytes;
 	int wHeapBytes;
+	int wHeapTopRow;
+	int wStackTopRow;
+	int wStackBytes;
 
 	DebuggerActiveWindow activeWindow;
 	vector<DebugEntry> entries;
 	SDLScreen& screen;
+
 	volatile bool running;
+	volatile bool runningOut;
+	volatile bool runningOver;
 	volatile bool haltPending;
 	volatile bool stepOverPending;
 	volatile bool stepIntoPending;
 	volatile bool stepOutPending;
 
-	volatile bool runningOut;
-	volatile bool runningOver;
 
 	volatile int flowLevel;
 	volatile int savedFlowLevel;
@@ -93,6 +94,7 @@ protected:
 	void printMenu();
 	void printFixed(int x, int y, const wchar_t* str, int length);
 public:
+	bool isRunning() { return running; }
 	void updateUI();
 	void handleControlKey(ControlKey ck)
 	{
@@ -152,7 +154,8 @@ public:
 	Debugger(FILE* debug_symbols, SDLScreen& screen);
 	virtual ~Debugger();
 	int findLine(int4 mem_pos) const;
-	void flowChanged(int4 flow, FlowState flowState, int1* stack, int4 stackMaxSize, int4 stackSize, int1* heap, int4 heapSize);
+	void reportFlowStateEvent(FlowState flowState);
+	void flowChanged(int4 flow, int1* stack, int4 stackMaxSize, int4 stackSize, int1* heap, int4 heapSize);
 
 	const DebuggerOrder askForOrder()
 	{

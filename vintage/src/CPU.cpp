@@ -28,13 +28,17 @@ void CPU::synchronizeDebugger(bool ask, int1* stack, int4 stackPtr, int4 stackSi
 {
 	if (debugger != NULL)
 	{
-		debugger->flowChanged(flow, state, &stack[stackPtr], stackSize, stackSize - stackPtr, heap, heapSize);
+		debugger->reportFlowStateEvent(state);
+		if (debugger->isRunning())
+		{
+			debugger->flowChanged(flow, &stack[stackPtr], stackSize, stackSize - stackPtr, heap, heapSize);
+		}
 		DebuggerOrder order;
 
-		while (ask && ((order = debugger->askForOrder()) == doWait))
+		while (ask && ((order = debugger->askForOrder()) == doWait) && !terminationPending)
 		{
 			Sleep(10);
-			debugger->flowChanged(flow, fsLinear, &stack[stackPtr], stackSize, stackSize - stackPtr, heap, heapSize);
+			debugger->flowChanged(flow, &stack[stackPtr], stackSize, stackSize - stackPtr, heap, heapSize);
 		}
 
 		if (order == doHalt)
@@ -52,84 +56,94 @@ void CPU::ActivityFunction()
 	int1* stack = &memory[stackStart];
 	int1* heap = &memory[heapStart];
 
+	bool ignoreInterrupts = false;
+
 	while (!terminationPending)
 	{
 		synchronizeDebugger(true, stack, stackPtr, stackSize, heap, heapSize, flow, fsLinear);
-		// Checking ports input
-		bool steppedIn = false;
-		pthread_mutex_lock(&portReadingMutex);
-		if (someInputPortIsWaiting)
+
+		if (!ignoreInterrupts)
 		{
-			// Clearing our flag (doing this by default, we will check it later)
-			someInputPortIsWaiting = false;
-
-			int inputPortsWaitingCount = 0;
-			int portToHandle = -1;
-
-			// Here we are checking if any port is waiting.
-			// We don't consider ports, which numbers are greater or equal
-			// than the currently handling one. This means that
-			// the least is the index of the port, the most priority it has.
-
-			// Example: if we are handling port #3 and port #4 is waiting,
-			//          the handler for the port #4 will not be executed
-			//          until port #3 handling is done.
-
-			// And we start handling for the highest priority
-			// (i.e. the least index) port
-			for (int i = 0; i < portsCount; i++)
+			// Checking ports input
+			bool steppedIn = false;
+			pthread_mutex_lock(&portReadingMutex);
+			if (someInputPortIsWaiting)
 			{
-				if (inputPortIsWaiting[i] && inputPortHandlersAddresses[i] > 0)
-				{
-					inputPortsWaitingCount++;
-					if (portToHandle == -1 && i < inputPortsCurrentlyHandlingStack[inputPortsCurrentlyHandlingCount - 1])
-					{
-						// If it is the first port we found
-						// and it's priority is greater than the currently handling ones,
-						// saving it for handling NOW
-						portToHandle = i;
-					}
-					else
-					{
-						// In all other cases it should be handled LATER,
-						// so we have the flag to set
-						someInputPortIsWaiting = true;
+				// Clearing our flag (doing this by default, we will check it later)
+				someInputPortIsWaiting = false;
 
-						// Nothing to search more
-						break;
+				int inputPortsWaitingCount = 0;
+				int portToHandle = -1;
+
+				// Here we are checking if any port is waiting.
+				// We don't consider ports, which numbers are greater or equal
+				// than the currently handling one. This means that
+				// the least is the index of the port, the most priority it has.
+
+				// Example: if we are handling port #3 and port #4 is waiting,
+				//          the handler for the port #4 will not be executed
+				//          until port #3 handling is done.
+
+				// And we start handling for the highest priority
+				// (i.e. the least index) port
+				for (int i = 0; i < portsCount; i++)
+				{
+					if (inputPortIsWaiting[i] && inputPortHandlersAddresses[i] > 0)
+					{
+						inputPortsWaitingCount++;
+						if (portToHandle == -1 && i < inputPortsCurrentlyHandlingStack[inputPortsCurrentlyHandlingCount - 1])
+						{
+							// If it is the first port we found
+							// and it's priority is greater than the currently handling ones,
+							// saving it for handling NOW
+							portToHandle = i;
+						}
+						else
+						{
+							// In all other cases it should be handled LATER,
+							// so we have the flag to set
+							someInputPortIsWaiting = true;
+
+							// Nothing to search more
+							break;
+						}
 					}
+				}
+
+				// Calling the handler
+				if (portToHandle >= 0)		// it's better to use a flag here
+				{
+					// Adding the port we are handling to input-ports-we-are-currently-handling stack
+					inputPortsCurrentlyHandlingStack[inputPortsCurrentlyHandlingCount] = portToHandle;
+					inputPortsCurrentlyHandlingCount++;
+
+					inputPortIsWaiting[portToHandle] = false;
+
+					stackPtr -= 4;
+					*((int4*)&stack[stackPtr]) = flow;
+
+					flow = inputPortHandlersAddresses[portToHandle];
+					steppedIn = true;
+
+					stackPtr -= portInWaitingDataLength[portToHandle];
+
+					for (int i = 0; i < portInWaitingDataLength[portToHandle]; i++)
+					{
+						*((int1*)&stack[stackPtr + i]) = *((int1*)&portInWaitingData[portToHandle * portDataLength + i]);
+					}
+
+					if (inputPortsWaitingCount == 1) someInputPortIsWaiting = false;
 				}
 			}
-
-			// Calling the handler
-			if (portToHandle >= 0)		// it's better to use a flag here
+			pthread_mutex_unlock(&portReadingMutex);
+			if (steppedIn)
 			{
-				// Adding the port we are handling to input-ports-we-are-currently-handling stack
-				inputPortsCurrentlyHandlingStack[inputPortsCurrentlyHandlingCount] = portToHandle;
-				inputPortsCurrentlyHandlingCount++;
-
-				inputPortIsWaiting[portToHandle] = false;
-
-				stackPtr -= 4;
-				*((int4*)&stack[stackPtr]) = flow;
-
-				flow = inputPortHandlersAddresses[portToHandle];
-				steppedIn = true;
-
-				stackPtr -= portInWaitingDataLength[portToHandle];
-
-				for (int i = 0; i < portInWaitingDataLength[portToHandle]; i++)
-				{
-					*((int1*)&stack[stackPtr + i]) = *((int1*)&portInWaitingData[portToHandle * portDataLength + i]);
-				}
-
-				if (inputPortsWaitingCount == 1) someInputPortIsWaiting = false;
+				synchronizeDebugger(false, stack, stackPtr, stackSize, heap, heapSize, flow, fsStepIn);
 			}
 		}
-		pthread_mutex_unlock(&portReadingMutex);
-		if (steppedIn)
+		else
 		{
-			synchronizeDebugger(true, stack, stackPtr, stackSize, heap, heapSize, flow, fsStepIn);
+			ignoreInterrupts = false;
 		}
 
 #ifdef OUTPUT_INSTRUCTIONS
@@ -235,7 +249,7 @@ void CPU::ActivityFunction()
 			switch (arg1)
 			{
 			case 1:
-				heap[addr] = stack[stackPtr + arg2];
+				heap[addr] = stack[stackPtr + arg3];
 				break;
 			case 2:
 				*((int2*)&heap[addr]) = *((int2*)&stack[stackPtr + arg3]);
@@ -263,7 +277,7 @@ void CPU::ActivityFunction()
 			switch (arg1)
 			{
 			case 1:
-				stack[stackPtr - arg2] = heap[addr];
+				*((int1*)&stack[stackPtr + arg2]) = *((int1*)&heap[addr]);
 				break;
 			case 2:
 				*((int2*)&stack[stackPtr + arg2]) = *((int2*)&heap[addr]);
@@ -796,7 +810,6 @@ void CPU::ActivityFunction()
 
 
 		case call_m_stp:
-			synchronizeDebugger(false, stack, stackPtr, stackSize, heap, heapSize, flow, fsStepIn);
 			GET_ARG(arg1, flow);
 #ifdef OUTPUT_INSTRUCTIONS
 			printf("call [{%d}]", arg1);
@@ -805,10 +818,11 @@ void CPU::ActivityFunction()
 			stackPtr -= 4;
 			*((int4*)&stack[stackPtr]) = flow;
 			flow = *((int4*)&stack[stackPtr + arg1]);
+
+			synchronizeDebugger(false, stack, stackPtr, stackSize, heap, heapSize, flow, fsStepIn);
 			break;
 
 		case call_flow:
-			synchronizeDebugger(false, stack, stackPtr, stackSize, heap, heapSize, flow, fsStepIn);
 			GET_ARG(arg1, flow);
 #ifdef OUTPUT_INSTRUCTIONS
 			printf("call [%d]", arg1);
@@ -817,6 +831,8 @@ void CPU::ActivityFunction()
 			stackPtr -= 4;
 			*((int4*)&stack[stackPtr]) = flow;
 			flow = (int4)arg1;
+
+			synchronizeDebugger(false, stack, stackPtr, stackSize, heap, heapSize, flow, fsStepIn);
 			break;
 
 		case ret_stp:
@@ -826,6 +842,7 @@ void CPU::ActivityFunction()
 #endif
 			flow = *((int4*)&stack[stackPtr]);
 			stackPtr += 4;	// removing the callr's address
+
 			synchronizeDebugger(false, stack, stackPtr, stackSize, heap, heapSize, flow, fsStepOut);
 			break;
 
@@ -841,12 +858,14 @@ void CPU::ActivityFunction()
 				flow = *((int4*)&stack[stackPtr]);
 				stackPtr += 4;	// removing the callr's address
 				inputPortsCurrentlyHandlingCount--;
+				ignoreInterrupts = true;
 				pthread_mutex_unlock(&portReadingMutex);
 			}
 			else
 			{
 				// TODO: Implement some exception here :)
 			}
+
 			synchronizeDebugger(false, stack, stackPtr, stackSize, heap, heapSize, flow, fsStepOut);
 			break;
 

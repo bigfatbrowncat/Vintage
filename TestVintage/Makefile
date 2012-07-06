@@ -12,5 +12,5 @@ clean:
 	rm test.bin test.dbg
 run-debug: compile
 	(cd ../vintage/$(PROFILE)/out; ./vintage-vm ../../../TestVintage/test.bin ../../../TestVintage/test.dbg)
-run-no-debug:
+run-no-debug: compile
 	(cd ../vintage/$(PROFILE)/out; ./vintage-vm ../../../TestVintage/test.bin)

@@ -6,8 +6,8 @@ CPUKeyboardController::CPUKeyboardController(CPU& cpu, int port, int2 bufferLeng
 	HardwareDevice(cpu, port),
 	bufferLength(bufferLength)
 {
-	keyDown = new int1[bufferLength];
-	modifiers = new int2[bufferLength];
+	keyDown = new bool[bufferLength];
+	//modifiers = new int2[bufferLength];
 	keyCode = new int4[bufferLength];
 
 	pthread_mutex_init(&keyBufferLock, NULL);
@@ -19,18 +19,17 @@ CPUKeyboardController::~CPUKeyboardController()
 {
 	pthread_mutex_destroy(&keyBufferLock);
 	delete [] keyDown;
-	delete [] modifiers;
+	//delete [] modifiers;
 	delete [] keyCode;
 }
 
-void CPUKeyboardController::ChangeKeyState(bool key_down, KeyModifiers modifiers, int4 key_code)
+void CPUKeyboardController::ChangeKeyState(bool key_down, int4 key_code)
 {
 	pthread_mutex_lock(&keyBufferLock);
 	if (last != current - 1)
 	{
-		this->keyDown[current] = key_down ? 1 : 0;
-		this->modifiers[current] = modifiers;
-		this->keyCode[current] = key_code;
+		this->keyDown[last] = key_down;
+		this->keyCode[last] = key_code;
 		last = (last + 1) % bufferLength;
 	}
 	else
@@ -44,19 +43,20 @@ void CPUKeyboardController::ActivityFunction()
 {
 	while (!TurnOffPending())
 	{
-		while (!TurnOffPending() && (current == last))
-			usleep(100);	// 0.1 millisecond
-
 		// Taking the event away from the buffer.
 		// This is synchronized with adding event to the buffer
 		pthread_mutex_lock(&keyBufferLock);
 		bool notEmpty = (current != last);
-		int1 msg[7];
+		int1 msg[5];
 		if (notEmpty)
 		{
-			msg[0] = keyDown[current];
-			*((int2*)&msg[1]) = (int2)(modifiers[current]);
-			*((int4*)&msg[3]) = keyCode[current];
+			// First 4 bytes -- key code
+			// 5th byte:
+			//     0 bit - boolean - is key down
+
+			*((int4*)&msg[0]) = keyCode[current];
+			*((int1*)&msg[4]) = keyDown[current] ? 1 : 0;
+			printf("<- (%d, %d) %d %d\n", current, last, keyCode[current], keyDown[current]);
 			current = (current + 1) % bufferLength;
 		}
 		pthread_mutex_unlock(&keyBufferLock);
@@ -65,8 +65,11 @@ void CPUKeyboardController::ActivityFunction()
 		// we send it to the CPU.
 		if (notEmpty)
 		{
-			GetCPU().handleInputPort(GetPort(), msg, 7);
+			GetCPU().handleInputPort(GetPort(), msg, 5);
 		}
-
+		else
+		{
+			usleep(100);	// 0.1 millisecond
+		}
 	}
 }

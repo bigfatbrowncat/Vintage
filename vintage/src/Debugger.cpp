@@ -416,12 +416,16 @@ void Debugger::updateUI()
 	pthread_mutex_unlock(&printingMutex);
 }
 
-void Debugger::flowChanged(int4 flow, FlowState flowState, int1* stack, int4 stackMaxSize, int4 stackAllocatedSize, int1* heap, int4 heapSize)
+void Debugger::reportFlowStateEvent(FlowState flowState)
 {
 	if (flowState == fsStepIn)
 		flowLevel ++;
 	if (flowState == fsStepOut)
 		flowLevel --;
+}
+
+void Debugger::flowChanged(int4 flow, int1* stack, int4 stackMaxSize, int4 stackAllocatedSize, int1* heap, int4 heapSize)
+{
 
 	this->flow = flow;
 

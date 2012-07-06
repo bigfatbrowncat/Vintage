@@ -41,7 +41,8 @@ private:
     GLuint vertexShader, /* Vertex Shader */
     	   fragmentShader, /* Fragment Shader */
     	   shaderProgramId; /* Shader Program */
-    GLint texture, phase;
+    volatile GLint texture, phase;
+    float phase_start_value;
 
     CustomEventsHandler* customEventsHandler;
     void* customEventsHandlerData;

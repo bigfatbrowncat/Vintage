@@ -70,6 +70,8 @@ $(OBJ_PATH):
 $(VM_OBJS) : $(OBJ_PATH)/%.o : $(SRC_PATH)/%.cpp $(VM_HEADERS) $(OBJ_PATH)
 	$(CXX) $(CXXFLAGS) -c -o $@ $(INCLUDES_PATH) $(LIBS_PATH) $(VM_LIBS) $< 
 
+$(ASM_OBJS) : $(OBJ_PATH)/%.o : $(SRC_PATH)/%.cpp $(ASM_HEADERS) $(OBJ_PATH)
+	$(CXX) $(CXXFLAGS) -c -o $@ $(INCLUDES_PATH) $(LIBS_PATH) $(ASM_LIBS) $< 
 
 
 ##### Target #####
@@ -86,7 +88,7 @@ $(OUT_PATH)/$(ASM_TARGET): $(ASM_OBJS) $(OUT_PATH)
 
 ##### Externals #####
 
-externals: $(OUT_PATH)/$(SDL_DLL) $(OUT_PATH)/$(GLEW_DLL) $(OUT_PATH)/$(GLEW_MX_DLL) $(OUT_PATH)/$(PTHREADS_DLL) $(OUT_PATH)/wave.frag $(OUT_PATH)/wave.vert
+externals: $(OUT_PATH)/$(SDL_DLL) $(OUT_PATH)/$(GLEW_DLL) $(OUT_PATH)/$(GLEW_MX_DLL) $(OUT_PATH)/$(PTHREADS_DLL)
 
 $(OUT_PATH)/wave.frag: wave.frag
 	cp -f wave.frag $(OUT_PATH)/

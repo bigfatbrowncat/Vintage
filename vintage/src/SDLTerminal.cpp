@@ -98,7 +98,7 @@ void SDLTerminal::processEvents()
 {
 	/* Our SDL event placeholder. */
 	SDL_Event event;
-	KeyModifiers modifiers = KEYMOD_NONE;
+	//KeyModifiers modifiers = KEYMOD_NONE;
 
 	/* Grab all the events off the queue. */
 	while (SDL_PollEvent(&event))
@@ -112,21 +112,13 @@ void SDLTerminal::processEvents()
 			}
 			else
 			{
-				if (event.key.keysym.mod & KMOD_LSHIFT) modifiers = (KeyModifiers)((int)modifiers | (int) KEYMOD_LSHIFT);
-				if (event.key.keysym.mod & KMOD_RSHIFT) modifiers = (KeyModifiers)((int)modifiers | (int) KEYMOD_RSHIFT);
-				if (event.key.keysym.mod & KMOD_LCTRL) modifiers = (KeyModifiers)((int)modifiers | (int) KEYMOD_LCTRL);
-				if (event.key.keysym.mod & KMOD_RCTRL) modifiers = (KeyModifiers)((int)modifiers | (int) KEYMOD_RCTRL);
-				if (event.key.keysym.mod & KMOD_LALT) modifiers = (KeyModifiers)((int)modifiers | (int) KEYMOD_LALT);
-				if (event.key.keysym.mod & KMOD_RALT) modifiers = (KeyModifiers)((int)modifiers | (int) KEYMOD_RALT);
-				if (event.key.keysym.mod & KMOD_LMETA) modifiers = (KeyModifiers)((int)modifiers | (int) KEYMOD_LMETA);
-				if (event.key.keysym.mod & KMOD_RMETA) modifiers = (KeyModifiers)((int)modifiers | (int) KEYMOD_RMETA);
-				if (event.key.keysym.mod & KMOD_NUM) modifiers = (KeyModifiers)((int)modifiers | (int) KEYMOD_NUM);
-				if (event.key.keysym.mod & KMOD_CAPS) modifiers = (KeyModifiers)((int)modifiers | (int) KEYMOD_CAPS);
-				if (event.key.keysym.mod & KMOD_MODE) modifiers = (KeyModifiers)((int)modifiers | (int) KEYMOD_MODE);
-
-				if (screens[activeScreen]->getKeyboardController() != NULL)
+				if (event.key.keysym.sym != 0)
 				{
-					screens[activeScreen]->getKeyboardController()->ChangeKeyState(true, modifiers, event.key.keysym.sym);
+					printf("-> %d %d\n", event.key.keysym.sym, true);
+					if (screens[activeScreen]->getKeyboardController() != NULL)
+					{
+						screens[activeScreen]->getKeyboardController()->ChangeKeyState(true, event.key.keysym.sym);
+					}
 				}
 			}
 			break;
@@ -135,22 +127,15 @@ void SDLTerminal::processEvents()
 			{
 				// Do nothing
 			}
-			else //if (state == TS_CPU)
+			else
 			{
-				if (event.key.keysym.mod & KMOD_LSHIFT) modifiers = (KeyModifiers)((int)modifiers & ~((int) KEYMOD_LSHIFT));
-				if (event.key.keysym.mod & KMOD_RSHIFT) modifiers = (KeyModifiers)((int)modifiers & ~((int) KEYMOD_RSHIFT));
-				if (event.key.keysym.mod & KMOD_LCTRL) modifiers = (KeyModifiers)((int)modifiers & ~((int) KEYMOD_LCTRL));
-				if (event.key.keysym.mod & KMOD_RCTRL) modifiers = (KeyModifiers)((int)modifiers & ~((int) KEYMOD_RCTRL));
-				if (event.key.keysym.mod & KMOD_LALT) modifiers = (KeyModifiers)((int)modifiers & ~((int) KEYMOD_LALT));
-				if (event.key.keysym.mod & KMOD_RALT) modifiers = (KeyModifiers)((int)modifiers & ~((int) KEYMOD_RALT));
-				if (event.key.keysym.mod & KMOD_LMETA) modifiers = (KeyModifiers)((int)modifiers & ~((int) KEYMOD_LMETA));
-				if (event.key.keysym.mod & KMOD_RMETA) modifiers = (KeyModifiers)((int)modifiers & ~((int) KEYMOD_RMETA));
-				if (event.key.keysym.mod & KMOD_NUM) modifiers = (KeyModifiers)((int)modifiers & ~((int) KEYMOD_NUM));
-				if (event.key.keysym.mod & KMOD_CAPS) modifiers = (KeyModifiers)((int)modifiers & ~((int) KEYMOD_CAPS));
-				if (event.key.keysym.mod & KMOD_MODE) modifiers = (KeyModifiers)((int)modifiers & ~((int) KEYMOD_MODE));
-				if (screens[activeScreen]->getKeyboardController() != NULL)
+				if (event.key.keysym.sym != 0)
 				{
-					screens[activeScreen]->getKeyboardController()->ChangeKeyState(false, modifiers, event.key.keysym.sym);
+					printf("-> %d %d\n", event.key.keysym.sym, false);
+					if (screens[activeScreen]->getKeyboardController() != NULL)
+					{
+						screens[activeScreen]->getKeyboardController()->ChangeKeyState(false, event.key.keysym.sym);
+					}
 				}
 			}
 			break;
@@ -252,7 +237,7 @@ bool SDLTerminal::setGLTextureFromSurface(SDL_Surface* surface, GLuint shaderPro
 
 
 	glUniform1i(texture, 0);	//use texture bound to GL_TEXTURE0
-	glUniform1f(phase, (float)SDL_GetTicks() / 1000);
+	glUniform1f(phase, (float)(SDL_GetTicks()) / 1000 - phase_start_value);
 	return true;
 }
 
@@ -288,7 +273,9 @@ bool SDLTerminal::Run()
 	printf("Initializing glew\n");
 	glewInit();
 	if (GLEW_VERSION_2_0)
-		fprintf(stderr, "INFO: OpenGL 2.0 supported, proceeding\n");
+	{
+		printf("INFO: OpenGL 2.0 supported, proceeding\n");
+	}
 	else
 	{
 		fprintf(stderr, "INFO: OpenGL 2.0 not supported. Exit\n");
@@ -297,8 +284,8 @@ bool SDLTerminal::Run()
 	printf("Success.\n");
 
 	// Reading shaders from files
-	GLchar *vsSource = (GLchar*)file2string("wave.vert");
-	GLchar *fsSource = (GLchar*)file2string("wave.frag");
+	GLchar *vsSource = (GLchar*)file2string("res/term.vert");
+	GLchar *fsSource = (GLchar*)file2string("res/term.frag");
 
 	const GLchar *cvsSource = vsSource;
 	const GLchar *cfsSource = fsSource;
@@ -416,6 +403,7 @@ void SDLTerminal::draw(SDL_Surface* frameSurface)
 	if (activeScreenChanged)
 	{
 		updateCaption();
+		phase_start_value = (float)(SDL_GetTicks()) / 1000;
 		activeScreenChanged = false;
 	}
 

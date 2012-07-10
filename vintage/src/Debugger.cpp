@@ -439,3 +439,186 @@ void Debugger::flowChanged(int4 flow, int1* stack, int4 stackMaxSize, int4 stack
 
 	updateUI();
 }
+
+const DebuggerOrder Debugger::askForOrder()
+{
+	pthread_mutex_lock(&printingMutex);
+
+	DebuggerOrder res;
+	if (haltPending)
+	{
+		res = doHalt;
+	}
+	else if (!running)
+	{
+		if (stepIntoPending)
+		{
+			stepIntoPending = false;
+			res = doGo;
+		}
+		else if (stepOutPending)
+		{
+			runningOut = true;
+			stepOutPending = false;
+			savedFlowLevel = flowLevel;
+			res = doGo;
+		}
+		else if (runningOut)
+		{
+			if (flowLevel < savedFlowLevel)
+			{
+				runningOut = false;
+				res = doWait;
+			}
+			else
+			{
+				res = doGo;
+			}
+		}
+		else if (stepOverPending)
+		{
+			runningOver = true;
+			stepOverPending = false;
+			savedFlowLevel = flowLevel;
+			res = doGo;
+		}
+		else if (runningOver)
+		{
+			if (flowLevel == savedFlowLevel)
+			{
+				runningOver = false;
+				res = doWait;
+			}
+			else
+			{
+				res = doGo;
+			}
+		}
+		else
+		{
+			res = doWait;
+		}
+	}
+	else
+	{
+		res = doGo;
+	}
+	printMenu();
+	pthread_mutex_unlock(&printingMutex);
+	return res;
+}
+
+void Debugger::handleControlKey(ControlKey ck)
+{
+	pthread_mutex_lock(&printingMutex);
+	int heapLines = heapSize / wHeapBytes;
+	int stackLines = stackMaxSize / wStackBytes;
+
+	if (ck == ckTab)
+	{
+		activeWindow = (DebuggerActiveWindow)((activeWindow + 1) % dawSize);
+	}
+
+	else if (ck == ckUp && activeWindow == dawHeap)
+	{
+		wHeapTopRow --;
+	}
+	else if (ck == ckDown && activeWindow == dawHeap)
+	{
+		wHeapTopRow ++;
+	}
+	else if (ck == ckUp && activeWindow == dawStack)
+	{
+		wStackTopRow --;
+	}
+	else if (ck == ckDown && activeWindow == dawStack)
+	{
+		wStackTopRow ++;
+	}
+
+	else if (ck == ckPageUp && activeWindow == dawHeap)
+	{
+		wHeapTopRow -= topSpace / 2;
+	}
+	else if (ck == ckPageDown && activeWindow == dawHeap)
+	{
+		wHeapTopRow += topSpace / 2;
+	}
+	else if (ck == ckPageUp && activeWindow == dawStack)
+	{
+		wStackTopRow -= topSpace / 2;
+	}
+	else if (ck == ckPageDown && activeWindow == dawStack)
+	{
+		wStackTopRow += topSpace / 2;
+	}
+
+	if (wHeapTopRow < 0) wHeapTopRow = 0;
+	if (wStackTopRow < 0) wStackTopRow = 0;
+	if (wHeapTopRow > heapLines) wHeapTopRow = heapLines;
+	if (wStackTopRow > stackLines) wStackTopRow = stackLines;
+	pthread_mutex_unlock(&printingMutex);
+
+	updateUI();
+}
+
+void Debugger::run()
+{
+	if (!running && !runningOut && !runningOver)
+	{
+		pthread_mutex_lock(&printingMutex);
+		running = true;
+		printMenu();
+		pthread_mutex_unlock(&printingMutex);
+	}
+}
+void Debugger::stop()
+{
+	if (running)
+	{
+		pthread_mutex_lock(&printingMutex);
+		running = false;
+		printMenu();
+		pthread_mutex_unlock(&printingMutex);
+	}
+}
+void Debugger::stepOver()
+{
+	if (!runningOut && !runningOver)
+	{
+		pthread_mutex_lock(&printingMutex);
+		running = false;
+		stepOverPending = true;
+		printMenu();
+		pthread_mutex_unlock(&printingMutex);
+	}
+}
+void Debugger::stepInto()
+{
+	if (!runningOut && !runningOver)
+	{
+		pthread_mutex_lock(&printingMutex);
+		running = false;
+		stepIntoPending = true;
+		printMenu();
+		pthread_mutex_unlock(&printingMutex);
+	}
+}
+void Debugger::stepOut()
+{
+	if (!runningOut && !runningOver && flowLevel > 0)
+	{
+		pthread_mutex_lock(&printingMutex);
+		running = false;
+		stepOutPending = true;
+		printMenu();
+		pthread_mutex_unlock(&printingMutex);
+	}
+}
+void Debugger::halt()
+{
+	pthread_mutex_lock(&printingMutex);
+	haltPending = true;
+	printMenu();
+	pthread_mutex_unlock(&printingMutex);
+}

@@ -79,6 +79,8 @@ private:
 	volatile int flowLevel;
 	volatile int savedFlowLevel;
 
+	volatile int wSelectedFlow;
+
 	pthread_mutex_t printingMutex;
 
 	int4 flow;
@@ -101,6 +103,7 @@ public:
 	Debugger(FILE* debug_symbols, SDLScreen& screen);
 	virtual ~Debugger();
 	int findLine(int4 mem_pos) const;
+	int lastLine() const { return entries.size() - 1; }
 	void reportFlowStateEvent(FlowState flowState);
 	void flowChanged(int4 flow, int1* stack, int4 stackMaxSize, int4 stackSize, int1* heap, int4 heapSize);
 

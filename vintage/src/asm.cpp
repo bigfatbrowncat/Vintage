@@ -282,12 +282,12 @@ int assemble(char* code, instr_t* target, int4 max_target_size, int& error_line,
 		while (*cur != '\x0')
 		{
 			// Writing the current memory position to debug symbols
-			fwrite(&mem_pos, sizeof(mem_pos), 1, debug_symbols_destination);
+			if (pass == 1) fwrite(&mem_pos, sizeof(mem_pos), 1, debug_symbols_destination);
 
 			// Dividing the line into tokens
 			while (*cur == '\n')
 			{
-				fwrite(cur, 1, 1, debug_symbols_destination);
+				if (pass == 1) fwrite(cur, 1, 1, debug_symbols_destination);
 				cur++;
 				line_index++;
 			}
@@ -323,7 +323,7 @@ int assemble(char* code, instr_t* target, int4 max_target_size, int& error_line,
 				else if (braces_num == 0 && quotes_on && (*cur == '"') && (*(cur + 1) == '"'))
 				{
 					symbol_to_add = *cur;
-					fwrite(cur, 1, 1, debug_symbols_destination);
+					if (pass == 1) fwrite(cur, 1, 1, debug_symbols_destination);
 					cur ++;		// Not an error - we pass thru 2 characters
 				}
 				else if (*cur == '"')
@@ -405,7 +405,7 @@ int assemble(char* code, instr_t* target, int4 max_target_size, int& error_line,
 					lin_cur ++;
 				}
 
-				fwrite(cur, 1, 1, debug_symbols_destination);
+				if (pass == 1) fwrite(cur, 1, 1, debug_symbols_destination);
 				cur ++;
 				col_index ++;
 			}
@@ -423,7 +423,7 @@ int assemble(char* code, instr_t* target, int4 max_target_size, int& error_line,
 
 			// Appending the zero-closing char to the debug symbols
 			char zero = 0;
-			fwrite(&zero, 1, 1, debug_symbols_destination);
+			if (pass == 1) fwrite(&zero, 1, 1, debug_symbols_destination);
 
 			// Analyzing tokens
 			int instr_start = 0;

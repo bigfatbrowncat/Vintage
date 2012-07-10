@@ -10,7 +10,8 @@ Debugger::Debugger(FILE* debug_symbols, SDLScreen& screen) :
 	runningOut(false),
 	runningOver(false),
 	topSpace(19), wStackBytes(8), wHeapBytes(10), wStackTopRow(0), wHeapTopRow(0),
-	flowLevel(0)
+	flowLevel(0),
+	wSelectedFlow(0)
 {
 	pthread_mutex_init(&printingMutex, NULL);
 
@@ -179,7 +180,6 @@ void Debugger::updateUI()
 	pthread_mutex_lock(&printingMutex);
 	if (screen.isActive() || !running)
 	{
-
 		// *** Printing code ***
 
 		if (activeWindow == dawCode)
@@ -201,19 +201,24 @@ void Debugger::updateUI()
 		int prev_addr = 0;
 		for (int i = down; i >= -up; i--)
 		{
-			int index = findLine(flow) + i;
+			int index = wSelectedFlow/*findLine(flow)*/ + i;
 
 			int y = topSpace + up + i;
 
-			if (i != 0)
-			{
-				screen.SelectForeColor(128, 128, 128);
-				screen.SelectBackColor(0, 0, 0);
-			}
-			else
+			if (i == 0)	// this line is selected now
 			{
 				screen.SelectForeColor(0, 0, 0);
 				screen.SelectBackColor(192, 192, 192);
+			}
+			else if (index == findLine(flow)) // flow is here
+			{
+				screen.SelectForeColor(0, 0, 0);
+				screen.SelectBackColor(128, 128, 255);
+			}
+			else // just a line
+			{
+				screen.SelectForeColor(128, 128, 128);
+				screen.SelectBackColor(0, 0, 0);
 			}
 
 			wstringstream strs;
@@ -228,15 +233,20 @@ void Debugger::updateUI()
 			}
 			printFixed(1, y, strs.str().c_str(), 9);
 
-			if (i != 0)
+			if (i == 0)	// this line is selected now
+			{
+				screen.SelectForeColor(0, 0, 0);
+				screen.SelectBackColor(192, 192, 192);
+			}
+			else if (index == findLine(flow)) // flow is here
+			{
+				screen.SelectForeColor(0, 0, 0);
+				screen.SelectBackColor(128, 128, 255);
+			}
+			else // just a line
 			{
 				screen.SelectForeColor(192, 192, 192);
 				screen.SelectBackColor(0, 0, 0);
-			}
-			else
-			{
-				screen.SelectBackColor(0, 0, 0);
-				screen.SelectBackColor(192, 192, 192);
 			}
 
 			wstringstream strs2;
@@ -426,7 +436,6 @@ void Debugger::reportFlowStateEvent(FlowState flowState)
 
 void Debugger::flowChanged(int4 flow, int1* stack, int4 stackMaxSize, int4 stackAllocatedSize, int1* heap, int4 heapSize)
 {
-
 	this->flow = flow;
 
 	this->stack = stack;
@@ -513,10 +522,28 @@ void Debugger::handleControlKey(ControlKey ck)
 	pthread_mutex_lock(&printingMutex);
 	int heapLines = heapSize / wHeapBytes;
 	int stackLines = stackMaxSize / wStackBytes;
+	int codeWindowHeight = 20;
 
 	if (ck == ckTab)
 	{
 		activeWindow = (DebuggerActiveWindow)((activeWindow + 1) % dawSize);
+	}
+
+	else if (ck == ckUp && activeWindow == dawCode)
+	{
+		wSelectedFlow --;
+	}
+	else if (ck == ckDown && activeWindow == dawCode)
+	{
+		wSelectedFlow ++;
+	}
+	else if (ck == ckPageUp && activeWindow == dawCode)
+	{
+		wSelectedFlow -= codeWindowHeight / 2;
+	}
+	else if (ck == ckPageDown && activeWindow == dawCode)
+	{
+		wSelectedFlow += codeWindowHeight / 2;
 	}
 
 	else if (ck == ckUp && activeWindow == dawHeap)
@@ -553,10 +580,15 @@ void Debugger::handleControlKey(ControlKey ck)
 		wStackTopRow += topSpace / 2;
 	}
 
+	if (wSelectedFlow < 0) wSelectedFlow = 0;
+	if (wSelectedFlow > lastLine()) wSelectedFlow = lastLine();
+
 	if (wHeapTopRow < 0) wHeapTopRow = 0;
-	if (wStackTopRow < 0) wStackTopRow = 0;
 	if (wHeapTopRow > heapLines) wHeapTopRow = heapLines;
+
+	if (wStackTopRow < 0) wStackTopRow = 0;
 	if (wStackTopRow > stackLines) wStackTopRow = stackLines;
+
 	pthread_mutex_unlock(&printingMutex);
 
 	updateUI();

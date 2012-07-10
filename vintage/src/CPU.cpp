@@ -41,7 +41,7 @@ void CPU::synchronizeDebugger(bool ask, int1* stack, int4 stackPtr, int4 stackSi
 			debugger->flowChanged(flow, &stack[stackPtr], stackSize, stackSize - stackPtr, heap, heapSize);
 		}
 
-		if (order == doHalt)
+		if (ask && (order == doHalt))
 		{
 			terminationPending = true;
 		}

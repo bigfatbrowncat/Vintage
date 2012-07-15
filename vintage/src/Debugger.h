@@ -30,8 +30,14 @@ enum DebuggerOrder
 
 struct DebugEntry
 {
-	int4 mem_pos;
-	wstring lines;
+	int4 memPos;
+	wstring codeLine;
+};
+
+struct Breakpoint
+{
+	int4 memPos;
+	Breakpoint(int4 memPos) : memPos(memPos) {}
 };
 
 enum DebuggerActiveWindow
@@ -66,9 +72,11 @@ private:
 
 	DebuggerActiveWindow activeWindow;
 	vector<DebugEntry> entries;
+	vector<Breakpoint> breakpoints;
 	SDLScreen& screen;
 
 	volatile bool running;
+	volatile bool runningPending;
 	volatile bool runningOut;
 	volatile bool runningOver;
 	volatile bool haltPending;
@@ -79,7 +87,7 @@ private:
 	volatile int flowLevel;
 	volatile int savedFlowLevel;
 
-	volatile int wSelectedFlow;
+	volatile int4 wSelectedLine;
 
 	pthread_mutex_t printingMutex;
 
@@ -94,6 +102,7 @@ private:
 protected:
 	void printMenu();
 	void printFixed(int x, int y, const wchar_t* str, int length);
+	vector<Breakpoint>::iterator findBreakpointAt(int4 memPos);
 public:
 	bool isRunning() { return running; }
 	void updateUI();
@@ -108,6 +117,7 @@ public:
 	void flowChanged(int4 flow, int1* stack, int4 stackMaxSize, int4 stackSize, int1* heap, int4 heapSize);
 
 	const DebuggerOrder askForOrder();
+	void toggleBreakpointAt(int4 memPos);
 
 	void run();
 	void stop();
@@ -115,6 +125,7 @@ public:
 	void stepInto();
 	void stepOut();
 	void halt();
+	void toggleBreakpoint();
 };
 
 #endif

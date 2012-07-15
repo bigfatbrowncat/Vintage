@@ -11,7 +11,7 @@ Debugger::Debugger(FILE* debug_symbols, SDLScreen& screen) :
 	runningOver(false),
 	topSpace(19), wStackBytes(8), wHeapBytes(10), wStackTopRow(0), wHeapTopRow(0),
 	flowLevel(0),
-	wSelectedFlow(0)
+	wSelectedLine(0)
 {
 	pthread_mutex_init(&printingMutex, NULL);
 
@@ -35,8 +35,8 @@ Debugger::Debugger(FILE* debug_symbols, SDLScreen& screen) :
 		while (read_char != 0);
 
 		DebugEntry newEntry;
-		newEntry.mem_pos = mem_pos;
-		newEntry.lines = lines;
+		newEntry.memPos = mem_pos;
+		newEntry.codeLine = lines;
 		entries.push_back(newEntry);
 	}
 }
@@ -50,8 +50,8 @@ int Debugger::findLine(int4 mem_pos) const
 {
 	for (unsigned int i = 0; i < entries.size() - 1; i++)
 	{
-		if (entries[i + 1].mem_pos > mem_pos &&
-			entries[i].mem_pos <= mem_pos)
+		if (entries[i + 1].memPos > mem_pos &&
+			entries[i].memPos <= mem_pos)
 		{
 			return i;
 		}
@@ -64,9 +64,9 @@ void Debugger::printMenu()
 	screen.SelectForeColor(0, 0, 0);
 	screen.SelectBackColor(192, 192, 192);
 	printFixed(screen.getFrameBufferWidth() - 25, screen.getFrameBufferHeight() - 1, L" Hardware debugging tool ", 25);
-
 	screen.SetCursorPosition(0, screen.getFrameBufferHeight() - 1);
-	if (this->running)
+
+	if (runningPending || running)
 	{
 		screen.SelectBackColor(192, 192, 192);
 	}
@@ -74,11 +74,12 @@ void Debugger::printMenu()
 	{
 		screen.SelectBackColor(128, 128, 128);
 	}
-	screen.Write(L"1 Run      ");
+	screen.Write(L"1 Run    ");
 	screen.SelectBackColor(0, 0, 0);
 	screen.Write(L" ");
 
 	if (!running &&
+		!runningPending &&
 	    !stepOverPending &&
 	    !stepIntoPending &&
 	    !stepOutPending &&
@@ -91,7 +92,7 @@ void Debugger::printMenu()
 	{
 		screen.SelectBackColor(128, 128, 128);
 	}
-	screen.Write(L"2 Pause    ");
+	screen.Write(L"2 Pause  ");
 	screen.SelectBackColor(0, 0, 0);
 	screen.Write(L" ");
 
@@ -103,7 +104,7 @@ void Debugger::printMenu()
 	{
 		screen.SelectBackColor(128, 128, 128);
 	}
-	screen.Write(L"3 Step over");
+	screen.Write(L"3 Stp ovr");
 	screen.SelectBackColor(0, 0, 0);
 	screen.Write(L" ");
 
@@ -115,7 +116,7 @@ void Debugger::printMenu()
 	{
 		screen.SelectBackColor(128, 128, 128);
 	}
-	screen.Write(L"4 Step into");
+	screen.Write(L"4 Stp in ");
 	screen.SelectBackColor(0, 0, 0);
 	screen.Write(L" ");
 
@@ -135,13 +136,29 @@ void Debugger::printMenu()
 		screen.SelectForeColor(128, 128, 128);
 	}
 
-	screen.Write(L"5 Step out ");
+	screen.Write(L"5 Stp out");
+	screen.SelectBackColor(0, 0, 0);
+	screen.Write(L" ");
+
+	if (findBreakpointAt(entries[wSelectedLine].memPos) != breakpoints.end())
+	{
+		screen.SelectBackColor(192, 192, 192);
+		screen.SelectForeColor(0, 0, 0);
+	}
+	else
+	{
+		screen.SelectBackColor(128, 128, 128);
+		screen.SelectForeColor(0, 0, 0);
+	}
+
+	screen.Write(L"6 Breakpt");
 	screen.SelectBackColor(0, 0, 0);
 	screen.Write(L" ");
 
 	screen.SelectForeColor(0, 0, 0);
 	screen.SelectBackColor(128, 128, 128);
-	screen.Write(L"6 Halt CPU ");
+	screen.Write(L"7 Halt   ");
+
 	screen.SelectBackColor(0, 0, 0);
 	screen.Write(L" ");
 	screen.SetCursorPosition(0, screen.getFrameBufferHeight() - 1);
@@ -201,7 +218,7 @@ void Debugger::updateUI()
 		int prev_addr = 0;
 		for (int i = down; i >= -up; i--)
 		{
-			int index = wSelectedFlow/*findLine(flow)*/ + i;
+			int index = wSelectedLine/*findLine(flow)*/ + i;
 
 			int y = topSpace + up + i;
 
@@ -215,6 +232,11 @@ void Debugger::updateUI()
 				screen.SelectForeColor(0, 0, 0);
 				screen.SelectBackColor(128, 128, 255);
 			}
+			else if (findBreakpointAt(entries[index].memPos) != breakpoints.end()) // flow is here
+			{
+				screen.SelectForeColor(192, 0, 0);
+				screen.SelectBackColor(0, 0, 0);
+			}
 			else // just a line
 			{
 				screen.SelectForeColor(128, 128, 128);
@@ -222,10 +244,10 @@ void Debugger::updateUI()
 			}
 
 			wstringstream strs;
-			if (index >= 0 && index < (int)entries.size() && entries[index].mem_pos != prev_addr)
+			if (index >= 0 && index < (int)entries.size() && entries[index].memPos != prev_addr)
 			{
-				strs << std::setw(8) << setfill(L'0') << std::hex << uppercase << entries[index].mem_pos << L" ";
-				prev_addr = entries[index].mem_pos;
+				strs << std::setw(8) << setfill(L'0') << std::hex << uppercase << entries[index].memPos << L" ";
+				prev_addr = entries[index].memPos;
 			}
 			else
 			{
@@ -243,6 +265,11 @@ void Debugger::updateUI()
 				screen.SelectForeColor(0, 0, 0);
 				screen.SelectBackColor(128, 128, 255);
 			}
+			else if (findBreakpointAt(entries[index].memPos) != breakpoints.end()) // flow is here
+			{
+				screen.SelectForeColor(255, 0, 0);
+				screen.SelectBackColor(0, 0, 0);
+			}
 			else // just a line
 			{
 				screen.SelectForeColor(192, 192, 192);
@@ -253,7 +280,7 @@ void Debugger::updateUI()
 			if (index >= 0 && index < (int)entries.size())
 			{
 				//printf("0x%X: %s\n", fl->mem_pos, fl->lines.c_str());
-				strs2 << entries[index].lines << L"\n";
+				strs2 << entries[index].codeLine << L"\n";
 			}
 			else
 			{
@@ -451,69 +478,82 @@ void Debugger::flowChanged(int4 flow, int1* stack, int4 stackMaxSize, int4 stack
 
 const DebuggerOrder Debugger::askForOrder()
 {
-	pthread_mutex_lock(&printingMutex);
+	//pthread_mutex_lock(&printingMutex);
 
 	DebuggerOrder res;
 	if (haltPending)
 	{
 		res = doHalt;
 	}
-	else if (!running)
+	else if (runningPending)
 	{
-		if (stepIntoPending)
+		res = doGo;
+		runningPending = false;
+		running = true;
+	}
+	else if (running)
+	{
+		// Checking for breakpoint
+		if (findBreakpointAt(flow) != breakpoints.end())
 		{
-			stepIntoPending = false;
-			res = doGo;
-		}
-		else if (stepOutPending)
-		{
-			runningOut = true;
-			stepOutPending = false;
-			savedFlowLevel = flowLevel;
-			res = doGo;
-		}
-		else if (runningOut)
-		{
-			if (flowLevel < savedFlowLevel)
-			{
-				runningOut = false;
-				res = doWait;
-			}
-			else
-			{
-				res = doGo;
-			}
-		}
-		else if (stepOverPending)
-		{
-			runningOver = true;
-			stepOverPending = false;
-			savedFlowLevel = flowLevel;
-			res = doGo;
-		}
-		else if (runningOver)
-		{
-			if (flowLevel == savedFlowLevel)
-			{
-				runningOver = false;
-				res = doWait;
-			}
-			else
-			{
-				res = doGo;
-			}
+			running = false;
+			res = doWait;
 		}
 		else
 		{
+			// Continue running
+			res = doGo;
+		}
+	}
+	else if (stepIntoPending)
+	{
+		stepIntoPending = false;
+		res = doGo;
+	}
+	else if (stepOutPending)
+	{
+		runningOut = true;
+		stepOutPending = false;
+		savedFlowLevel = flowLevel;
+		res = doGo;
+	}
+	else if (runningOut)
+	{
+		if (flowLevel < savedFlowLevel || findBreakpointAt(flow) != breakpoints.end())
+		{
+			runningOut = false;
 			res = doWait;
+		}
+		else
+		{
+			res = doGo;
+		}
+	}
+	else if (stepOverPending)
+	{
+		runningOver = true;
+		stepOverPending = false;
+		savedFlowLevel = flowLevel;
+		res = doGo;
+	}
+	else if (runningOver)
+	{
+		if (flowLevel == savedFlowLevel || findBreakpointAt(flow) != breakpoints.end())
+		{
+			runningOver = false;
+			res = doWait;
+		}
+		else
+		{
+			res = doGo;
 		}
 	}
 	else
 	{
-		res = doGo;
+		res = doWait;
 	}
 	printMenu();
-	pthread_mutex_unlock(&printingMutex);
+	//pthread_mutex_unlock(&printingMutex);
 	return res;
 }
 
@@ -531,19 +571,19 @@ void Debugger::handleControlKey(ControlKey ck)
 
 	else if (ck == ckUp && activeWindow == dawCode)
 	{
-		wSelectedFlow --;
+		wSelectedLine --;
 	}
 	else if (ck == ckDown && activeWindow == dawCode)
 	{
-		wSelectedFlow ++;
+		wSelectedLine ++;
 	}
 	else if (ck == ckPageUp && activeWindow == dawCode)
 	{
-		wSelectedFlow -= codeWindowHeight / 2;
+		wSelectedLine -= codeWindowHeight / 2;
 	}
 	else if (ck == ckPageDown && activeWindow == dawCode)
 	{
-		wSelectedFlow += codeWindowHeight / 2;
+		wSelectedLine += codeWindowHeight / 2;
 	}
 
 	else if (ck == ckUp && activeWindow == dawHeap)
@@ -580,8 +620,8 @@ void Debugger::handleControlKey(ControlKey ck)
 		wStackTopRow += topSpace / 2;
 	}
 
-	if (wSelectedFlow < 0) wSelectedFlow = 0;
-	if (wSelectedFlow > lastLine()) wSelectedFlow = lastLine();
+	if (wSelectedLine < 0) wSelectedLine = 0;
+	if (wSelectedLine > lastLine()) wSelectedLine = lastLine();
 
 	if (wHeapTopRow < 0) wHeapTopRow = 0;
 	if (wHeapTopRow > heapLines) wHeapTopRow = heapLines;
@@ -594,12 +634,34 @@ void Debugger::handleControlKey(ControlKey ck)
 	updateUI();
 }
 
+vector<Breakpoint>::iterator Debugger::findBreakpointAt(int4 memPos)
+{
+	for (vector<Breakpoint>::iterator iter = breakpoints.begin(); iter != breakpoints.end(); iter++)
+	{
+		if ((*iter).memPos == memPos) return iter;
+	}
+	return breakpoints.end();
+}
+
+void Debugger::toggleBreakpointAt(int4 memPos)
+{
+	vector<Breakpoint>::iterator bp = findBreakpointAt(memPos);
+	if (bp != breakpoints.end())
+	{
+		breakpoints.erase(bp);
+	}
+	else
+	{
+		breakpoints.push_back(Breakpoint(memPos));
+	}
+}
+
 void Debugger::run()
 {
 	if (!running && !runningOut && !runningOver)
 	{
 		pthread_mutex_lock(&printingMutex);
-		running = true;
+		runningPending = true;
 		printMenu();
 		pthread_mutex_unlock(&printingMutex);
 	}
@@ -653,4 +715,9 @@ void Debugger::halt()
 	haltPending = true;
 	printMenu();
 	pthread_mutex_unlock(&printingMutex);
+}
+void Debugger::toggleBreakpoint()
+{
+	toggleBreakpointAt(entries[wSelectedLine].memPos);
+	updateUI();
 }

@@ -22,6 +22,9 @@ void DebuggerKeyboardController::ChangeKeyState(bool key_down, int4 key_code)
 			debugger.stepOut();
 			break;
 		case SDLK_F6:
+			debugger.toggleBreakpoint();
+			break;
+		case SDLK_F7:
 			debugger.halt();
 			break;
 

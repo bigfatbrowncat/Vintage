@@ -38,6 +38,8 @@ void CPU::askDebugger(int1* stack, int4 stackPtr, int4 stackSize, int1* heap, in
 {
 	if (debugger != NULL)
 	{
+		debugger->reportCPUState(flow, &stack[stackPtr], stackSize, stackSize - stackPtr, heap, heapSize);
+
 		DebuggerOrder order;
 		while (((order = debugger->askForOrder()) == doWait) && !terminationPending)
 		{

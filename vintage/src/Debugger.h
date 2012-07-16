@@ -70,6 +70,8 @@ enum DebuggerState
 	dsStopped
 };
 
+enum FlowLayerType { fltNormal, fltHandler };
+
 class Debugger
 {
 	friend class DebuggerKeyboardController;
@@ -88,10 +90,8 @@ private:
 
 	volatile DebuggerState state;
 
-	volatile int flowLevel;
-	volatile int savedFlowLevel;
-	volatile int handlerFlowLevel;
-	volatile int savedHandlerFlowLevel;
+	vector<FlowLayerType> flowLayers;
+	int savedFlowLayers;
 
 	volatile int4 wSelectedLine;
 

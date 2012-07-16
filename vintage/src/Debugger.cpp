@@ -4,7 +4,6 @@ Debugger::Debugger(FILE* debug_symbols, SDLScreen& screen) :
 	screen(screen),
 	state(dsStopped),
 	topSpace(19), wStackBytes(8), wHeapBytes(10), wStackTopRow(0), wHeapTopRow(0),
-	flowLevel(0),
 	wSelectedLine(0)
 {
 	pthread_mutex_init(&printingMutex, NULL);
@@ -113,7 +112,7 @@ void Debugger::printMenu()
 		screen.SelectBackColor(192, 192, 192);
 		screen.SelectForeColor(0, 0, 0);
 	}
-	else if (flowLevel > 0)
+	else if (flowLayers.size() > 0)
 	{
 		screen.SelectBackColor(128, 128, 128);
 		screen.SelectForeColor(0, 0, 0);
@@ -446,16 +445,22 @@ void Debugger::reportFlowStateEvent(FlowState flowState)
 	switch (flowState)
 	{
 	case fsStepIn:
-		flowLevel ++;
+		flowLayers.push_back(fltNormal);
 		break;
 	case fsStepOut:
-		flowLevel --;
+		if (flowLayers.back() == fltNormal)
+			flowLayers.pop_back();
+		else
+			printf("Incorrect flow layer!");
 		break;
 	case fsStepInHandler:
-		handlerFlowLevel ++;
+		flowLayers.push_back(fltHandler);
 		break;
 	case fsStepOutHandler:
-		handlerFlowLevel --;
+		if (flowLayers.back() == fltHandler)
+			flowLayers.pop_back();
+		else
+			printf("Incorrect flow layer!");
 		break;
 	case fsLinear:
 		// Do nothing
@@ -496,19 +501,17 @@ const DebuggerOrder Debugger::askForOrder()
 		res = doGo;
 		break;
 	case dsStepIntoPending:
-		savedHandlerFlowLevel = handlerFlowLevel;
+		savedFlowLayers = flowLayers.size();
 		state = dsRunningInto;
 		res = doGo;
 		break;
 	case dsStepOutPending:
-		savedFlowLevel = flowLevel;
-		savedHandlerFlowLevel = handlerFlowLevel;
+		savedFlowLayers = flowLayers.size();
 		state = dsRunningOut;
 		res = doGo;
 		break;
 	case dsStepOverPending:
-		savedFlowLevel = flowLevel;
-		savedHandlerFlowLevel = handlerFlowLevel;
+		savedFlowLayers = flowLayers.size();
 		state = dsRunningOver;
 		res = doGo;
 		break;
@@ -526,7 +529,7 @@ const DebuggerOrder Debugger::askForOrder()
 		}
 		break;
 	case dsRunningInto:
-		if (savedHandlerFlowLevel == handlerFlowLevel)
+		if (flowLayers.size() == 0 || savedFlowLayers == flowLayers.size() || flowLayers.back() == fltNormal)
 		{
 			state = dsStopped;
 			res = doWait;
@@ -537,7 +540,7 @@ const DebuggerOrder Debugger::askForOrder()
 		}
 		break;
 	case dsRunningOut:
-		if (flowLevel < savedFlowLevel || handlerFlowLevel < savedHandlerFlowLevel || findBreakpointAt(flow) != breakpoints.end())
+		if (savedFlowLayers < flowLayers.size() || findBreakpointAt(flow) != breakpoints.end())
 		{
 			state = dsStopped;
 			res = doWait;
@@ -548,7 +551,7 @@ const DebuggerOrder Debugger::askForOrder()
 		}
 		break;
 	case dsRunningOver:
-		if ((flowLevel == savedFlowLevel && handlerFlowLevel == savedHandlerFlowLevel) || findBreakpointAt(flow) != breakpoints.end())
+		if (flowLayers.size() == 0 || (savedFlowLayers == flowLayers.size() && flowLayers.back() == fltNormal) || findBreakpointAt(flow) != breakpoints.end())
 		{
 			state = dsStopped;
 			res = doWait;
@@ -706,7 +709,7 @@ void Debugger::stepInto()
 }
 void Debugger::stepOut()
 {
-	if (state != dsRunningOut && state != dsRunningOver && flowLevel > 0)
+	if (state != dsRunningOut && state != dsRunningOver && flowLayers.size() > 0)
 	{
 		pthread_mutex_lock(&printingMutex);
 		state = dsStepOutPending;

@@ -25,7 +25,7 @@
 #define MAX_TOKENS_NUM				256
 #define MAX_DATA_BUFFER_LENGTH		65536
 
-int assemble(char* code, instr_t* target, int4 max_target_size, int& error_line, int& error_col, int4& actual_target_size, FILE* debug_symbols_destination);
+int assemble(char* code, int1* target, int4 max_target_size, int& error_line, int& error_col, int4& actual_target_size, FILE* debug_symbols_destination);
 
 
 #endif /* ASM_H_ */

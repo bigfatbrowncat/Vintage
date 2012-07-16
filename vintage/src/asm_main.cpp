@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
 	}
 
 	const int4 mem_size = 4096; // 4 Kb should be enough for everyone :)
-	instr_t mem[mem_size];
+	int1 mem[mem_size];
 	char code[MAX_CODE_LENGTH];
 
 	FILE *src = NULL, *dest = NULL, *debug_symbols_dest = NULL;

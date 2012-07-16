@@ -18,9 +18,6 @@ class Debugger;
 
 using namespace std;
 
-#define CODE_LINE_MAX_LENGTH		256
-
-
 enum DebuggerOrder
 {
 	doWait,
@@ -28,7 +25,7 @@ enum DebuggerOrder
 	doHalt
 };
 
-struct DebugEntry
+struct DebuggingSymbolsEntry
 {
 	int4 memPos;
 	wstring codeLine;
@@ -71,7 +68,7 @@ private:
 	int wStackBytes;
 
 	DebuggerActiveWindow activeWindow;
-	vector<DebugEntry> entries;
+	vector<DebuggingSymbolsEntry> entries;
 	vector<Breakpoint> breakpoints;
 	SDLScreen& screen;
 
@@ -108,7 +105,7 @@ public:
 	void updateUI();
 	void handleControlKey(ControlKey ck);
 
-	const vector<DebugEntry>& getEntries() const { return entries; }
+	const vector<DebuggingSymbolsEntry>& getEntries() const { return entries; }
 	Debugger(FILE* debug_symbols, SDLScreen& screen);
 	virtual ~Debugger();
 	int findLine(int4 mem_pos) const;

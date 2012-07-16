@@ -34,7 +34,7 @@ Debugger::Debugger(FILE* debug_symbols, SDLScreen& screen) :
 		}
 		while (read_char != 0);
 
-		DebugEntry newEntry;
+		DebuggingSymbolsEntry newEntry;
 		newEntry.memPos = mem_pos;
 		newEntry.codeLine = lines;
 		entries.push_back(newEntry);

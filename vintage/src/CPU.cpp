@@ -8,7 +8,8 @@
 #include "CPU.h"
 #include "Debugger.h"
 
-#define GET_ARG(arg, flow)			arg = *((int4*)(&heap[flow])); flow += sizeof(int4);
+#define GET_INSTR(instr, flow)		instr = *((instr_t*)(&heap[flow])); flow += sizeof(instr_t);
+#define GET_ARG_INT4(arg, flow)		arg   = *((int4*)   (&heap[flow])); flow += sizeof(int4);
 
 //#define OUTPUT_INSTRUCTIONS
 
@@ -152,9 +153,11 @@ void CPU::ActivityFunction()
 		int4 arg1, arg2, arg3;
 
 		// Parsing
-		instr_t instr = heap[flow];
+		instr_t instr;
+		GET_INSTR(instr, flow);
 
-		flow++;
+		//instr_t instr = *((instr_t*)&heap[flow]);
+		//flow += sizeof(instr_t);
 
 		switch (instr)
 		{
@@ -167,7 +170,7 @@ void CPU::ActivityFunction()
 			break;
 
 		case alloc_const:
-			GET_ARG(arg1, flow);
+			GET_ARG_INT4(arg1, flow);
 #ifdef OUTPUT_INSTRUCTIONS
 			printf("alloc %d", arg1);
 			fflush(stdout);
@@ -176,7 +179,7 @@ void CPU::ActivityFunction()
 			break;
 
 		case free_const:
-			GET_ARG(arg1, flow);
+			GET_ARG_INT4(arg1, flow);
 #ifdef OUTPUT_INSTRUCTIONS
 			printf("free %d", arg1);
 			fflush(stdout);
@@ -185,9 +188,9 @@ void CPU::ActivityFunction()
 			break;
 
 		case mov_stp_stp:
-			GET_ARG(arg1, flow);
-			GET_ARG(arg2, flow);
-			GET_ARG(arg3, flow);
+			GET_ARG_INT4(arg1, flow);
+			GET_ARG_INT4(arg2, flow);
+			GET_ARG_INT4(arg3, flow);
 #ifdef OUTPUT_INSTRUCTIONS
 			printf("mov %d, {%d}, {%d}", arg1, arg2, arg3);
 			fflush(stdout);
@@ -211,9 +214,9 @@ void CPU::ActivityFunction()
 			break;
 
 		case mov_stp_const:
-			GET_ARG(arg1, flow);
-			GET_ARG(arg2, flow);
-			GET_ARG(arg3, flow);
+			GET_ARG_INT4(arg1, flow);
+			GET_ARG_INT4(arg2, flow);
+			GET_ARG_INT4(arg3, flow);
 #ifdef OUTPUT_INSTRUCTIONS
 			printf("mov %d, {%d}, %d", arg1, arg2, arg3);
 			fflush(stdout);
@@ -237,9 +240,9 @@ void CPU::ActivityFunction()
 			break;
 
 		case mov_m_stp_stp:
-			GET_ARG(arg1, flow);
-			GET_ARG(arg2, flow);
-			GET_ARG(arg3, flow);
+			GET_ARG_INT4(arg1, flow);
+			GET_ARG_INT4(arg2, flow);
+			GET_ARG_INT4(arg3, flow);
 #ifdef OUTPUT_INSTRUCTIONS
 			printf("mov %d, [{%d}], {%d}", arg1, arg2, arg3);
 			fflush(stdout);
@@ -265,9 +268,9 @@ void CPU::ActivityFunction()
 			break;
 
 		case mov_stp_m_stp:
-			GET_ARG(arg1, flow);
-			GET_ARG(arg2, flow);
-			GET_ARG(arg3, flow);
+			GET_ARG_INT4(arg1, flow);
+			GET_ARG_INT4(arg2, flow);
+			GET_ARG_INT4(arg3, flow);
 #ifdef OUTPUT_INSTRUCTIONS
 			printf("mov %d, {%d}, [{%d}]", arg1, arg2, arg3);
 			fflush(stdout);
@@ -294,9 +297,9 @@ void CPU::ActivityFunction()
 
 
 		case add_stp_stp:
-			GET_ARG(arg1, flow);
-			GET_ARG(arg2, flow);
-			GET_ARG(arg3, flow);
+			GET_ARG_INT4(arg1, flow);
+			GET_ARG_INT4(arg2, flow);
+			GET_ARG_INT4(arg3, flow);
 #ifdef OUTPUT_INSTRUCTIONS
 			printf("add %d, {%d}, {%d}", arg1, arg2, arg3);
 			fflush(stdout);
@@ -320,9 +323,9 @@ void CPU::ActivityFunction()
 			break;
 
 		case sub_stp_stp:
-			GET_ARG(arg1, flow);
-			GET_ARG(arg2, flow);
-			GET_ARG(arg3, flow);
+			GET_ARG_INT4(arg1, flow);
+			GET_ARG_INT4(arg2, flow);
+			GET_ARG_INT4(arg3, flow);
 #ifdef OUTPUT_INSTRUCTIONS
 			printf("sub %d, {%d}, {%d}", arg1, arg2, arg3);
 			fflush(stdout);
@@ -346,9 +349,9 @@ void CPU::ActivityFunction()
 			break;
 
 		case mul_stp_stp:
-			GET_ARG(arg1, flow);
-			GET_ARG(arg2, flow);
-			GET_ARG(arg3, flow);
+			GET_ARG_INT4(arg1, flow);
+			GET_ARG_INT4(arg2, flow);
+			GET_ARG_INT4(arg3, flow);
 #ifdef OUTPUT_INSTRUCTIONS
 			printf("mul %d, {%d}, {%d}", arg1, arg2, arg3);
 			fflush(stdout);
@@ -372,9 +375,9 @@ void CPU::ActivityFunction()
 			break;
 
 		case div_stp_stp:
-			GET_ARG(arg1, flow);
-			GET_ARG(arg2, flow);
-			GET_ARG(arg3, flow);
+			GET_ARG_INT4(arg1, flow);
+			GET_ARG_INT4(arg2, flow);
+			GET_ARG_INT4(arg3, flow);
 #ifdef OUTPUT_INSTRUCTIONS
 			printf("div %d, {%d}, {%d}", arg1, arg2, arg3);
 			fflush(stdout);
@@ -398,9 +401,9 @@ void CPU::ActivityFunction()
 			break;
 
 		case mod_stp_stp:
-			GET_ARG(arg1, flow);
-			GET_ARG(arg2, flow);
-			GET_ARG(arg3, flow);
+			GET_ARG_INT4(arg1, flow);
+			GET_ARG_INT4(arg2, flow);
+			GET_ARG_INT4(arg3, flow);
 #ifdef OUTPUT_INSTRUCTIONS
 			printf("mod %d, {%d}, {%d}", arg1, arg2, arg3);
 			fflush(stdout);
@@ -424,9 +427,9 @@ void CPU::ActivityFunction()
 			break;
 
 		case add_stp_const:
-			GET_ARG(arg1, flow);
-			GET_ARG(arg2, flow);
-			GET_ARG(arg3, flow);
+			GET_ARG_INT4(arg1, flow);
+			GET_ARG_INT4(arg2, flow);
+			GET_ARG_INT4(arg3, flow);
 #ifdef OUTPUT_INSTRUCTIONS
 			printf("add %d, {%d}, %d", arg1, arg2, arg3);
 			fflush(stdout);
@@ -450,9 +453,9 @@ void CPU::ActivityFunction()
 			break;
 
 		case sub_stp_const:
-			GET_ARG(arg1, flow);
-			GET_ARG(arg2, flow);
-			GET_ARG(arg3, flow);
+			GET_ARG_INT4(arg1, flow);
+			GET_ARG_INT4(arg2, flow);
+			GET_ARG_INT4(arg3, flow);
 #ifdef OUTPUT_INSTRUCTIONS
 			printf("sub %d, {%d}, %d", arg1, arg2, arg3);
 			fflush(stdout);
@@ -476,9 +479,9 @@ void CPU::ActivityFunction()
 			break;
 
 		case mul_stp_const:
-			GET_ARG(arg1, flow);
-			GET_ARG(arg2, flow);
-			GET_ARG(arg3, flow);
+			GET_ARG_INT4(arg1, flow);
+			GET_ARG_INT4(arg2, flow);
+			GET_ARG_INT4(arg3, flow);
 #ifdef OUTPUT_INSTRUCTIONS
 			printf("mul %d, {%d}, %d", arg1, arg2, arg3);
 			fflush(stdout);
@@ -502,9 +505,9 @@ void CPU::ActivityFunction()
 			break;
 
 		case div_stp_const:
-			GET_ARG(arg1, flow);
-			GET_ARG(arg2, flow);
-			GET_ARG(arg3, flow);
+			GET_ARG_INT4(arg1, flow);
+			GET_ARG_INT4(arg2, flow);
+			GET_ARG_INT4(arg3, flow);
 #ifdef OUTPUT_INSTRUCTIONS
 			printf("div %d, {%d}, %d", arg1, arg2, arg3);
 			fflush(stdout);
@@ -528,9 +531,9 @@ void CPU::ActivityFunction()
 			break;
 
 		case mod_stp_const:
-			GET_ARG(arg1, flow);
-			GET_ARG(arg2, flow);
-			GET_ARG(arg3, flow);
+			GET_ARG_INT4(arg1, flow);
+			GET_ARG_INT4(arg2, flow);
+			GET_ARG_INT4(arg3, flow);
 #ifdef OUTPUT_INSTRUCTIONS
 			printf("mod %d, {%d}, %d", arg1, arg2, arg3);
 			fflush(stdout);
@@ -554,8 +557,8 @@ void CPU::ActivityFunction()
 			break;
 
 		case not_stp:
-			GET_ARG(arg1, flow);
-			GET_ARG(arg2, flow);
+			GET_ARG_INT4(arg1, flow);
+			GET_ARG_INT4(arg2, flow);
 #ifdef OUTPUT_INSTRUCTIONS
 			printf("not %d, {%d}", arg1, arg2);
 			fflush(stdout);
@@ -579,9 +582,9 @@ void CPU::ActivityFunction()
 			break;
 
 		case and_stp_stp:
-			GET_ARG(arg1, flow);
-			GET_ARG(arg2, flow);
-			GET_ARG(arg3, flow);
+			GET_ARG_INT4(arg1, flow);
+			GET_ARG_INT4(arg2, flow);
+			GET_ARG_INT4(arg3, flow);
 #ifdef OUTPUT_INSTRUCTIONS
 			printf("and %d, {%d}, {%d}", arg1, arg2, arg3);
 			fflush(stdout);
@@ -605,9 +608,9 @@ void CPU::ActivityFunction()
 			break;
 
 		case or_stp_stp:
-			GET_ARG(arg1, flow);
-			GET_ARG(arg2, flow);
-			GET_ARG(arg3, flow);
+			GET_ARG_INT4(arg1, flow);
+			GET_ARG_INT4(arg2, flow);
+			GET_ARG_INT4(arg3, flow);
 #ifdef OUTPUT_INSTRUCTIONS
 			printf("or %d, {%d}, {%d}", arg1, arg2, arg3);
 			fflush(stdout);
@@ -631,9 +634,9 @@ void CPU::ActivityFunction()
 			break;
 
 		case xor_stp_stp:
-			GET_ARG(arg1, flow);
-			GET_ARG(arg2, flow);
-			GET_ARG(arg3, flow);
+			GET_ARG_INT4(arg1, flow);
+			GET_ARG_INT4(arg2, flow);
+			GET_ARG_INT4(arg3, flow);
 #ifdef OUTPUT_INSTRUCTIONS
 			printf("xor %d, {%d}, {%d}", arg1, arg2, arg3);
 			fflush(stdout);
@@ -657,9 +660,9 @@ void CPU::ActivityFunction()
 			break;
 
 		case and_stp_const:
-			GET_ARG(arg1, flow);
-			GET_ARG(arg2, flow);
-			GET_ARG(arg3, flow);
+			GET_ARG_INT4(arg1, flow);
+			GET_ARG_INT4(arg2, flow);
+			GET_ARG_INT4(arg3, flow);
 #ifdef OUTPUT_INSTRUCTIONS
 			printf("and %d, {%d}, {%d}", arg1, arg2, arg3);
 			fflush(stdout);
@@ -683,9 +686,9 @@ void CPU::ActivityFunction()
 			break;
 
 		case or_stp_const:
-			GET_ARG(arg1, flow);
-			GET_ARG(arg2, flow);
-			GET_ARG(arg3, flow);
+			GET_ARG_INT4(arg1, flow);
+			GET_ARG_INT4(arg2, flow);
+			GET_ARG_INT4(arg3, flow);
 #ifdef OUTPUT_INSTRUCTIONS
 			printf("or %d, {%d}, {%d}", arg1, arg2, arg3);
 			fflush(stdout);
@@ -709,9 +712,9 @@ void CPU::ActivityFunction()
 			break;
 
 		case xor_stp_const:
-			GET_ARG(arg1, flow);
-			GET_ARG(arg2, flow);
-			GET_ARG(arg3, flow);
+			GET_ARG_INT4(arg1, flow);
+			GET_ARG_INT4(arg2, flow);
+			GET_ARG_INT4(arg3, flow);
 #ifdef OUTPUT_INSTRUCTIONS
 			printf("xor %d, {%d}, {%d}", arg1, arg2, arg3);
 			fflush(stdout);
@@ -735,9 +738,9 @@ void CPU::ActivityFunction()
 			break;
 
 		case if_stp_flow:
-			GET_ARG(arg1, flow);
-			GET_ARG(arg2, flow);
-			GET_ARG(arg3, flow);
+			GET_ARG_INT4(arg1, flow);
+			GET_ARG_INT4(arg2, flow);
+			GET_ARG_INT4(arg3, flow);
 #ifdef OUTPUT_INSTRUCTIONS
 			printf("if %d, {%d} [%d]", arg1, arg2, arg3);
 			fflush(stdout);
@@ -772,9 +775,9 @@ void CPU::ActivityFunction()
 			break;
 
 		case ifp_stp_flow:
-			GET_ARG(arg1, flow);
-			GET_ARG(arg2, flow);
-			GET_ARG(arg3, flow);
+			GET_ARG_INT4(arg1, flow);
+			GET_ARG_INT4(arg2, flow);
+			GET_ARG_INT4(arg3, flow);
 #ifdef OUTPUT_INSTRUCTIONS
 			printf("ifp %d, {%d} [%d]", arg1, arg2, arg3);
 			fflush(stdout);
@@ -810,7 +813,7 @@ void CPU::ActivityFunction()
 
 
 		case call_m_stp:
-			GET_ARG(arg1, flow);
+			GET_ARG_INT4(arg1, flow);
 #ifdef OUTPUT_INSTRUCTIONS
 			printf("call [{%d}]", arg1);
 			fflush(stdout);
@@ -823,7 +826,7 @@ void CPU::ActivityFunction()
 			break;
 
 		case call_flow:
-			GET_ARG(arg1, flow);
+			GET_ARG_INT4(arg1, flow);
 #ifdef OUTPUT_INSTRUCTIONS
 			printf("call [%d]", arg1);
 			fflush(stdout);
@@ -870,7 +873,7 @@ void CPU::ActivityFunction()
 			break;
 
 		case jmp_flow:
-			GET_ARG(arg1, flow);
+			GET_ARG_INT4(arg1, flow);
 #ifdef OUTPUT_INSTRUCTIONS
 			printf("jmp [%d]", arg1);
 			fflush(stdout);
@@ -879,7 +882,7 @@ void CPU::ActivityFunction()
 			break;
 
 		case out_const:
-			GET_ARG(arg1, flow);
+			GET_ARG_INT4(arg1, flow);
 #ifdef OUTPUT_INSTRUCTIONS
 			printf("out %d", arg1);
 			fflush(stdout);
@@ -888,8 +891,8 @@ void CPU::ActivityFunction()
 			break;
 
 		case regin_const_flow:
-			GET_ARG(arg1, flow);
-			GET_ARG(arg2, flow);
+			GET_ARG_INT4(arg1, flow);
+			GET_ARG_INT4(arg2, flow);
 #ifdef OUTPUT_INSTRUCTIONS
 			printf("regin %d, %d", arg1, arg2);
 			fflush(stdout);
@@ -898,8 +901,8 @@ void CPU::ActivityFunction()
 			break;
 
 		case uregin_const:
-			GET_ARG(arg1, flow);
-			GET_ARG(arg2, flow);
+			GET_ARG_INT4(arg1, flow);
+			GET_ARG_INT4(arg2, flow);
 #ifdef OUTPUT_INSTRUCTIONS
 			printf("uregin %d", arg1);
 			fflush(stdout);

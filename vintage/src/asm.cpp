@@ -197,12 +197,12 @@ char braceType(char ch, bool& is_open)
 	return BRACE_NOT_A_BRACE;
 }
 
-bool addInstr(instr_t* target, int4 target_size, int4& mem_pos, instr_t instr, int4 args[], int arg_num)
+bool addInstr(int1* target, int4 target_size, int4& mem_pos, instr_t instr, int4 args[], int arg_num)
 {
 	if (mem_pos + 1 + arg_num * sizeof(int4) < target_size)
 	{
-		target[mem_pos] = instr;
-		mem_pos ++;
+		*(instr_t*)(&target[mem_pos]) = instr;
+		mem_pos += sizeof(instr_t);
 		for (int i = 0; i < arg_num; i++)
 		{
 			*(int4*)(&target[mem_pos]) = args[i];
@@ -214,7 +214,7 @@ bool addInstr(instr_t* target, int4 target_size, int4& mem_pos, instr_t instr, i
 		return false;
 }
 
-bool addData(instr_t* target, int4 target_size, int4& mem_pos, wchar_t* data, int4 data_length)
+bool addData(int1* target, int4 target_size, int4& mem_pos, wchar_t* data, int4 data_length)
 {
 	if (mem_pos + /*1 + sizeof(defint) +*/ data_length * sizeof(wchar_t) < target_size)
 	{
@@ -235,7 +235,7 @@ bool addData(instr_t* target, int4 target_size, int4& mem_pos, wchar_t* data, in
 		return false;
 }
 
-int assemble(char* code, instr_t* target, int4 max_target_size, int& error_line, int& error_col, int4& actual_target_size, FILE* debug_symbols_destination)
+int assemble(char* code, int1* target, int4 max_target_size, int& error_line, int& error_col, int4& actual_target_size, FILE* debug_symbols_destination)
 {
 #	define RAISE_LC_ERROR(err)			\
 		{								\

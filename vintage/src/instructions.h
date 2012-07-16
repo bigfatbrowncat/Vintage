@@ -1,7 +1,7 @@
 #ifndef INSTRUCTIONS_H_
 #define INSTRUCTIONS_H_
 
-typedef unsigned char instr_t;
+typedef unsigned short instr_t;
 
 // Integer types
 typedef signed char int1;

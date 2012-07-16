@@ -91,7 +91,7 @@ private:
 	volatile DebuggerState state;
 
 	vector<FlowLayerType> flowLayers;
-	int savedFlowLayers;
+	int savedFlowLayer;
 
 	volatile int4 wSelectedLine;
 
@@ -118,8 +118,8 @@ public:
 	virtual ~Debugger();
 	int findLine(int4 mem_pos) const;
 	int lastLine() const { return entries.size() - 1; }
-	void reportFlowStateEvent(FlowState flowState);
-	void flowChanged(int4 flow, int1* stack, int4 stackMaxSize, int4 stackSize, int1* heap, int4 heapSize);
+	void reportFlowStateChanged(FlowState flowState);
+	void reportCPUState(int4 flow, int1* stack, int4 stackMaxSize, int4 stackSize, int1* heap, int4 heapSize);
 
 	const DebuggerOrder askForOrder();
 	void toggleBreakpointAt(int4 memPos);

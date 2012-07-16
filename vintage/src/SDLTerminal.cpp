@@ -114,7 +114,7 @@ void SDLTerminal::processEvents()
 			{
 				if (event.key.keysym.sym != 0)
 				{
-					printf("-> %d %d\n", event.key.keysym.sym, true);
+//					printf("-> %d %d\n", event.key.keysym.sym, true);
 					if (screens[activeScreen]->getKeyboardController() != NULL)
 					{
 						screens[activeScreen]->getKeyboardController()->ChangeKeyState(true, event.key.keysym.sym);
@@ -131,7 +131,7 @@ void SDLTerminal::processEvents()
 			{
 				if (event.key.keysym.sym != 0)
 				{
-					printf("-> %d %d\n", event.key.keysym.sym, false);
+//					printf("-> %d %d\n", event.key.keysym.sym, false);
 					if (screens[activeScreen]->getKeyboardController() != NULL)
 					{
 						screens[activeScreen]->getKeyboardController()->ChangeKeyState(false, event.key.keysym.sym);
@@ -170,17 +170,6 @@ SDLTerminal::SDLTerminal(CachedFont& font, CachedFont& cursorFont):
 		screens[i] = new SDLScreen(frameBufferWidth, frameBufferHeight);
 	}
 	screens[activeScreen]->setActivity(true);
-
-    printf("Initializing SDL.\n");
-
-
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER) == -1)
-    {
-        printf("Could not initialize SDL: %s.\n", SDL_GetError());
-        exit(-1);
-    }
-
-    printf("SDL initialized.\n");
 }
 
 SDLTerminal::~SDLTerminal()
@@ -243,7 +232,19 @@ bool SDLTerminal::setGLTextureFromSurface(SDL_Surface* surface, GLuint shaderPro
 
 bool SDLTerminal::Run()
 {
+    printf("Initializing SDL.\n");
+
+
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER) == -1)
+    {
+        printf("Could not initialize SDL: %s.\n", SDL_GetError());
+        exit(-1);
+    }
+
+    printf("SDL initialized.\n");
+
 	int distance = 0;
+
 	SDL_Surface* mainSurface = SDL_SetVideoMode(
     		(font.getLetterWidth() + distance) * frameBufferWidth + 2 * windowFrame,
     		(font.getLetterHeight() + distance) * frameBufferHeight + 2 * windowFrame, 24, SDL_OPENGL);
@@ -254,6 +255,20 @@ bool SDLTerminal::Run()
                         SDL_GetError());
         throw 1;
     }
+
+    printf("Initializing GLEW\n");
+	glewInit();
+	if (GLEW_VERSION_2_0)
+	{
+		printf("INFO: OpenGL 2.0 supported, proceeding\n");
+	}
+	else
+	{
+		fprintf(stderr, "INFO: OpenGL 2.0 not supported. Exit\n");
+		return false;
+	}
+	printf("GLEW initialized.\n");
+
 
 	SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 5);
 	SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 5);
@@ -269,19 +284,6 @@ bool SDLTerminal::Run()
 	gluOrtho2D(0, 1, 1, 0);
 
 	glMatrixMode(GL_MODELVIEW);
-
-	printf("Initializing glew\n");
-	glewInit();
-	if (GLEW_VERSION_2_0)
-	{
-		printf("INFO: OpenGL 2.0 supported, proceeding\n");
-	}
-	else
-	{
-		fprintf(stderr, "INFO: OpenGL 2.0 not supported. Exit\n");
-		return false;
-	}
-	printf("Success.\n");
 
 	// Reading shaders from files
 	GLchar *vsSource = (GLchar*)file2string("res/term.vert");

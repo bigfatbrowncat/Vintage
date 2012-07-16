@@ -25,24 +25,27 @@ void CPU::TurnOn()
 	pthread_create(&this->activity, NULL, &CPUActivityFunction, this);
 }
 
-void CPU::synchronizeDebugger(bool ask, int1* stack, int4 stackPtr, int4 stackSize, int1* heap, int4 heapSize, int4 flow, FlowState state)
+void CPU::reportToDebugger(int1* stack, int4 stackPtr, int4 stackSize, int1* heap, int4 heapSize, int4 flow, FlowState state)
 {
 	if (debugger != NULL)
 	{
-		debugger->reportFlowStateEvent(state);
-		//if (debugger->isRunning())
-		{
-			debugger->flowChanged(flow, &stack[stackPtr], stackSize, stackSize - stackPtr, heap, heapSize);
-		}
-		DebuggerOrder order;
+		debugger->reportFlowStateChanged(state);
+		debugger->reportCPUState(flow, &stack[stackPtr], stackSize, stackSize - stackPtr, heap, heapSize);
+	}
+}
 
-		while (ask && ((order = debugger->askForOrder()) == doWait) && !terminationPending)
+void CPU::askDebugger(int1* stack, int4 stackPtr, int4 stackSize, int1* heap, int4 heapSize, int4 flow)
+{
+	if (debugger != NULL)
+	{
+		DebuggerOrder order;
+		while (((order = debugger->askForOrder()) == doWait) && !terminationPending)
 		{
 			Sleep(10);
-			debugger->flowChanged(flow, &stack[stackPtr], stackSize, stackSize - stackPtr, heap, heapSize);
+			debugger->reportCPUState(flow, &stack[stackPtr], stackSize, stackSize - stackPtr, heap, heapSize);
 		}
 
-		if (ask && (order == doHalt))
+		if (order == doHalt)
 		{
 			terminationPending = true;
 		}
@@ -57,16 +60,15 @@ void CPU::ActivityFunction()
 	int1* stack = &memory[stackStart];
 	int1* heap = &memory[heapStart];
 
-	bool ignoreInterrupts = false;
+	bool portHandlingJustFinished = false;
 
 	while (!terminationPending)
 	{
-		synchronizeDebugger(true, stack, stackPtr, stackSize, heap, heapSize, flow, fsLinear);
+		bool justSteppedIntoHandler = false;
 
-		if (!ignoreInterrupts)
+		if (!portHandlingJustFinished)
 		{
 			// Checking ports input
-			bool steppedInHandler = false;
 			pthread_mutex_lock(&portReadingMutex);
 			if (someInputPortIsWaiting)
 			{
@@ -124,7 +126,7 @@ void CPU::ActivityFunction()
 					*((int4*)&stack[stackPtr]) = flow;
 
 					flow = inputPortHandlersAddresses[portToHandle];
-					steppedInHandler = true;
+					justSteppedIntoHandler = true;
 
 					stackPtr -= portInWaitingDataLength[portToHandle];
 
@@ -137,14 +139,21 @@ void CPU::ActivityFunction()
 				}
 			}
 			pthread_mutex_unlock(&portReadingMutex);
-			if (steppedInHandler)
+			if (justSteppedIntoHandler)
 			{
-				synchronizeDebugger(false, stack, stackPtr, stackSize, heap, heapSize, flow, fsStepInHandler);
+				// If we have just stepped into a handler, let's report the debugger about it
+				reportToDebugger(stack, stackPtr, stackSize, heap, heapSize, flow, fsStepInHandler);
 			}
 		}
 		else
 		{
-			ignoreInterrupts = false;
+			portHandlingJustFinished = false;
+		}
+
+		if (!justSteppedIntoHandler)
+		{
+			// We don't ask the debugger what to do if we have just stepped into a handler -- we are just going on
+			askDebugger(stack, stackPtr, stackSize, heap, heapSize, flow);
 		}
 
 #ifdef OUTPUT_INSTRUCTIONS
@@ -822,7 +831,7 @@ void CPU::ActivityFunction()
 			*((int4*)&stack[stackPtr]) = flow;
 			flow = *((int4*)&stack[stackPtr + arg1]);
 
-			synchronizeDebugger(false, stack, stackPtr, stackSize, heap, heapSize, flow, fsStepIn);
+			reportToDebugger(stack, stackPtr, stackSize, heap, heapSize, flow, fsStepIn);
 			break;
 
 		case call_flow:
@@ -835,7 +844,7 @@ void CPU::ActivityFunction()
 			*((int4*)&stack[stackPtr]) = flow;
 			flow = (int4)arg1;
 
-			synchronizeDebugger(false, stack, stackPtr, stackSize, heap, heapSize, flow, fsStepIn);
+			reportToDebugger(stack, stackPtr, stackSize, heap, heapSize, flow, fsStepIn);
 			break;
 
 		case ret_stp:
@@ -846,7 +855,7 @@ void CPU::ActivityFunction()
 			flow = *((int4*)&stack[stackPtr]);
 			stackPtr += 4;	// removing the callr's address
 
-			synchronizeDebugger(false, stack, stackPtr, stackSize, heap, heapSize, flow, fsStepOut);
+			reportToDebugger(stack, stackPtr, stackSize, heap, heapSize, flow, fsStepOut);
 			break;
 
 		case hret_stp:
@@ -861,7 +870,9 @@ void CPU::ActivityFunction()
 				flow = *((int4*)&stack[stackPtr]);
 				stackPtr += 4;	// removing the callr's address
 				inputPortsCurrentlyHandlingCount--;
-				ignoreInterrupts = true;
+
+				portHandlingJustFinished = true;
+				reportToDebugger(stack, stackPtr, stackSize, heap, heapSize, flow, fsStepOutHandler);
 				pthread_mutex_unlock(&portReadingMutex);
 			}
 			else
@@ -869,7 +880,6 @@ void CPU::ActivityFunction()
 				// TODO: Implement some exception here :)
 			}
 
-			synchronizeDebugger(false, stack, stackPtr, stackSize, heap, heapSize, flow, fsStepOutHandler);
 			break;
 
 		case jmp_flow:

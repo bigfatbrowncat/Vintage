@@ -1,12 +1,14 @@
 #include "Debugger.h"
 
 Debugger::Debugger(FILE* debug_symbols, SDLScreen& screen) :
+	activeWindow(dawCode),
+	savedFlowLayer(0),
 	screen(screen),
 	state(dsStopped),
 	topSpace(19), wStackBytes(8), wHeapBytes(10), wStackTopRow(0), wHeapTopRow(0),
 	wSelectedLine(0)
 {
-	pthread_mutex_init(&printingMutex, NULL);
+	int pthred_res = pthread_mutex_init(&printingMutex, NULL);
 
 	while (!feof(debug_symbols))
 	{
@@ -19,7 +21,7 @@ Debugger::Debugger(FILE* debug_symbols, SDLScreen& screen) :
 		do
 		{
 			fread(&read_char, 1, 1, debug_symbols);
-			if (read_char != 0 && (read_char != '\n' || first_char == false) && read_char != '\r') 	// We remove first caret return
+			if (read_char != 0 && (read_char != '\n' || first_char == false) && read_char != '\r') 	// We remove first carriage return
 			{
 				lines += read_char;
 			}
@@ -182,7 +184,7 @@ void Debugger::printFixed(int x, int y, const wchar_t* str, int length)
 void Debugger::updateUI()
 {
 	pthread_mutex_lock(&printingMutex);
-	if (/*screen.isActive() ||*/ state == dsStopped)
+	if ((screen.isActive() && state == dsRunning) || state == dsStopped)
 	{
 		// *** Printing code ***
 
@@ -440,8 +442,9 @@ void Debugger::updateUI()
 	pthread_mutex_unlock(&printingMutex);
 }
 
-void Debugger::reportFlowStateEvent(FlowState flowState)
+void Debugger::reportFlowStateChanged(FlowState flowState)
 {
+	//printf("LVL: %d\n", savedFlowLayer);
 	switch (flowState)
 	{
 	case fsStepIn:
@@ -468,7 +471,7 @@ void Debugger::reportFlowStateEvent(FlowState flowState)
 	}
 }
 
-void Debugger::flowChanged(int4 flow, int1* stack, int4 stackMaxSize, int4 stackAllocatedSize, int1* heap, int4 heapSize)
+void Debugger::reportCPUState(int4 flow, int1* stack, int4 stackMaxSize, int4 stackAllocatedSize, int1* heap, int4 heapSize)
 {
 	this->flow = flow;
 
@@ -486,8 +489,8 @@ void Debugger::flowChanged(int4 flow, int1* stack, int4 stackMaxSize, int4 stack
 const DebuggerOrder Debugger::askForOrder()
 {
 	//pthread_mutex_lock(&printingMutex);
-
 	DebuggerOrder res;
+
 	switch (state)
 	{
 	case dsStopped:
@@ -501,17 +504,17 @@ const DebuggerOrder Debugger::askForOrder()
 		res = doGo;
 		break;
 	case dsStepIntoPending:
-		savedFlowLayers = flowLayers.size();
+		savedFlowLayer = flowLayers.size();
 		state = dsRunningInto;
 		res = doGo;
 		break;
 	case dsStepOutPending:
-		savedFlowLayers = flowLayers.size();
+		savedFlowLayer = flowLayers.size();
 		state = dsRunningOut;
 		res = doGo;
 		break;
 	case dsStepOverPending:
-		savedFlowLayers = flowLayers.size();
+		savedFlowLayer = flowLayers.size();
 		state = dsRunningOver;
 		res = doGo;
 		break;
@@ -529,7 +532,7 @@ const DebuggerOrder Debugger::askForOrder()
 		}
 		break;
 	case dsRunningInto:
-		if (flowLayers.size() == 0 || savedFlowLayers == flowLayers.size() || flowLayers.back() == fltNormal)
+		if (flowLayers.size() < 2 || flowLayers[flowLayers.size() - 2] == flowLayers[flowLayers.size() - 1] || findBreakpointAt(flow) != breakpoints.end())
 		{
 			state = dsStopped;
 			res = doWait;
@@ -540,7 +543,7 @@ const DebuggerOrder Debugger::askForOrder()
 		}
 		break;
 	case dsRunningOut:
-		if (savedFlowLayers < flowLayers.size() || findBreakpointAt(flow) != breakpoints.end())
+		if (savedFlowLayer > flowLayers.size() || findBreakpointAt(flow) != breakpoints.end())
 		{
 			state = dsStopped;
 			res = doWait;
@@ -551,7 +554,8 @@ const DebuggerOrder Debugger::askForOrder()
 		}
 		break;
 	case dsRunningOver:
-		if (flowLayers.size() == 0 || (savedFlowLayers == flowLayers.size() && flowLayers.back() == fltNormal) || findBreakpointAt(flow) != breakpoints.end())
+//		printf("OVER: size=%d, saved=%d, ", flowLayers.size(), savedFlowLayer);
+		if (flowLayers.size() == 0 || savedFlowLayer == flowLayers.size() || findBreakpointAt(flow) != breakpoints.end())
 		{
 			state = dsStopped;
 			res = doWait;
@@ -560,6 +564,8 @@ const DebuggerOrder Debugger::askForOrder()
 		{
 			res = doGo;
 		}
+//		printf("state=%d, res=%d\n", state, res);
+		fflush(stdout);
 		break;
 	}
 

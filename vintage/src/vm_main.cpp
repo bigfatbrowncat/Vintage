@@ -49,7 +49,7 @@ int main(int argc, char* argv[])
 	SDLScreen& debuggerScreen = terminal.getScreen(1);		// Ctrl + F2
 
 
-	HardwareTimer ht(cpu, 1);							// Hardware timer on port 1 -- the highest priority
+	HardwareTimer hardTimer(cpu, 1);							// Hardware timer on port 1 -- the highest priority
 	Console cpuConsole(cpu, 2, &cpuScreen);				// Terminal on port 2
 	CPUKeyboardController kbd(cpu, 3, 256);				// Keyboard on the port 3
 
@@ -103,15 +103,20 @@ int main(int argc, char* argv[])
 	}
 
 	cpuConsole.TurnOn();
-	ht.TurnOn();
+	hardTimer.TurnOn();
 	kbd.TurnOn();
 	cpu.TurnOn();
 
+	try{
 	terminal.Run();
+	}catch(int e){
+		printf("exc: %x\n", e);
+	}
+	GLenum err = glGetError();
 
 	cpu.TurnOff();
 	kbd.TurnOff();
-	ht.TurnOff();
+	hardTimer.TurnOff();
 	cpuConsole.TurnOff();
 
 	if (dbg != NULL)

@@ -53,8 +53,9 @@ private:
 	volatile bool terminated;
 
 protected:
+	void reportToDebugger(int1* stack, int4 stackPtr, int4 stackSize, int1* heap, int4 heapSize, int4 flow, FlowState state);
+	void askDebugger(int1* stack, int4 stackPtr, int4 stackSize, int1* heap, int4 heapSize, int4 flow);
 
-	void synchronizeDebugger(bool ask, int1* stack, int4 stackPtr, int4 stackSize, int1* heap, int4 heapSize, int4 flow, FlowState state);
 public:
 	void handleInputPort(int4 port, const int1* data, int4 data_len)
 	{

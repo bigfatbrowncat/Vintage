@@ -5,7 +5,9 @@ enum FlowState
 {
 	fsLinear,
 	fsStepIn,
-	fsStepOut
+	fsStepOut,
+	fsStepInHandler,
+	fsStepOutHandler
 };
 
 #endif

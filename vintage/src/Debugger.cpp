@@ -2,13 +2,7 @@
 
 Debugger::Debugger(FILE* debug_symbols, SDLScreen& screen) :
 	screen(screen),
-	running(false),
-	haltPending(false),
-	stepOverPending(false),
-	stepIntoPending(false),
-	stepOutPending(false),
-	runningOut(false),
-	runningOver(false),
+	state(dsStopped),
 	topSpace(19), wStackBytes(8), wHeapBytes(10), wStackTopRow(0), wHeapTopRow(0),
 	flowLevel(0),
 	wSelectedLine(0)
@@ -66,7 +60,7 @@ void Debugger::printMenu()
 	printFixed(screen.getFrameBufferWidth() - 25, screen.getFrameBufferHeight() - 1, L" Hardware debugging tool ", 25);
 	screen.SetCursorPosition(0, screen.getFrameBufferHeight() - 1);
 
-	if (runningPending || running)
+	if (state == dsRunningPending || state == dsRunning)
 	{
 		screen.SelectBackColor(192, 192, 192);
 	}
@@ -78,13 +72,7 @@ void Debugger::printMenu()
 	screen.SelectBackColor(0, 0, 0);
 	screen.Write(L" ");
 
-	if (!running &&
-		!runningPending &&
-	    !stepOverPending &&
-	    !stepIntoPending &&
-	    !stepOutPending &&
-	    !runningOut &&
-	    !runningOver)
+	if (state == dsStopped)
 	{
 		screen.SelectBackColor(192, 192, 192);
 	}
@@ -96,7 +84,7 @@ void Debugger::printMenu()
 	screen.SelectBackColor(0, 0, 0);
 	screen.Write(L" ");
 
-	if (stepOverPending || runningOver)
+	if (state == dsStepOverPending || state == dsRunningOver)
 	{
 		screen.SelectBackColor(192, 192, 192);
 	}
@@ -108,7 +96,7 @@ void Debugger::printMenu()
 	screen.SelectBackColor(0, 0, 0);
 	screen.Write(L" ");
 
-	if (stepIntoPending)
+	if (state == dsStepIntoPending)
 	{
 		screen.SelectBackColor(192, 192, 192);
 	}
@@ -120,7 +108,7 @@ void Debugger::printMenu()
 	screen.SelectBackColor(0, 0, 0);
 	screen.Write(L" ");
 
-	if (stepOutPending || runningOut)
+	if (state == dsStepOutPending || state == dsRunningOut)
 	{
 		screen.SelectBackColor(192, 192, 192);
 		screen.SelectForeColor(0, 0, 0);
@@ -195,7 +183,7 @@ void Debugger::printFixed(int x, int y, const wchar_t* str, int length)
 void Debugger::updateUI()
 {
 	pthread_mutex_lock(&printingMutex);
-	if (screen.isActive() || !running)
+	if (/*screen.isActive() ||*/ state == dsStopped)
 	{
 		// *** Printing code ***
 
@@ -455,10 +443,24 @@ void Debugger::updateUI()
 
 void Debugger::reportFlowStateEvent(FlowState flowState)
 {
-	if (flowState == fsStepIn)
+	switch (flowState)
+	{
+	case fsStepIn:
 		flowLevel ++;
-	if (flowState == fsStepOut)
+		break;
+	case fsStepOut:
 		flowLevel --;
+		break;
+	case fsStepInHandler:
+		handlerFlowLevel ++;
+		break;
+	case fsStepOutHandler:
+		handlerFlowLevel --;
+		break;
+	case fsLinear:
+		// Do nothing
+		break;
+	}
 }
 
 void Debugger::flowChanged(int4 flow, int1* stack, int4 stackMaxSize, int4 stackAllocatedSize, int1* heap, int4 heapSize)
@@ -481,22 +483,40 @@ const DebuggerOrder Debugger::askForOrder()
 	//pthread_mutex_lock(&printingMutex);
 
 	DebuggerOrder res;
-	if (haltPending)
+	switch (state)
 	{
+	case dsStopped:
+		res = doWait;
+		break;
+	case dsHaltPending:
 		res = doHalt;
-	}
-	else if (runningPending)
-	{
+		break;
+	case dsRunningPending:
+		state = dsRunning;
 		res = doGo;
-		runningPending = false;
-		running = true;
-	}
-	else if (running)
-	{
-		// Checking for breakpoint
+		break;
+	case dsStepIntoPending:
+		savedHandlerFlowLevel = handlerFlowLevel;
+		state = dsRunningInto;
+		res = doGo;
+		break;
+	case dsStepOutPending:
+		savedFlowLevel = flowLevel;
+		savedHandlerFlowLevel = handlerFlowLevel;
+		state = dsRunningOut;
+		res = doGo;
+		break;
+	case dsStepOverPending:
+		savedFlowLevel = flowLevel;
+		savedHandlerFlowLevel = handlerFlowLevel;
+		state = dsRunningOver;
+		res = doGo;
+		break;
+	case dsRunning:
+		// Checking for a breakpoint
 		if (findBreakpointAt(flow) != breakpoints.end())
 		{
-			running = false;
+			state = dsStopped;
 			res = doWait;
 		}
 		else
@@ -504,54 +524,42 @@ const DebuggerOrder Debugger::askForOrder()
 			// Continue running
 			res = doGo;
 		}
-	}
-	else if (stepIntoPending)
-	{
-		stepIntoPending = false;
-		res = doGo;
-	}
-	else if (stepOutPending)
-	{
-		runningOut = true;
-		stepOutPending = false;
-		savedFlowLevel = flowLevel;
-		res = doGo;
-	}
-	else if (runningOut)
-	{
-		if (flowLevel < savedFlowLevel || findBreakpointAt(flow) != breakpoints.end())
+		break;
+	case dsRunningInto:
+		if (savedHandlerFlowLevel == handlerFlowLevel)
 		{
-			runningOut = false;
+			state = dsStopped;
 			res = doWait;
 		}
 		else
 		{
 			res = doGo;
 		}
-	}
-	else if (stepOverPending)
-	{
-		runningOver = true;
-		stepOverPending = false;
-		savedFlowLevel = flowLevel;
-		res = doGo;
-	}
-	else if (runningOver)
-	{
-		if (flowLevel == savedFlowLevel || findBreakpointAt(flow) != breakpoints.end())
+		break;
+	case dsRunningOut:
+		if (flowLevel < savedFlowLevel || handlerFlowLevel < savedHandlerFlowLevel || findBreakpointAt(flow) != breakpoints.end())
 		{
-			runningOver = false;
+			state = dsStopped;
 			res = doWait;
 		}
 		else
 		{
 			res = doGo;
 		}
+		break;
+	case dsRunningOver:
+		if ((flowLevel == savedFlowLevel && handlerFlowLevel == savedHandlerFlowLevel) || findBreakpointAt(flow) != breakpoints.end())
+		{
+			state = dsStopped;
+			res = doWait;
+		}
+		else
+		{
+			res = doGo;
+		}
+		break;
 	}
-	else
-	{
-		res = doWait;
-	}
+
 	printMenu();
 	//pthread_mutex_unlock(&printingMutex);
 	return res;
@@ -658,53 +666,50 @@ void Debugger::toggleBreakpointAt(int4 memPos)
 
 void Debugger::run()
 {
-	if (!running && !runningOut && !runningOver)
+	if (state != dsRunning && state != dsRunningOut && state != dsRunningOver)
 	{
 		pthread_mutex_lock(&printingMutex);
-		runningPending = true;
+		state = dsRunningPending;
 		printMenu();
 		pthread_mutex_unlock(&printingMutex);
 	}
 }
 void Debugger::stop()
 {
-	if (running)
+	if (state == dsRunning)
 	{
 		pthread_mutex_lock(&printingMutex);
-		running = false;
+		state = dsStopped;
 		printMenu();
 		pthread_mutex_unlock(&printingMutex);
 	}
 }
 void Debugger::stepOver()
 {
-	if (!runningOut && !runningOver)
+	if (state != dsRunningOut && state != dsRunningOver)
 	{
 		pthread_mutex_lock(&printingMutex);
-		running = false;
-		stepOverPending = true;
+		state = dsStepOverPending;
 		printMenu();
 		pthread_mutex_unlock(&printingMutex);
 	}
 }
 void Debugger::stepInto()
 {
-	if (!runningOut && !runningOver)
+	if (state != dsRunningOut && state != dsRunningOver)
 	{
 		pthread_mutex_lock(&printingMutex);
-		running = false;
-		stepIntoPending = true;
+		state = dsStepIntoPending;
 		printMenu();
 		pthread_mutex_unlock(&printingMutex);
 	}
 }
 void Debugger::stepOut()
 {
-	if (!runningOut && !runningOver && flowLevel > 0)
+	if (state != dsRunningOut && state != dsRunningOver && flowLevel > 0)
 	{
 		pthread_mutex_lock(&printingMutex);
-		running = false;
-		stepOutPending = true;
+		state = dsStepOutPending;
 		printMenu();
 		pthread_mutex_unlock(&printingMutex);
 	}
@@ -712,7 +717,7 @@ void Debugger::stepOut()
 void Debugger::halt()
 {
 	pthread_mutex_lock(&printingMutex);
-	haltPending = true;
+	state = dsHaltPending;
 	printMenu();
 	pthread_mutex_unlock(&printingMutex);
 }

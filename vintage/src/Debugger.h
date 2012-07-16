@@ -56,6 +56,20 @@ enum ControlKey
 	ckTab
 };
 
+enum DebuggerState
+{
+	dsRunningPending,
+	dsStepIntoPending,
+	dsStepOutPending,
+	dsStepOverPending,
+	dsHaltPending,
+	dsRunning,
+	dsRunningInto,
+	dsRunningOut,
+	dsRunningOver,
+	dsStopped
+};
+
 class Debugger
 {
 	friend class DebuggerKeyboardController;
@@ -72,17 +86,12 @@ private:
 	vector<Breakpoint> breakpoints;
 	SDLScreen& screen;
 
-	volatile bool running;
-	volatile bool runningPending;
-	volatile bool runningOut;
-	volatile bool runningOver;
-	volatile bool haltPending;
-	volatile bool stepOverPending;
-	volatile bool stepIntoPending;
-	volatile bool stepOutPending;
+	volatile DebuggerState state;
 
 	volatile int flowLevel;
 	volatile int savedFlowLevel;
+	volatile int handlerFlowLevel;
+	volatile int savedHandlerFlowLevel;
 
 	volatile int4 wSelectedLine;
 
@@ -101,7 +110,6 @@ protected:
 	void printFixed(int x, int y, const wchar_t* str, int length);
 	vector<Breakpoint>::iterator findBreakpointAt(int4 memPos);
 public:
-	bool isRunning() { return running; }
 	void updateUI();
 	void handleControlKey(ControlKey ck);
 

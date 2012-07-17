@@ -72,6 +72,27 @@ enum DebuggerState
 
 enum FlowLayerType { fltNormal, fltHandler };
 
+struct FlowLayer
+{
+	FlowLayerType type;
+	int4 lastFlow;
+	FlowLayer(FlowLayerType type = fltNormal, int4 lastFlow = 0)
+		: type(type), lastFlow(lastFlow)
+	{
+
+	}
+
+	bool operator == (FlowLayer other)
+	{
+		return type == other.type && lastFlow == other.lastFlow;
+	}
+
+	bool operator != (FlowLayer other)
+	{
+		return type != other.type || lastFlow != other.lastFlow;
+	}
+};
+
 class Debugger
 {
 	friend class DebuggerKeyboardController;
@@ -90,8 +111,22 @@ private:
 
 	volatile DebuggerState state;
 
-	vector<FlowLayerType> flowLayers;
-	int savedFlowLayer;
+	vector<FlowLayer> flowLayers;
+	FlowLayer savedFlowLayer;
+
+	bool savedFlowLayerExists()
+	{
+		for (vector<FlowLayer>::iterator iter = flowLayers.begin(); iter != flowLayers.end(); iter++)
+		{
+			if (savedFlowLayer == *iter)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	FlowState lastFlowState;
 
 	volatile int4 wSelectedLine;
 

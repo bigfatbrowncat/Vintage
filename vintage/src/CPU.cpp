@@ -152,11 +152,7 @@ void CPU::ActivityFunction()
 			portHandlingJustFinished = false;
 		}
 
-		if (!justSteppedIntoHandler)
-		{
-			// We don't ask the debugger what to do if we have just stepped into a handler -- we are just going on
-			askDebugger(stack, stackPtr, stackSize, heap, heapSize, flow);
-		}
+		askDebugger(stack, stackPtr, stackSize, heap, heapSize, flow);
 
 #ifdef OUTPUT_INSTRUCTIONS
 		printf("%d:\t", flow);
@@ -875,6 +871,7 @@ void CPU::ActivityFunction()
 
 				portHandlingJustFinished = true;
 				reportToDebugger(stack, stackPtr, stackSize, heap, heapSize, flow, fsStepOutHandler);
+
 				pthread_mutex_unlock(&portReadingMutex);
 			}
 			else

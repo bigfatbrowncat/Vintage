@@ -1,15 +1,18 @@
 #include "Debugger.h"
 
+#include <math.h>
+
 Debugger::Debugger(FILE* debug_symbols, SDLScreen& screen) :
 	activeWindow(dawCode),
-	savedFlowLayer(0),
 	screen(screen),
 	state(dsStopped),
 	topSpace(19), wStackBytes(8), wHeapBytes(10), wStackTopRow(0), wHeapTopRow(0),
 	wSelectedLine(0)
 {
 	int pthred_res = pthread_mutex_init(&printingMutex, NULL);
+	flowLayers.push_back(FlowLayer(fltNormal, 0));
 
+	// Loading the debug symbols
 	while (!feof(debug_symbols))
 	{
 		int4 mem_pos;
@@ -114,7 +117,7 @@ void Debugger::printMenu()
 		screen.SelectBackColor(192, 192, 192);
 		screen.SelectForeColor(0, 0, 0);
 	}
-	else if (flowLayers.size() > 0)
+	else if (flowLayers.size() > 1)
 	{
 		screen.SelectBackColor(128, 128, 128);
 		screen.SelectForeColor(0, 0, 0);
@@ -211,25 +214,57 @@ void Debugger::updateUI()
 
 			int y = topSpace + up + i;
 
-			if (i == 0)	// this line is selected now
 			{
-				screen.SelectForeColor(0, 0, 0);
-				screen.SelectBackColor(192, 192, 192);
-			}
-			else if (index == findLine(flow)) // flow is here
-			{
-				screen.SelectForeColor(0, 0, 0);
-				screen.SelectBackColor(128, 128, 255);
-			}
-			else if (findBreakpointAt(entries[index].memPos) != breakpoints.end()) // flow is here
-			{
-				screen.SelectForeColor(192, 0, 0);
-				screen.SelectBackColor(0, 0, 0);
-			}
-			else // just a line
-			{
-				screen.SelectForeColor(128, 128, 128);
-				screen.SelectBackColor(0, 0, 0);
+				int colorsCount = 0;
+				int bgR = 0, bgG = 0, bgB = 0;
+				int fgR = 0, fgG = 0, fgB = 0;
+
+				if (i == 0)	// this line is selected now
+				{
+					bgR += 192; bgG += 192; bgB += 192;
+					colorsCount++;
+				}
+
+				for (unsigned int i = 1; i < flowLayers.size(); i++)
+				{
+					int p = flowLayers.size() - i;
+					if (entries[index].memPos == flowLayers[i].lastFlow)
+					{
+						bgR += 255 / pow(2.0, p);
+						bgG += 192 / pow(2.0, p);
+						bgB += 64 / pow(2.0, p);
+						colorsCount ++;
+					}
+				}
+
+				if (index == findLine(flow)) // flow is here
+				{
+					bgR += 255; bgG += 192; bgB += 64;
+					colorsCount++;
+				}
+
+				if (findBreakpointAt(entries[index].memPos) != breakpoints.end()) // flow is here
+				{
+					bgR += 192; bgG += 32; bgB += 32;
+					colorsCount++;
+				}
+
+				if (colorsCount > 0)
+				{
+					bgR /= colorsCount; bgG /= colorsCount; bgB /= colorsCount;
+				}
+
+				if (bgR < 64 && bgG < 64 && bgB < 64)
+				{
+					fgR = 128; fgG = 128; fgB = 128;
+				}
+				else
+				{
+					fgR = 0; fgG = 0; fgB = 0;
+				}
+
+				screen.SelectForeColor(fgR, fgG, fgB);
+				screen.SelectBackColor(bgR, bgG, bgB);
 			}
 
 			wstringstream strs;
@@ -244,25 +279,58 @@ void Debugger::updateUI()
 			}
 			printFixed(1, y, strs.str().c_str(), 9);
 
-			if (i == 0)	// this line is selected now
+
 			{
-				screen.SelectForeColor(0, 0, 0);
-				screen.SelectBackColor(192, 192, 192);
-			}
-			else if (index == findLine(flow)) // flow is here
-			{
-				screen.SelectForeColor(0, 0, 0);
-				screen.SelectBackColor(128, 128, 255);
-			}
-			else if (findBreakpointAt(entries[index].memPos) != breakpoints.end()) // flow is here
-			{
-				screen.SelectForeColor(255, 0, 0);
-				screen.SelectBackColor(0, 0, 0);
-			}
-			else // just a line
-			{
-				screen.SelectForeColor(192, 192, 192);
-				screen.SelectBackColor(0, 0, 0);
+				int colorsCount = 0;
+				int bgR = 0, bgG = 0, bgB = 0;
+				int fgR = 0, fgG = 0, fgB = 0;
+
+				if (i == 0)	// this line is selected now
+				{
+					bgR += 192; bgG += 192; bgB += 192;
+					colorsCount ++;
+				}
+
+				for (unsigned int i = 1; i < flowLayers.size(); i++)
+				{
+					int p = flowLayers.size() - i;
+					if (entries[index].memPos == flowLayers[i].lastFlow)
+					{
+						bgR += 255 / pow(2.0, p);
+						bgG += 192 / pow(2.0, p);
+						bgB += 64 / pow(2.0, p);
+						colorsCount ++;
+					}
+				}
+
+				if (index == findLine(flow)) // flow is here
+				{
+					bgR += 255; bgG += 192; bgB += 64;
+					colorsCount++;
+				}
+
+				if (findBreakpointAt(entries[index].memPos) != breakpoints.end()) // flow is here
+				{
+					bgR += 192; bgG += 32; bgB += 32;
+					colorsCount++;
+				}
+
+				if (colorsCount > 0)
+				{
+					bgR /= colorsCount; bgG /= colorsCount; bgB /= colorsCount;
+				}
+
+				if (bgR < 64 && bgG < 64 && bgB < 64)
+				{
+					fgR = 192; fgG = 192; fgB = 192;
+				}
+				else
+				{
+					fgR = 0; fgG = 0; fgB = 0;
+				}
+
+				screen.SelectForeColor(fgR, fgG, fgB);
+				screen.SelectBackColor(bgR, bgG, bgB);
 			}
 
 			wstringstream strs2;
@@ -444,26 +512,35 @@ void Debugger::updateUI()
 
 void Debugger::reportFlowStateChanged(FlowState flowState)
 {
-	//printf("LVL: %d\n", savedFlowLayer);
+	lastFlowState = flowState;
+
 	switch (flowState)
 	{
 	case fsStepIn:
-		flowLayers.push_back(fltNormal);
+		flowLayers.push_back(FlowLayer(fltNormal, flow));
 		break;
 	case fsStepOut:
-		if (flowLayers.back() == fltNormal)
+		if (flowLayers.size() > 1 && flowLayers.back().type == fltNormal)
+		{
 			flowLayers.pop_back();
+		}
 		else
-			printf("Incorrect flow layer!");
+		{
+			printf("Call stack is broken!");
+		}
 		break;
 	case fsStepInHandler:
-		flowLayers.push_back(fltHandler);
+		flowLayers.push_back(FlowLayer(fltHandler, flow));
 		break;
 	case fsStepOutHandler:
-		if (flowLayers.back() == fltHandler)
+		if (flowLayers.size() > 1 && flowLayers.back().type == fltHandler)
+		{
 			flowLayers.pop_back();
+		}
 		else
-			printf("Incorrect flow layer!");
+		{
+			printf("Call stack is broken!");
+		}
 		break;
 	case fsLinear:
 		// Do nothing
@@ -504,17 +581,17 @@ const DebuggerOrder Debugger::askForOrder()
 		res = doGo;
 		break;
 	case dsStepIntoPending:
-		savedFlowLayer = flowLayers.size();
+		savedFlowLayer = flowLayers.back();
 		state = dsRunningInto;
 		res = doGo;
 		break;
 	case dsStepOutPending:
-		savedFlowLayer = flowLayers.size();
+		savedFlowLayer = flowLayers.back();
 		state = dsRunningOut;
 		res = doGo;
 		break;
 	case dsStepOverPending:
-		savedFlowLayer = flowLayers.size();
+		savedFlowLayer = flowLayers.back();
 		state = dsRunningOver;
 		res = doGo;
 		break;
@@ -532,7 +609,7 @@ const DebuggerOrder Debugger::askForOrder()
 		}
 		break;
 	case dsRunningInto:
-		if (flowLayers.size() < 2 || flowLayers[flowLayers.size() - 2] == flowLayers[flowLayers.size() - 1] || findBreakpointAt(flow) != breakpoints.end())
+		if (flowLayers.back().type == fltNormal || findBreakpointAt(flow) != breakpoints.end())
 		{
 			state = dsStopped;
 			res = doWait;
@@ -543,7 +620,7 @@ const DebuggerOrder Debugger::askForOrder()
 		}
 		break;
 	case dsRunningOut:
-		if (savedFlowLayer > flowLayers.size() || findBreakpointAt(flow) != breakpoints.end())
+		if (!savedFlowLayerExists() || findBreakpointAt(flow) != breakpoints.end())
 		{
 			state = dsStopped;
 			res = doWait;
@@ -554,8 +631,7 @@ const DebuggerOrder Debugger::askForOrder()
 		}
 		break;
 	case dsRunningOver:
-//		printf("OVER: size=%d, saved=%d, ", flowLayers.size(), savedFlowLayer);
-		if (flowLayers.size() == 0 || savedFlowLayer == flowLayers.size() || findBreakpointAt(flow) != breakpoints.end())
+		if (savedFlowLayer == flowLayers.back() || findBreakpointAt(flow) != breakpoints.end())
 		{
 			state = dsStopped;
 			res = doWait;
@@ -564,11 +640,8 @@ const DebuggerOrder Debugger::askForOrder()
 		{
 			res = doGo;
 		}
-//		printf("state=%d, res=%d\n", state, res);
-		fflush(stdout);
 		break;
 	}
-
 	printMenu();
 	//pthread_mutex_unlock(&printingMutex);
 	return res;
@@ -715,7 +788,7 @@ void Debugger::stepInto()
 }
 void Debugger::stepOut()
 {
-	if (state != dsRunningOut && state != dsRunningOver && flowLayers.size() > 0)
+	if (state != dsRunningOut && state != dsRunningOver && flowLayers.size() > 1)
 	{
 		pthread_mutex_lock(&printingMutex);
 		state = dsStepOutPending;

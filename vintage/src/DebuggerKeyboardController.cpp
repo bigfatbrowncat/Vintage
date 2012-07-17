@@ -49,6 +49,9 @@ void DebuggerKeyboardController::ChangeKeyState(bool key_down, int4 key_code)
 		case SDLK_PAGEDOWN:
 			debugger.handleControlKey(ckPageDown);
 			break;
+		case SDLK_SPACE:
+			debugger.handleControlKey(ckSpace);
+			break;
 
 		}
 

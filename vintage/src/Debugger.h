@@ -53,7 +53,8 @@ enum ControlKey
 	ckPageDown,
 	ckLeft,
 	ckRight,
-	ckTab
+	ckTab,
+	ckSpace
 };
 
 enum DebuggerState
@@ -126,9 +127,8 @@ private:
 		return false;
 	}
 
-	FlowState lastFlowState;
-
 	volatile int4 wSelectedLine;
+	volatile bool wSelectedLineFollowsFlow;
 
 	pthread_mutex_t printingMutex;
 

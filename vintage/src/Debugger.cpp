@@ -7,7 +7,8 @@ Debugger::Debugger(FILE* debug_symbols, SDLScreen& screen) :
 	screen(screen),
 	state(dsStopped),
 	topSpace(19), wStackBytes(8), wHeapBytes(10), wStackTopRow(0), wHeapTopRow(0),
-	wSelectedLine(0)
+	wSelectedLine(0),
+	wSelectedLineFollowsFlow(true)
 {
 	int pthred_res = pthread_mutex_init(&printingMutex, NULL);
 	flowLayers.push_back(FlowLayer(fltNormal, 0));
@@ -189,6 +190,11 @@ void Debugger::updateUI()
 	pthread_mutex_lock(&printingMutex);
 	if ((screen.isActive() && state == dsRunning) || state == dsStopped)
 	{
+		if (wSelectedLineFollowsFlow)
+		{
+			wSelectedLine = findLine(flow);
+		}
+
 		// *** Printing code ***
 
 		if (activeWindow == dawCode)
@@ -512,8 +518,6 @@ void Debugger::updateUI()
 
 void Debugger::reportFlowStateChanged(FlowState flowState)
 {
-	lastFlowState = flowState;
-
 	switch (flowState)
 	{
 	case fsStepIn:
@@ -661,19 +665,27 @@ void Debugger::handleControlKey(ControlKey ck)
 
 	else if (ck == ckUp && activeWindow == dawCode)
 	{
+		wSelectedLineFollowsFlow = false;
 		wSelectedLine --;
 	}
 	else if (ck == ckDown && activeWindow == dawCode)
 	{
+		wSelectedLineFollowsFlow = false;
 		wSelectedLine ++;
 	}
 	else if (ck == ckPageUp && activeWindow == dawCode)
 	{
+		wSelectedLineFollowsFlow = false;
 		wSelectedLine -= codeWindowHeight / 2;
 	}
 	else if (ck == ckPageDown && activeWindow == dawCode)
 	{
+		wSelectedLineFollowsFlow = false;
 		wSelectedLine += codeWindowHeight / 2;
+	}
+	else if (ck == ckSpace && activeWindow == dawCode)
+	{
+		wSelectedLineFollowsFlow = true;
 	}
 
 	else if (ck == ckUp && activeWindow == dawHeap)

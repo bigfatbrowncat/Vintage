@@ -272,6 +272,24 @@ public:
 		}
 	}
 
+	void kernUp(vector<bool*>::iterator iter)
+	{
+		int overSize = getOverSize();
+		int letterWidth = getLetterWidth();
+		int letterHeight = getLetterHeight();
+		int w = letterWidth * overSize;
+		int h = letterHeight * overSize;
+		for (int i = 0; i < w; i++)
+		{
+			bool tmp = (*iter)[i];
+			for (int j = 1; j < h; j++)
+			{
+				(*iter)[(j - 1) * w + i] = (*iter)[j * w + i];
+			}
+			(*iter)[(h - 1) * w + i] = tmp;
+		}
+	}
+
 
 	~EditableFont()
 	{

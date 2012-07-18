@@ -18,7 +18,7 @@ Debugger::Debugger(FILE* debug_symbols, SDLScreen& screen) :
 	{
 		int4 mem_pos;
 		char read_char;
-		wstring lines = L"";
+		wstring line = L"";
 
 		fread(&mem_pos, sizeof(mem_pos), 1, debug_symbols);
 		bool first_char = true;
@@ -27,7 +27,7 @@ Debugger::Debugger(FILE* debug_symbols, SDLScreen& screen) :
 			fread(&read_char, 1, 1, debug_symbols);
 			if (read_char != 0 && (read_char != '\n' || first_char == false) && read_char != '\r') 	// We remove first carriage return
 			{
-				lines += read_char;
+				line += read_char;
 			}
 			if (read_char != '\n' && read_char != '\r') first_char = false;
 		}
@@ -35,7 +35,7 @@ Debugger::Debugger(FILE* debug_symbols, SDLScreen& screen) :
 
 		DebuggingSymbolsEntry newEntry;
 		newEntry.memPos = mem_pos;
-		newEntry.codeLine = lines;
+		newEntry.codeLine = line;
 		entries.push_back(newEntry);
 	}
 }
@@ -60,101 +60,104 @@ int Debugger::findLine(int4 mem_pos) const
 
 void Debugger::printMenu()
 {
-	screen.SelectForeColor(0, 0, 0);
-	screen.SelectBackColor(192, 192, 192);
-	printFixed(screen.getFrameBufferWidth() - 25, screen.getFrameBufferHeight() - 1, L" Hardware debugging tool ", 25);
-	screen.SetCursorPosition(0, screen.getFrameBufferHeight() - 1);
-
-	if (state == dsRunningPending || state == dsRunning)
+	if (screen.isActive() || state == dsStopped)
 	{
-		screen.SelectBackColor(192, 192, 192);
-	}
-	else
-	{
-		screen.SelectBackColor(128, 128, 128);
-	}
-	screen.Write(L"1 Run    ");
-	screen.SelectBackColor(0, 0, 0);
-	screen.Write(L" ");
-
-	if (state == dsStopped)
-	{
-		screen.SelectBackColor(192, 192, 192);
-	}
-	else
-	{
-		screen.SelectBackColor(128, 128, 128);
-	}
-	screen.Write(L"2 Pause  ");
-	screen.SelectBackColor(0, 0, 0);
-	screen.Write(L" ");
-
-	if (state == dsStepOverPending || state == dsRunningOver)
-	{
-		screen.SelectBackColor(192, 192, 192);
-	}
-	else
-	{
-		screen.SelectBackColor(128, 128, 128);
-	}
-	screen.Write(L"3 Stp ovr");
-	screen.SelectBackColor(0, 0, 0);
-	screen.Write(L" ");
-
-	if (state == dsStepIntoPending)
-	{
-		screen.SelectBackColor(192, 192, 192);
-	}
-	else
-	{
-		screen.SelectBackColor(128, 128, 128);
-	}
-	screen.Write(L"4 Stp in ");
-	screen.SelectBackColor(0, 0, 0);
-	screen.Write(L" ");
-
-	if (state == dsStepOutPending || state == dsRunningOut)
-	{
-		screen.SelectBackColor(192, 192, 192);
 		screen.SelectForeColor(0, 0, 0);
-	}
-	else if (flowLayers.size() > 1)
-	{
-		screen.SelectBackColor(128, 128, 128);
-		screen.SelectForeColor(0, 0, 0);
-	}
-	else
-	{
+		screen.SelectBackColor(192, 192, 192);
+		printFixed(screen.getFrameBufferWidth() - 25, screen.getFrameBufferHeight() - 1, L" Hardware debugging tool ", 25);
+		screen.SetCursorPosition(0, screen.getFrameBufferHeight() - 1);
+
+		if (state == dsRunningPending || state == dsRunning)
+		{
+			screen.SelectBackColor(192, 192, 192);
+		}
+		else
+		{
+			screen.SelectBackColor(128, 128, 128);
+		}
+		screen.Write(L"1 Run    ");
 		screen.SelectBackColor(0, 0, 0);
-		screen.SelectForeColor(128, 128, 128);
-	}
+		screen.Write(L" ");
 
-	screen.Write(L"5 Stp out");
-	screen.SelectBackColor(0, 0, 0);
-	screen.Write(L" ");
+		if (state == dsStopped)
+		{
+			screen.SelectBackColor(192, 192, 192);
+		}
+		else
+		{
+			screen.SelectBackColor(128, 128, 128);
+		}
+		screen.Write(L"2 Pause  ");
+		screen.SelectBackColor(0, 0, 0);
+		screen.Write(L" ");
 
-	if (findBreakpointAt(entries[wSelectedLine].memPos) != breakpoints.end())
-	{
-		screen.SelectBackColor(192, 192, 192);
+		if (state == dsStepOverPending || state == dsRunningOver)
+		{
+			screen.SelectBackColor(192, 192, 192);
+		}
+		else
+		{
+			screen.SelectBackColor(128, 128, 128);
+		}
+		screen.Write(L"3 Stp ovr");
+		screen.SelectBackColor(0, 0, 0);
+		screen.Write(L" ");
+
+		if (state == dsStepIntoPending)
+		{
+			screen.SelectBackColor(192, 192, 192);
+		}
+		else
+		{
+			screen.SelectBackColor(128, 128, 128);
+		}
+		screen.Write(L"4 Stp in ");
+		screen.SelectBackColor(0, 0, 0);
+		screen.Write(L" ");
+
+		if (state == dsStepOutPending || state == dsRunningOut)
+		{
+			screen.SelectBackColor(192, 192, 192);
+			screen.SelectForeColor(0, 0, 0);
+		}
+		else if (flowLayers.size() > 1)
+		{
+			screen.SelectBackColor(128, 128, 128);
+			screen.SelectForeColor(0, 0, 0);
+		}
+		else
+		{
+			screen.SelectBackColor(0, 0, 0);
+			screen.SelectForeColor(128, 128, 128);
+		}
+
+		screen.Write(L"5 Stp out");
+		screen.SelectBackColor(0, 0, 0);
+		screen.Write(L" ");
+
+		if (findBreakpointAt(entries[wSelectedLine].memPos) != breakpoints.end())
+		{
+			screen.SelectBackColor(192, 192, 192);
+			screen.SelectForeColor(0, 0, 0);
+		}
+		else
+		{
+			screen.SelectBackColor(128, 128, 128);
+			screen.SelectForeColor(0, 0, 0);
+		}
+
+		screen.Write(L"6 Breakpt");
+		screen.SelectBackColor(0, 0, 0);
+		screen.Write(L" ");
+
 		screen.SelectForeColor(0, 0, 0);
-	}
-	else
-	{
 		screen.SelectBackColor(128, 128, 128);
-		screen.SelectForeColor(0, 0, 0);
+		screen.Write(L"7 Halt   ");
+
+		screen.SelectBackColor(0, 0, 0);
+		screen.Write(L" ");
+		screen.SetCursorPosition(0, screen.getFrameBufferHeight() - 1);
 	}
-
-	screen.Write(L"6 Breakpt");
-	screen.SelectBackColor(0, 0, 0);
-	screen.Write(L" ");
-
-	screen.SelectForeColor(0, 0, 0);
-	screen.SelectBackColor(128, 128, 128);
-	screen.Write(L"7 Halt   ");
-
-	screen.SelectBackColor(0, 0, 0);
-	screen.Write(L" ");
-	screen.SetCursorPosition(0, screen.getFrameBufferHeight() - 1);
 }
 
 void Debugger::printFixed(int x, int y, const wchar_t* str, int length)
@@ -188,7 +191,7 @@ void Debugger::printFixed(int x, int y, const wchar_t* str, int length)
 void Debugger::updateUI()
 {
 	pthread_mutex_lock(&printingMutex);
-	if ((screen.isActive() && state == dsRunning) || state == dsStopped)
+	if (screen.isActive() || state == dsStopped)
 	{
 		if (wSelectedLineFollowsFlow)
 		{

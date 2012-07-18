@@ -148,8 +148,8 @@ void SDLTerminal::processEvents()
 }
 
 SDLTerminal::SDLTerminal(CachedFont& font, CachedFont& cursorFont):
-		frameBufferWidth(100),
-		frameBufferHeight(40),
+		frameBufferWidth(128),
+		frameBufferHeight(56),
 		font(font),
 		cursorFont(cursorFont),
 		activeScreen(0),

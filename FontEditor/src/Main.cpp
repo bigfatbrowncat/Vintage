@@ -304,6 +304,10 @@ void process_events(Font& edited)
 			{
 				((EditableFont&)edited).kernDown(currentLetter);
 			}
+			else if (event.key.keysym.sym == SDLK_UP)
+			{
+				((EditableFont&)edited).kernUp(currentLetter);
+			}
 			break;
 		case SDL_KEYUP:
 			if (event.key.keysym.sym == SDLK_LCTRL)

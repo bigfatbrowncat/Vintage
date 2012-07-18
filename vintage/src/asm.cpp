@@ -285,9 +285,16 @@ int assemble(char* code, int1* target, int4 max_target_size, int& error_line, in
 			if (pass == 1) fwrite(&mem_pos, sizeof(mem_pos), 1, debug_symbols_destination);
 
 			// Dividing the line into tokens
+			bool first_newline = true;
 			while (*cur == '\n')
 			{
-				if (pass == 1) fwrite(cur, 1, 1, debug_symbols_destination);
+				if (pass == 1 && !first_newline)
+				{
+					char zero = 0;
+					if (pass == 1) fwrite(&zero, 1, 1, debug_symbols_destination);
+					fwrite(&mem_pos, sizeof(mem_pos), 1, debug_symbols_destination);
+				}
+				first_newline = false;
 				cur++;
 				line_index++;
 			}

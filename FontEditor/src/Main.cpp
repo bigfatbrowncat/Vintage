@@ -73,8 +73,6 @@ void blendFrame(SDL_Surface *surface, int x1, int x2, int y1, int y2, Uint8 r, U
 	}
 }
 
-
-
 int drawing_box_x = 35;
 int drawing_box_y = 70;
 
@@ -92,13 +90,15 @@ int symbol_h = 16;*/
 
 int cell_size = 9;
 
+int small_cell_x = 0, small_cell_y = 0, big_cell_x = 0, big_cell_y = 0;
+
 wchar_t* encoding = L" "
                      "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                      "abcdefghijklmnopqrstuvwxyz"
                      "0123456789.,:;!?@#$%^&*()[]{}_-+<>=~\"'`/\\|";
 
 bool painting = false;
-bool base_mode = true;
+bool big_cells_mode = true;
 
 enum color { black, white } painting_color;
 int painting_cell_x = -1, painting_cell_y = -1;
@@ -240,7 +240,7 @@ void process_events(Font& edited)
 			else if (event.key.keysym.sym == SDLK_LCTRL)
 			{
 				// Entering the subpixel editing mode
-				base_mode = false;
+				big_cells_mode = false;
 			}
 			else if (event.key.keysym.sym == SDLK_PAGEDOWN)
 			{
@@ -312,7 +312,7 @@ void process_events(Font& edited)
 		case SDL_KEYUP:
 			if (event.key.keysym.sym == SDLK_LCTRL)
 			{
-				base_mode = true;
+				big_cells_mode = true;
 			}
 			break;
 		case SDL_QUIT:
@@ -320,38 +320,39 @@ void process_events(Font& edited)
 			quit_pending = true;
 			break;
 		case SDL_MOUSEBUTTONDOWN:
+			small_cell_x = (event.button.x - drawing_box_x - drawing_box_frame_width) / cell_size;
+			small_cell_y = (event.button.y - drawing_box_y - drawing_box_frame_width) / cell_size;
+			big_cell_x = (event.button.x - drawing_box_x - drawing_box_frame_width) / cell_size / edited.getOverSize();
+			big_cell_y = (event.button.y - drawing_box_y - drawing_box_frame_width) / cell_size / edited.getOverSize();
+
 			if (event.button.x > drawing_box_x + drawing_box_frame_width && event.button.x < drawing_box_x + drawing_box_frame_width + edited.getLetterWidth() * edited.getOverSize() * cell_size &&
 			    event.button.y > drawing_box_y + drawing_box_frame_width && event.button.y < drawing_box_y + drawing_box_frame_width + edited.getLetterHeight() * edited.getOverSize() * cell_size)
 			{
-				if (!base_mode)
+				if (!big_cells_mode)
 				{
-					int cell_x = (event.button.x - drawing_box_x - drawing_box_frame_width) / cell_size;
-					int cell_y = (event.button.y - drawing_box_y - drawing_box_frame_width) / cell_size;
 					if (event.button.button == SDL_BUTTON_LEFT)
 					{
-						(*currentLetter)[cell_y * edited.getLetterWidth() * edited.getOverSize() + cell_x] = true;
+						(*currentLetter)[small_cell_y * edited.getLetterWidth() * edited.getOverSize() + small_cell_x] = true;
 						painting_color = white;
 					}
 					else if (event.button.button == SDL_BUTTON_RIGHT)
 					{
-						(*currentLetter)[cell_y * edited.getLetterWidth() * edited.getOverSize() + cell_x] = false;
+						(*currentLetter)[small_cell_y * edited.getLetterWidth() * edited.getOverSize() + small_cell_x] = false;
 						painting_color = black;
 					}
 
 					painting = true;
-					painting_cell_x = cell_x;
-					painting_cell_y = cell_y;
+					painting_cell_x = small_cell_x;
+					painting_cell_y = small_cell_y;
 				}
 				else
 				{
-					int cell_x = (event.button.x - drawing_box_x - drawing_box_frame_width) / cell_size / edited.getOverSize();
-					int cell_y = (event.button.y - drawing_box_y - drawing_box_frame_width) / cell_size / edited.getOverSize();
 					if (event.button.button == SDL_BUTTON_LEFT)
 					{
 						for (int p = 0; p < edited.getOverSize(); p++)
 						for (int q = 0; q < edited.getOverSize(); q++)
 						{
-							(*currentLetter)[(edited.getOverSize() * cell_y + q) * edited.getLetterWidth() * edited.getOverSize() + (edited.getOverSize() * cell_x + p)] = true;
+							(*currentLetter)[(edited.getOverSize() * big_cell_y + q) * edited.getLetterWidth() * edited.getOverSize() + (edited.getOverSize() * big_cell_x + p)] = true;
 						}
 						painting_color = white;
 					}
@@ -360,54 +361,56 @@ void process_events(Font& edited)
 						for (int p = 0; p < edited.getOverSize(); p++)
 						for (int q = 0; q < edited.getOverSize(); q++)
 						{
-							(*currentLetter)[(edited.getOverSize() * cell_y + q) * edited.getLetterWidth() * edited.getOverSize() + (edited.getOverSize() * cell_x + p)] = false;
+							(*currentLetter)[(edited.getOverSize() * big_cell_y + q) * edited.getLetterWidth() * edited.getOverSize() + (edited.getOverSize() * big_cell_x + p)] = false;
 						}
 						painting_color = black;
 					}
 
 					painting = true;
-					painting_cell_x = cell_x;
-					painting_cell_y = cell_y;
+					painting_cell_x = big_cell_x;
+					painting_cell_y = big_cell_y;
 				}
 			}
 			break;
 		case SDL_MOUSEMOTION:
+			small_cell_x = (event.motion.x - drawing_box_x - drawing_box_frame_width) / cell_size;
+			small_cell_y = (event.motion.y - drawing_box_y - drawing_box_frame_width) / cell_size;
+			big_cell_x = (event.button.x - drawing_box_x - drawing_box_frame_width) / cell_size / edited.getOverSize();
+			big_cell_y = (event.button.y - drawing_box_y - drawing_box_frame_width) / cell_size / edited.getOverSize();
+
 			if (painting &&
 				event.motion.x > drawing_box_x + drawing_box_frame_width &&
 				event.motion.x < drawing_box_x + drawing_box_frame_width + edited.getLetterWidth() * edited.getOverSize() * cell_size &&
 			    event.motion.y > drawing_box_y + drawing_box_frame_width &&
 			    event.motion.y < drawing_box_y + drawing_box_frame_width + edited.getLetterHeight() * edited.getOverSize() * cell_size)
 			{
-				if (!base_mode)
+
+				if (!big_cells_mode)
 				{
-					int cell_x = (event.motion.x - drawing_box_x - drawing_box_frame_width) / cell_size;
-					int cell_y = (event.motion.y - drawing_box_y - drawing_box_frame_width) / cell_size;
-					if (painting_cell_x != cell_x || painting_cell_y != cell_y)
+					if (painting_cell_x != small_cell_x || painting_cell_y != small_cell_y)
 					{
 
 						if (painting_color == white)
 						{
-							(*currentLetter)[cell_y * edited.getLetterWidth() * edited.getOverSize() + cell_x] = true;
+							(*currentLetter)[small_cell_y * edited.getLetterWidth() * edited.getOverSize() + small_cell_x] = true;
 						}
 						else if (painting_color == black)
 						{
-							(*currentLetter)[cell_y * edited.getLetterWidth() * edited.getOverSize() + cell_x] = false;
+							(*currentLetter)[small_cell_y * edited.getLetterWidth() * edited.getOverSize() + small_cell_x] = false;
 						}
 
-						painting_cell_x = cell_x;
-						painting_cell_y = cell_y;
+						painting_cell_x = small_cell_x;
+						painting_cell_y = small_cell_y;
 					}
 				}
 				else
 				{
-					int cell_x = (event.button.x - drawing_box_x - drawing_box_frame_width) / cell_size / edited.getOverSize();
-					int cell_y = (event.button.y - drawing_box_y - drawing_box_frame_width) / cell_size / edited.getOverSize();
 					if (painting_color == white)
 					{
 						for (int p = 0; p < edited.getOverSize(); p++)
 						for (int q = 0; q < edited.getOverSize(); q++)
 						{
-							(*currentLetter)[(edited.getOverSize() * cell_y + q) * edited.getLetterWidth() * edited.getOverSize() + (edited.getOverSize() * cell_x + p)] = true;
+							(*currentLetter)[(edited.getOverSize() * big_cell_y + q) * edited.getLetterWidth() * edited.getOverSize() + (edited.getOverSize() * big_cell_x + p)] = true;
 						}
 						painting_color = white;
 					}
@@ -416,14 +419,14 @@ void process_events(Font& edited)
 						for (int p = 0; p < edited.getOverSize(); p++)
 						for (int q = 0; q < edited.getOverSize(); q++)
 						{
-							(*currentLetter)[(edited.getOverSize() * cell_y + q) * edited.getLetterWidth() * edited.getOverSize() + (edited.getOverSize() * cell_x + p)] = false;
+							(*currentLetter)[(edited.getOverSize() * big_cell_y + q) * edited.getLetterWidth() * edited.getOverSize() + (edited.getOverSize() * big_cell_x + p)] = false;
 						}
 						painting_color = black;
 					}
 
 					painting = true;
-					painting_cell_x = cell_x;
-					painting_cell_y = cell_y;
+					painting_cell_x = big_cell_x;
+					painting_cell_y = big_cell_y;
 				}
 			}
 			break;
@@ -439,6 +442,8 @@ void draw(SDL_Surface* surface, const Font& edited)
 	blendFrame(surface, drawing_box_x, drawing_box_x + 2 * drawing_box_frame_width + edited.getLetterWidth() * edited.getOverSize() * cell_size,
 			             drawing_box_y, drawing_box_y + 2 * drawing_box_frame_width + edited.getLetterHeight() * edited.getOverSize() * cell_size, 255, 255, 255, 1);
 
+	// Drawing the small cells
+
 	for (int i = 0; i < edited.getLetterWidth() * edited.getOverSize(); i++)
 	for (int j = 0; j < edited.getLetterHeight() * edited.getOverSize(); j++)
 	{
@@ -449,6 +454,13 @@ void draw(SDL_Surface* surface, const Font& edited)
 			                           drawing_box_y + drawing_box_frame_width + cell_size * j,
 			                           drawing_box_y + drawing_box_frame_width + cell_size * (j + 1), 255, 255, 255, 1);
 
+		}
+		else if (i == small_cell_x || j == small_cell_y)
+		{
+			blendFrameFilled(surface, drawing_box_x + drawing_box_frame_width + cell_size * i,
+			                           drawing_box_x + drawing_box_frame_width + cell_size * (i + 1),
+			                           drawing_box_y + drawing_box_frame_width + cell_size * j,
+			                           drawing_box_y + drawing_box_frame_width + cell_size * (j + 1), 64, 64, 64, 1);
 		}
 		blendFrame(surface, drawing_box_x + drawing_box_frame_width + cell_size * i,
 							 drawing_box_x + drawing_box_frame_width + cell_size * (i + 1),

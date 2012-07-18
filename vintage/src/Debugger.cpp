@@ -191,7 +191,7 @@ void Debugger::printFixed(int x, int y, const wchar_t* str, int length)
 void Debugger::updateUI()
 {
 	pthread_mutex_lock(&printingMutex);
-	if (screen.isActive() || state == dsStopped)
+	if ((screen.isActive() && state == dsRunning) || state == dsStopped)
 	{
 		if (wSelectedLineFollowsFlow)
 		{

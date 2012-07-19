@@ -97,8 +97,17 @@ wchar_t* encoding = L" "
                      "abcdefghijklmnopqrstuvwxyz"
                      "0123456789.,:;!?@#$%^&*()[]{}_-+<>=~\"'`/\\|";
 
-bool painting = false;
-bool big_cells_mode = true;
+enum Mode
+{
+	mIdle,
+	mPaintingSmallCells,
+	mPaintingBigCells,
+	mSelecting,
+	mMovingSelection
+};
+
+Mode currentMode = mIdle;
+bool ctrlButtonIsDown = false;
 
 enum color { black, white } painting_color;
 int painting_cell_x = -1, painting_cell_y = -1;
@@ -237,10 +246,10 @@ void process_events(Font& edited)
 				// Quiting the program
 				quit_pending = true;
 			}
-			else if (event.key.keysym.sym == SDLK_LCTRL)
+			else if (event.key.keysym.sym == SDLK_LCTRL || event.key.keysym.sym == SDLK_RCTRL)
 			{
 				// Entering the subpixel editing mode
-				big_cells_mode = false;
+				ctrlButtonIsDown = true;
 			}
 			else if (event.key.keysym.sym == SDLK_PAGEDOWN)
 			{
@@ -310,9 +319,9 @@ void process_events(Font& edited)
 			}
 			break;
 		case SDL_KEYUP:
-			if (event.key.keysym.sym == SDLK_LCTRL)
+			if (event.key.keysym.sym == SDLK_LCTRL || event.key.keysym.sym == SDLK_RCTRL)
 			{
-				big_cells_mode = true;
+				ctrlButtonIsDown = false;
 			}
 			break;
 		case SDL_QUIT:
@@ -328,8 +337,10 @@ void process_events(Font& edited)
 			if (event.button.x > drawing_box_x + drawing_box_frame_width && event.button.x < drawing_box_x + drawing_box_frame_width + edited.getLetterWidth() * edited.getOverSize() * cell_size &&
 			    event.button.y > drawing_box_y + drawing_box_frame_width && event.button.y < drawing_box_y + drawing_box_frame_width + edited.getLetterHeight() * edited.getOverSize() * cell_size)
 			{
-				if (!big_cells_mode)
+				if (ctrlButtonIsDown)
 				{
+					currentMode = mPaintingSmallCells;
+
 					if (event.button.button == SDL_BUTTON_LEFT)
 					{
 						(*currentLetter)[small_cell_y * edited.getLetterWidth() * edited.getOverSize() + small_cell_x] = true;
@@ -341,7 +352,6 @@ void process_events(Font& edited)
 						painting_color = black;
 					}
 
-					painting = true;
 					painting_cell_x = small_cell_x;
 					painting_cell_y = small_cell_y;
 				}
@@ -366,7 +376,7 @@ void process_events(Font& edited)
 						painting_color = black;
 					}
 
-					painting = true;
+					currentMode = mPaintingBigCells;
 					painting_cell_x = big_cell_x;
 					painting_cell_y = big_cell_y;
 				}
@@ -378,14 +388,13 @@ void process_events(Font& edited)
 			big_cell_x = (event.button.x - drawing_box_x - drawing_box_frame_width) / cell_size / edited.getOverSize();
 			big_cell_y = (event.button.y - drawing_box_y - drawing_box_frame_width) / cell_size / edited.getOverSize();
 
-			if (painting &&
-				event.motion.x > drawing_box_x + drawing_box_frame_width &&
+			if (event.motion.x > drawing_box_x + drawing_box_frame_width &&
 				event.motion.x < drawing_box_x + drawing_box_frame_width + edited.getLetterWidth() * edited.getOverSize() * cell_size &&
 			    event.motion.y > drawing_box_y + drawing_box_frame_width &&
 			    event.motion.y < drawing_box_y + drawing_box_frame_width + edited.getLetterHeight() * edited.getOverSize() * cell_size)
 			{
 
-				if (!big_cells_mode)
+				if (currentMode == mPaintingSmallCells)
 				{
 					if (painting_cell_x != small_cell_x || painting_cell_y != small_cell_y)
 					{
@@ -403,7 +412,7 @@ void process_events(Font& edited)
 						painting_cell_y = small_cell_y;
 					}
 				}
-				else
+				else if (currentMode == mPaintingBigCells)
 				{
 					if (painting_color == white)
 					{
@@ -424,14 +433,13 @@ void process_events(Font& edited)
 						painting_color = black;
 					}
 
-					painting = true;
 					painting_cell_x = big_cell_x;
 					painting_cell_y = big_cell_y;
 				}
 			}
 			break;
 		case SDL_MOUSEBUTTONUP:
-			painting = false;
+			currentMode = mIdle;
 			break;
 		}
 	}

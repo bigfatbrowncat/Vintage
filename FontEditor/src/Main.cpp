@@ -108,18 +108,21 @@ enum Mode
 
 Mode currentMode = mIdle;
 bool ctrlButtonIsDown = false;
+bool shiftButtonIsDown = false;
 
 enum color { black, white } painting_color;
-int painting_cell_x = -1, painting_cell_y = -1;
+
+int cell_under_cursor_x = -1, cell_under_cursor_y = -1;
+int cell_selection_start_x = -1, cell_selection_start_y = -1;
 
 void draw(SDL_Surface* surface, const Font& edited);
 void process_events(Font& edited);
 void putSymbol(SDL_Surface *surface, const Font& font, vector<bool*>::const_iterator iter, int x, int y, Uint8 r, Uint8 g, Uint8 b);
-void putChar(SDL_Surface *surface, const Font& font, wchar_t* encoding, wchar_t ch, int x, int y, Uint8 r, Uint8 g, Uint8 b);
+void putChar(SDL_Surface *surface, const Font& font, const wchar_t* encoding, wchar_t ch, int x, int y, Uint8 r, Uint8 g, Uint8 b);
 
-void putString(SDL_Surface *surface, const Font& font, wchar_t* encoding, wchar_t* string, int x, int y, Uint8 r, Uint8 g, Uint8 b)
+void putString(SDL_Surface *surface, const Font& font, const wchar_t* encoding, const wchar_t* string, int x, int y, Uint8 r, Uint8 g, Uint8 b)
 {
-	wchar_t* ps = string;
+	const wchar_t* ps = string;
 	int xcur = x, ycur = y;
 	while (*ps != 0)
 	{
@@ -146,9 +149,9 @@ void putString(SDL_Surface *surface, const Font& font, wchar_t* encoding, wchar_
 	}
 }
 
-void putChar(SDL_Surface *surface, const Font& font, wchar_t* encoding, wchar_t ch, int x, int y, Uint8 r, Uint8 g, Uint8 b)
+void putChar(SDL_Surface *surface, const Font& font, const wchar_t* encoding, wchar_t ch, int x, int y, Uint8 r, Uint8 g, Uint8 b)
 {
-	wchar_t* pcur_ch = encoding;
+	const wchar_t* pcur_ch = encoding;
 	for (vector<bool*>::const_iterator iter = font.getLettersBegin(); iter != font.getLettersEnd(); iter++)
 	{
 		if (*pcur_ch == ch)
@@ -248,8 +251,11 @@ void process_events(Font& edited)
 			}
 			else if (event.key.keysym.sym == SDLK_LCTRL || event.key.keysym.sym == SDLK_RCTRL)
 			{
-				// Entering the subpixel editing mode
 				ctrlButtonIsDown = true;
+			}
+			else if (event.key.keysym.sym == SDLK_LSHIFT || event.key.keysym.sym == SDLK_RSHIFT)
+			{
+				shiftButtonIsDown = true;
 			}
 			else if (event.key.keysym.sym == SDLK_PAGEDOWN)
 			{
@@ -295,11 +301,11 @@ void process_events(Font& edited)
 			}
 			else if (event.key.keysym.sym == SDLK_m)
 			{
-				((EditableFont&)edited).mirrorHorizontal(currentLetter);
+				((EditableFont&)edited).mirrorHorizontal(currentLetter, currentSelection);
 			}
 			else if (event.key.keysym.sym == SDLK_n)
 			{
-				((EditableFont&)edited).mirrorVertical(currentLetter);
+				((EditableFont&)edited).mirrorVertical(currentLetter, currentSelection);
 			}
 			else if (event.key.keysym.sym == SDLK_LEFT)
 			{
@@ -323,6 +329,10 @@ void process_events(Font& edited)
 			{
 				ctrlButtonIsDown = false;
 			}
+			else if (event.key.keysym.sym == SDLK_LSHIFT || event.key.keysym.sym == SDLK_RSHIFT)
+			{
+				shiftButtonIsDown = false;
+			}
 			break;
 		case SDL_QUIT:
 			/* Handle quit requests (like Ctrl-c). */
@@ -337,7 +347,7 @@ void process_events(Font& edited)
 			if (event.button.x > drawing_box_x + drawing_box_frame_width && event.button.x < drawing_box_x + drawing_box_frame_width + edited.getLetterWidth() * edited.getOverSize() * cell_size &&
 			    event.button.y > drawing_box_y + drawing_box_frame_width && event.button.y < drawing_box_y + drawing_box_frame_width + edited.getLetterHeight() * edited.getOverSize() * cell_size)
 			{
-				if (ctrlButtonIsDown)
+				if (ctrlButtonIsDown && !shiftButtonIsDown)
 				{
 					currentMode = mPaintingSmallCells;
 
@@ -352,10 +362,10 @@ void process_events(Font& edited)
 						painting_color = black;
 					}
 
-					painting_cell_x = small_cell_x;
-					painting_cell_y = small_cell_y;
+					cell_under_cursor_x = small_cell_x;
+					cell_under_cursor_y = small_cell_y;
 				}
-				else
+				else if (!ctrlButtonIsDown && !shiftButtonIsDown)
 				{
 					if (event.button.button == SDL_BUTTON_LEFT)
 					{
@@ -377,8 +387,23 @@ void process_events(Font& edited)
 					}
 
 					currentMode = mPaintingBigCells;
-					painting_cell_x = big_cell_x;
-					painting_cell_y = big_cell_y;
+					cell_under_cursor_x = big_cell_x;
+					cell_under_cursor_y = big_cell_y;
+				}
+				else if (!ctrlButtonIsDown && shiftButtonIsDown)
+				{
+					if (event.button.button == SDL_BUTTON_LEFT)
+					{
+						currentMode = mSelecting;
+						cell_selection_start_x = small_cell_x;
+						cell_selection_start_y = small_cell_y;
+					}
+					else if (event.button.button == SDL_BUTTON_RIGHT)
+					{
+						currentMode = mIdle;
+						currentSelection = SELECTION_NONE;
+					}
+
 				}
 			}
 			break;
@@ -396,7 +421,7 @@ void process_events(Font& edited)
 
 				if (currentMode == mPaintingSmallCells)
 				{
-					if (painting_cell_x != small_cell_x || painting_cell_y != small_cell_y)
+					if (cell_under_cursor_x != small_cell_x || cell_under_cursor_y != small_cell_y)
 					{
 
 						if (painting_color == white)
@@ -408,8 +433,8 @@ void process_events(Font& edited)
 							(*currentLetter)[small_cell_y * edited.getLetterWidth() * edited.getOverSize() + small_cell_x] = false;
 						}
 
-						painting_cell_x = small_cell_x;
-						painting_cell_y = small_cell_y;
+						cell_under_cursor_x = small_cell_x;
+						cell_under_cursor_y = small_cell_y;
 					}
 				}
 				else if (currentMode == mPaintingBigCells)
@@ -433,8 +458,12 @@ void process_events(Font& edited)
 						painting_color = black;
 					}
 
-					painting_cell_x = big_cell_x;
-					painting_cell_y = big_cell_y;
+					cell_under_cursor_x = big_cell_x;
+					cell_under_cursor_y = big_cell_y;
+				}
+				else if (currentMode == mSelecting)
+				{
+					currentSelection = Selection(cell_selection_start_x, cell_selection_start_y, small_cell_x, small_cell_y);
 				}
 			}
 			break;
@@ -457,6 +486,7 @@ void draw(SDL_Surface* surface, const Font& edited)
 	{
 		if ((*currentLetter)[j * edited.getLetterWidth() * edited.getOverSize() + i])
 		{
+			// Drawing white pixel
 			blendFrameFilled(surface, drawing_box_x + drawing_box_frame_width + cell_size * i,
 			                           drawing_box_x + drawing_box_frame_width + cell_size * (i + 1),
 			                           drawing_box_y + drawing_box_frame_width + cell_size * j,
@@ -465,11 +495,21 @@ void draw(SDL_Surface* surface, const Font& edited)
 		}
 		else if (i == small_cell_x || j == small_cell_y)
 		{
+			// Drawing cell under mouse and it's cross
 			blendFrameFilled(surface, drawing_box_x + drawing_box_frame_width + cell_size * i,
 			                           drawing_box_x + drawing_box_frame_width + cell_size * (i + 1),
 			                           drawing_box_y + drawing_box_frame_width + cell_size * j,
 			                           drawing_box_y + drawing_box_frame_width + cell_size * (j + 1), 64, 64, 64, 1);
 		}
+		else if (i >= currentSelection.xLeft && i <= currentSelection.xRight && j >= currentSelection.yTop && j <= currentSelection.yBottom)
+		{
+			// Drawing selection
+			blendFrameFilled(surface, drawing_box_x + drawing_box_frame_width + cell_size * i,
+			                           drawing_box_x + drawing_box_frame_width + cell_size * (i + 1),
+			                           drawing_box_y + drawing_box_frame_width + cell_size * j,
+			                           drawing_box_y + drawing_box_frame_width + cell_size * (j + 1), 96, 96, 96, 1);
+		}
+
 		blendFrame(surface, drawing_box_x + drawing_box_frame_width + cell_size * i,
 							 drawing_box_x + drawing_box_frame_width + cell_size * (i + 1),
 							 drawing_box_y + drawing_box_frame_width + cell_size * j,
@@ -536,7 +576,7 @@ void draw(SDL_Surface* surface, const Font& edited)
 		putSymbol(surface, edited, iter, x1 + 3, y1 + 3, 255, 255, 255);
 	}
 
-	wchar_t* test_str = L"The quick brown fox\njumps over the lazy dog.\n\nTHE QUICK BROWN FOX\nJUMPS OVER THE LAZY DOG.";
+	const wchar_t* test_str = L"The quick brown fox\njumps over the lazy dog.\n\nTHE QUICK BROWN FOX\nJUMPS OVER THE LAZY DOG.";
 
 	putString(surface, edited, encoding, test_str, symbol_preview_x, symbol_preview_y + 50, 255, 255, 255);
 }

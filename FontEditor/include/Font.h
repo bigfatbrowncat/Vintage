@@ -154,6 +154,25 @@ public:
 	}
 };
 
+struct Selection
+{
+	int xLeft, xRight, yTop, yBottom;
+	Selection(int x1, int y1, int x2, int y2)
+	{
+		xLeft = x1 < x2 ? x1 : x2;
+		xRight = x2 > x1 ? x2 : x1;
+		yTop = y1 < y2 ? y1 : y2;
+		yBottom = y2 > y1 ? y2 : y1;
+	}
+	bool operator == (const Selection& other)
+	{
+		return xLeft == other.xLeft && xRight == other.xRight && yTop == other.yTop && yBottom == other.yBottom;
+	}
+};
+
+static const Selection SELECTION_NONE(-1, -1, -1, -1);
+Selection currentSelection(SELECTION_NONE);
+
 class EditableFont : public Font
 {
 private:
@@ -178,44 +197,88 @@ public:
 			(*iter)[i] = clipboard[i];
 		}
 	}
-	void mirrorHorizontal(vector<bool*>::iterator iter)
+	void mirrorHorizontal(vector<bool*>::iterator iter, Selection selection)
 	{
 		int letterWidth = getLetterWidth();
-		if (letterWidth >= 2)
+		int imin, imax, jmin, jmax;
+
+		if (selection == SELECTION_NONE)
+		{
+			imin = 0;
+			imax = letterWidth * getOverSize();
+			jmin = 0;
+			jmax = getLetterHeight() * getOverSize();
+		}
+		else
+		{
+			imin = selection.xLeft;
+			imax = selection.xRight + 1;
+			jmin = selection.yTop;
+			jmax = selection.yBottom + 1;
+		}
+		int sel_w = imax - imin;
+
+		if (sel_w >= 2)
 		{
 			int overSize = getOverSize();
-			for (int j = 0; j < getLetterHeight() * overSize; j++)
+			for (int j = jmin; j < jmax; j++)
 			{
-				for (int i = 0; i < letterWidth * overSize / 2; i++)
+				for (int di = 0; di < sel_w / 2; di++)
 				{
 					int w = letterWidth * overSize;
-					bool tmp = (*iter)[j * w + (w - 1 - i)];
-					(*iter)[j * w + (w - 1 - i)] = (*iter)[j * w + i];
-					(*iter)[j * w + i] = tmp;
+
+					int rpos = j * w + imin + (sel_w - 1 - di);
+					int lpos = j * w + imin + di;
+
+					bool tmp = (*iter)[rpos];
+					(*iter)[rpos] = (*iter)[lpos];
+					(*iter)[lpos] = tmp;
 				}
 			}
 		}
 	}
 
-	void mirrorVertical(vector<bool*>::iterator iter)
+	void mirrorVertical(vector<bool*>::iterator iter, Selection selection)
 	{
 		int letterWidth = getLetterWidth();
-		int letterHeight = getLetterHeight();
-		if (letterHeight >= 2)
+		int letterheight = getLetterHeight();
+		int overSize = getOverSize();
+		int w = letterWidth * overSize;
+
+		int imin, imax, jmin, jmax;
+
+		if (selection == SELECTION_NONE)
 		{
-			int overSize = getOverSize();
-			for (int i = 0; i < letterWidth * overSize; i++)
+			imin = 0;
+			imax = letterWidth * overSize;
+			jmin = 0;
+			jmax = letterheight * overSize;
+		}
+		else
+		{
+			imin = selection.xLeft;
+			imax = selection.xRight + 1;
+			jmin = selection.yTop;
+			jmax = selection.yBottom + 1;
+		}
+		int sel_h = jmax - jmin;
+
+		if (sel_h >= 2)
+		{
+			for (int i = imin; i < imax; i++)
 			{
-				for (int j = 0; j < getLetterHeight() * overSize / 2; j++)
+				for (int dj = 0; dj < sel_h / 2; dj++)
 				{
-					int w = letterWidth * overSize;
-					int h = letterHeight * overSize;
-					bool tmp = (*iter)[(h - 1 - j) * w + i];
-					(*iter)[(h - 1 - j) * w + i] = (*iter)[j * w + i];
-					(*iter)[j * w + i] = tmp;
+					int bpos = (jmin + sel_h - 1 - dj) * w + i;
+					int tpos = (jmin + dj) * w + i;
+
+					bool tmp = (*iter)[bpos];
+					(*iter)[bpos] = (*iter)[tpos];
+					(*iter)[tpos] = tmp;
 				}
 			}
 		}
+
 	}
 
 	void kernLeft(vector<bool*>::iterator iter)

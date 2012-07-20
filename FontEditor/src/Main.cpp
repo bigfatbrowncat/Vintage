@@ -309,7 +309,7 @@ void process_events(Font& edited)
 			}
 			else if (event.key.keysym.sym == SDLK_LEFT)
 			{
-				((EditableFont&)edited).kernLeft(currentLetter);
+				((EditableFont&)edited).kernLeft(currentLetter, currentSelection);
 			}
 			else if (event.key.keysym.sym == SDLK_RIGHT)
 			{

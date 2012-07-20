@@ -281,21 +281,40 @@ public:
 
 	}
 
-	void kernLeft(vector<bool*>::iterator iter)
+	void kernLeft(vector<bool*>::iterator iter, Selection selection)
 	{
-		int overSize = getOverSize();
 		int letterWidth = getLetterWidth();
 		int letterHeight = getLetterHeight();
+		int overSize = getOverSize();
 		int w = letterWidth * overSize;
 		int h = letterHeight * overSize;
-		for (int j = 0; j < h; j++)
+
+		int imin, imax, jmin, jmax;
+
+		if (selection == SELECTION_NONE)
 		{
-			bool tmp = (*iter)[j * w];
-			for (int i = 1; i < w; i++)
+			imin = 0;
+			imax = letterWidth * overSize;
+			jmin = 0;
+			jmax = letterHeight * overSize;
+		}
+		else
+		{
+			imin = selection.xLeft;
+			imax = selection.xRight + 1;
+			jmin = selection.yTop;
+			jmax = selection.yBottom + 1;
+		}
+		int sel_w = imax - imin;
+
+		for (int j = jmin; j < jmax; j++)
+		{
+			bool tmp = (*iter)[j * w + imin];
+			for (int di = 1; di < sel_w; di++)
 			{
-				(*iter)[j * w + (i + w - 1) % w] = (*iter)[j * w + i];
+				(*iter)[j * w + imin + (di + sel_w - 1) % sel_w] = (*iter)[j * w + imin + di];
 			}
-			(*iter)[j * w + (w - 1)] = tmp;
+			(*iter)[j * w + (imax - 1)] = tmp;
 		}
 	}
 

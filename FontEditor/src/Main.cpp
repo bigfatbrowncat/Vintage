@@ -109,6 +109,7 @@ enum Mode
 Mode currentMode = mIdle;
 bool ctrlButtonIsDown = false;
 bool shiftButtonIsDown = false;
+Selection currentSelection(SELECTION_NONE);
 
 enum color { black, white } painting_color;
 
@@ -313,7 +314,7 @@ void process_events(Font& edited)
 			}
 			else if (event.key.keysym.sym == SDLK_RIGHT)
 			{
-				((EditableFont&)edited).kernRight(currentLetter);
+				((EditableFont&)edited).kernRight(currentLetter, currentSelection);
 			}
 			else if (event.key.keysym.sym == SDLK_DOWN)
 			{

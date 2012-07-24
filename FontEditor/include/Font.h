@@ -171,7 +171,6 @@ struct Selection
 };
 
 static const Selection SELECTION_NONE(-1, -1, -1, -1);
-Selection currentSelection(SELECTION_NONE);
 
 class EditableFont : public Font
 {
@@ -318,21 +317,40 @@ public:
 		}
 	}
 
-	void kernRight(vector<bool*>::iterator iter)
+	void kernRight(vector<bool*>::iterator iter, Selection selection)
 	{
-		int overSize = getOverSize();
 		int letterWidth = getLetterWidth();
 		int letterHeight = getLetterHeight();
+		int overSize = getOverSize();
 		int w = letterWidth * overSize;
 		int h = letterHeight * overSize;
-		for (int j = 0; j < h; j++)
+
+		int imin, imax, jmin, jmax;
+
+		if (selection == SELECTION_NONE)
 		{
-			bool tmp = (*iter)[j * w + (w - 1)];
-			for (int i = w - 2; i >= 0; i--)
+			imin = 0;
+			imax = letterWidth * overSize;
+			jmin = 0;
+			jmax = letterHeight * overSize;
+		}
+		else
+		{
+			imin = selection.xLeft;
+			imax = selection.xRight + 1;
+			jmin = selection.yTop;
+			jmax = selection.yBottom + 1;
+		}
+		int sel_w = imax - imin;
+
+		for (int j = jmin; j < jmax; j++)
+		{
+			bool tmp = (*iter)[j * w + (imax - 1)];
+			for (int di = sel_w - 1; di >= 0; di--)
 			{
-				(*iter)[j * w + (i + 1) % w] = (*iter)[j * w + i];
+				(*iter)[j * w + imin + (di + 1) % sel_w] = (*iter)[j * w + imin + di];
 			}
-			(*iter)[j * w] = tmp;
+			(*iter)[j * w + imin] = tmp;
 		}
 	}
 

@@ -318,11 +318,11 @@ void process_events(Font& edited)
 			}
 			else if (event.key.keysym.sym == SDLK_DOWN)
 			{
-				((EditableFont&)edited).kernDown(currentLetter);
+				((EditableFont&)edited).kernDown(currentLetter, currentSelection);
 			}
 			else if (event.key.keysym.sym == SDLK_UP)
 			{
-				((EditableFont&)edited).kernUp(currentLetter);
+				((EditableFont&)edited).kernUp(currentLetter, currentSelection);
 			}
 			break;
 		case SDL_KEYUP:

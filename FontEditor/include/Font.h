@@ -346,7 +346,7 @@ public:
 		for (int j = jmin; j < jmax; j++)
 		{
 			bool tmp = (*iter)[j * w + (imax - 1)];
-			for (int di = sel_w - 1; di >= 0; di--)
+			for (int di = sel_w - 2; di >= 0; di--)
 			{
 				(*iter)[j * w + imin + (di + 1) % sel_w] = (*iter)[j * w + imin + di];
 			}
@@ -354,39 +354,77 @@ public:
 		}
 	}
 
-	void kernDown(vector<bool*>::iterator iter)
+	void kernDown(vector<bool*>::iterator iter, Selection selection)
 	{
-		int overSize = getOverSize();
 		int letterWidth = getLetterWidth();
 		int letterHeight = getLetterHeight();
+		int overSize = getOverSize();
 		int w = letterWidth * overSize;
 		int h = letterHeight * overSize;
-		for (int i = 0; i < w; i++)
+
+		int imin, imax, jmin, jmax;
+
+		if (selection == SELECTION_NONE)
 		{
-			bool tmp = (*iter)[(h - 1) * w + i];
-			for (int j = h - 2; j >= 0; j--)
+			imin = 0;
+			imax = letterWidth * overSize;
+			jmin = 0;
+			jmax = letterHeight * overSize;
+		}
+		else
+		{
+			imin = selection.xLeft;
+			imax = selection.xRight + 1;
+			jmin = selection.yTop;
+			jmax = selection.yBottom + 1;
+		}
+		int sel_h = jmax - jmin;
+
+		for (int i = imin; i < imax; i++)
+		{
+			bool tmp = (*iter)[(jmax - 1) * w + i];
+			for (int dj = sel_h - 2; dj >= 0; dj--)
 			{
-				(*iter)[(j + 1) * w + i] = (*iter)[j * w + i];
+				(*iter)[(jmin + (dj + 1) % sel_h) * w + i] = (*iter)[(jmin + dj) * w + i];
 			}
-			(*iter)[i] = tmp;
+			(*iter)[jmin * w + i] = tmp;
 		}
 	}
 
-	void kernUp(vector<bool*>::iterator iter)
+	void kernUp(vector<bool*>::iterator iter, Selection selection)
 	{
-		int overSize = getOverSize();
 		int letterWidth = getLetterWidth();
 		int letterHeight = getLetterHeight();
+		int overSize = getOverSize();
 		int w = letterWidth * overSize;
 		int h = letterHeight * overSize;
-		for (int i = 0; i < w; i++)
+
+		int imin, imax, jmin, jmax;
+
+		if (selection == SELECTION_NONE)
 		{
-			bool tmp = (*iter)[i];
-			for (int j = 1; j < h; j++)
+			imin = 0;
+			imax = letterWidth * overSize;
+			jmin = 0;
+			jmax = letterHeight * overSize;
+		}
+		else
+		{
+			imin = selection.xLeft;
+			imax = selection.xRight + 1;
+			jmin = selection.yTop;
+			jmax = selection.yBottom + 1;
+		}
+		int sel_h = jmax - jmin;
+
+		for (int i = imin; i < imax; i++)
+		{
+			bool tmp = (*iter)[jmin * w + i];
+			for (int dj = 1; dj < sel_h; dj++)
 			{
-				(*iter)[(j - 1) * w + i] = (*iter)[j * w + i];
+				(*iter)[(jmin + (dj - 1 + sel_h) % sel_h) * w + i] = (*iter)[(jmin + dj) * w + i];
 			}
-			(*iter)[(h - 1) * w + i] = tmp;
+			(*iter)[(jmax - 1) * w + i] = tmp;
 		}
 	}
 

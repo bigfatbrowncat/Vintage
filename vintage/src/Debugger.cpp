@@ -589,16 +589,19 @@ const DebuggerOrder Debugger::askForOrder()
 		break;
 	case dsStepIntoPending:
 		savedFlowLayer = flowLayers.back();
+		savedFlowLayersNumber = flowLayers.size();
 		state = dsRunningInto;
 		res = doGo;
 		break;
 	case dsStepOutPending:
 		savedFlowLayer = flowLayers.back();
+		savedFlowLayersNumber = flowLayers.size();
 		state = dsRunningOut;
 		res = doGo;
 		break;
 	case dsStepOverPending:
 		savedFlowLayer = flowLayers.back();
+		savedFlowLayersNumber = flowLayers.size();
 		state = dsRunningOver;
 		res = doGo;
 		break;
@@ -627,7 +630,7 @@ const DebuggerOrder Debugger::askForOrder()
 		}
 		break;
 	case dsRunningOut:
-		if (!savedFlowLayerExists() || findBreakpointAt(flow) != breakpoints.end())
+		if ((!(savedFlowLayerExists()) && flowLayers.size() == savedFlowLayersNumber - 1) || findBreakpointAt(flow) != breakpoints.end())
 		{
 			state = dsStopped;
 			res = doWait;
@@ -638,7 +641,7 @@ const DebuggerOrder Debugger::askForOrder()
 		}
 		break;
 	case dsRunningOver:
-		if (savedFlowLayer == flowLayers.back() || findBreakpointAt(flow) != breakpoints.end())
+		if (savedFlowLayer == flowLayers.back() || (!(savedFlowLayerExists()) && flowLayers.size() == savedFlowLayersNumber - 1)  || findBreakpointAt(flow) != breakpoints.end())
 		{
 			state = dsStopped;
 			res = doWait;

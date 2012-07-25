@@ -19,7 +19,7 @@ SDLBuffer::SDLBuffer(int frameBufferWidth, int frameBufferHeight) :
 	frameBufferModified(true)
 {
 	frameBuffer = new SymbolPlace[frameBufferWidth * frameBufferHeight];
-	frameBufferEditing = new SymbolPlace[frameBufferWidth * frameBufferHeight];
+	//frameBufferEditing = new SymbolPlace[frameBufferWidth * frameBufferHeight];
 	pthread_mutex_init(&drawingMutex, NULL);
 }
 
@@ -27,19 +27,19 @@ SDLBuffer::~SDLBuffer()
 {
 	pthread_mutex_destroy(&drawingMutex);
 	delete [] frameBuffer;
-	delete [] frameBufferEditing;
+	//delete [] frameBufferEditing;
 }
 
 SymbolPlace* SDLBuffer::LockFrameBuffer()
 {
 	pthread_mutex_lock(&drawingMutex);
-	memcpy(frameBufferEditing, frameBuffer, frameBufferWidth * frameBufferHeight * sizeof(SymbolPlace));
-	return frameBufferEditing;
+	//memcpy(frameBufferEditing, frameBuffer, frameBufferWidth * frameBufferHeight * sizeof(SymbolPlace));
+	return frameBuffer;
 }
 
 void SDLBuffer::UnlockFrameBuffer()
 {
-	memcpy(frameBuffer, frameBufferEditing, frameBufferWidth * frameBufferHeight * sizeof(SymbolPlace));
+	//memcpy(frameBuffer, frameBufferEditing, frameBufferWidth * frameBufferHeight * sizeof(SymbolPlace));
 	frameBufferModified = true;
 	pthread_mutex_unlock(&drawingMutex);
 }

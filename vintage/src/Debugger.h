@@ -77,20 +77,22 @@ struct FlowLayer
 {
 	FlowLayerType type;
 	int4 lastFlow;
+	int uid;
+
 	FlowLayer(FlowLayerType type = fltNormal, int4 lastFlow = 0)
 		: type(type), lastFlow(lastFlow)
 	{
-
+		uid = rand();
 	}
 
 	bool operator == (FlowLayer other)
 	{
-		return type == other.type && lastFlow == other.lastFlow;
+		return type == other.type && lastFlow == other.lastFlow && uid == other.uid;
 	}
 
 	bool operator != (FlowLayer other)
 	{
-		return type != other.type || lastFlow != other.lastFlow;
+		return type != other.type || lastFlow != other.lastFlow || uid != other.uid;
 	}
 };
 
@@ -109,11 +111,11 @@ private:
 	vector<DebuggingSymbolsEntry> entries;
 	vector<Breakpoint> breakpoints;
 	SDLScreen& screen;
-
 	volatile DebuggerState state;
 
 	vector<FlowLayer> flowLayers;
 	FlowLayer savedFlowLayer;
+	int savedFlowLayersNumber;
 
 	bool savedFlowLayerExists()
 	{

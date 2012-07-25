@@ -27,7 +27,7 @@ class SDLBuffer
 private:
 	pthread_mutex_t drawingMutex;
 	SymbolPlace* frameBuffer;
-	SymbolPlace* frameBufferEditing;
+	//SymbolPlace* frameBufferEditing;
 	int frameBufferWidth, frameBufferHeight;
     bool frameBufferModified;
 public:

@@ -57,8 +57,6 @@ void CPU::askDebugger(int1* stack, int4 stackPtr, int4 stackSize, int1* heap, in
 void CPU::ActivityFunction()
 {
 	int4 flow = heapStart;
-	int4 addr;
-
 	int1* stack = &memory[stackStart];
 	int1* heap = &memory[heapStart];
 
@@ -66,8 +64,6 @@ void CPU::ActivityFunction()
 
 	while (!terminationPending)
 	{
-		bool justSteppedIntoHandler = false;
-
 		if (!portHandlingJustFinished)
 		{
 			// Checking ports input
@@ -128,7 +124,6 @@ void CPU::ActivityFunction()
 					*((int4*)&stack[stackPtr]) = flow;
 
 					flow = inputPortHandlersAddresses[portToHandle];
-					justSteppedIntoHandler = true;
 
 					stackPtr -= portInWaitingDataLength[portToHandle];
 
@@ -138,14 +133,12 @@ void CPU::ActivityFunction()
 					}
 
 					if (inputPortsWaitingCount == 1) someInputPortIsWaiting = false;
+
+					// If we have just stepped into a handler, let's report the debugger about it
+					reportToDebugger(stack, stackPtr, stackSize, heap, heapSize, flow, fsStepInHandler);
 				}
 			}
 			pthread_mutex_unlock(&portReadingMutex);
-			if (justSteppedIntoHandler)
-			{
-				// If we have just stepped into a handler, let's report the debugger about it
-				reportToDebugger(stack, stackPtr, stackSize, heap, heapSize, flow, fsStepInHandler);
-			}
 		}
 		else
 		{
@@ -166,6 +159,7 @@ void CPU::ActivityFunction()
 		//instr_t instr = *((instr_t*)&heap[flow]);
 		//flow += sizeof(instr_t);
 
+		int4 tmpAddr;
 		switch (instr)
 		{
 		case nop:
@@ -254,21 +248,21 @@ void CPU::ActivityFunction()
 			printf("mov %d, [{%d}], {%d}", arg1, arg2, arg3);
 			fflush(stdout);
 #endif
-			addr = *((int4*)&stack[stackPtr + arg2]);
+			tmpAddr = *((int4*)&stack[stackPtr + arg2]);
 
 			switch (arg1)
 			{
 			case 1:
-				heap[addr] = stack[stackPtr + arg3];
+				heap[tmpAddr] = stack[stackPtr + arg3];
 				break;
 			case 2:
-				*((int2*)&heap[addr]) = *((int2*)&stack[stackPtr + arg3]);
+				*((int2*)&heap[tmpAddr]) = *((int2*)&stack[stackPtr + arg3]);
 				break;
 			case 4:
-				*((int4*)&heap[addr]) = *((int4*)&stack[stackPtr + arg3]);
+				*((int4*)&heap[tmpAddr]) = *((int4*)&stack[stackPtr + arg3]);
 				break;
 			case 8:
-				*((int8*)&heap[addr]) = *((int8*)&stack[stackPtr + arg3]);
+				*((int8*)&heap[tmpAddr]) = *((int8*)&stack[stackPtr + arg3]);
 				break;
 			}
 
@@ -282,21 +276,21 @@ void CPU::ActivityFunction()
 			printf("mov %d, {%d}, [{%d}]", arg1, arg2, arg3);
 			fflush(stdout);
 #endif
-			addr = *((int4*)&stack[stackPtr + arg3]);
+			tmpAddr = *((int4*)&stack[stackPtr + arg3]);
 
 			switch (arg1)
 			{
 			case 1:
-				*((int1*)&stack[stackPtr + arg2]) = *((int1*)&heap[addr]);
+				*((int1*)&stack[stackPtr + arg2]) = *((int1*)&heap[tmpAddr]);
 				break;
 			case 2:
-				*((int2*)&stack[stackPtr + arg2]) = *((int2*)&heap[addr]);
+				*((int2*)&stack[stackPtr + arg2]) = *((int2*)&heap[tmpAddr]);
 				break;
 			case 4:
-				*((int4*)&stack[stackPtr + arg2]) = *((int4*)&heap[addr]);
+				*((int4*)&stack[stackPtr + arg2]) = *((int4*)&heap[tmpAddr]);
 				break;
 			case 8:
-				*((int8*)&stack[stackPtr + arg2]) = *((int8*)&heap[addr]);
+				*((int8*)&stack[stackPtr + arg2]) = *((int8*)&heap[tmpAddr]);
 				break;
 			}
 
@@ -911,7 +905,6 @@ void CPU::ActivityFunction()
 
 		case uregin_const:
 			GET_ARG_INT4(arg1, flow);
-			GET_ARG_INT4(arg2, flow);
 #ifdef OUTPUT_INSTRUCTIONS
 			printf("uregin %d", arg1);
 			fflush(stdout);
@@ -927,6 +920,43 @@ void CPU::ActivityFunction()
 			// Halt
 			terminationPending = true;		// Close the world...
 			break;
+
+		case ldcont_stp:
+			GET_ARG_INT4(arg1, flow);
+#ifdef OUTPUT_INSTRUCTIONS
+			printf("ldcont {%d}", arg1);
+			fflush(stdout);
+#endif
+
+			break;
+
+		case ldcont_m_stp:
+			GET_ARG_INT4(arg1, flow);
+#ifdef OUTPUT_INSTRUCTIONS
+			printf("ldcont [{%d}]", arg1);
+			fflush(stdout);
+#endif
+
+			break;
+
+		case svcont_stp:
+			GET_ARG_INT4(arg1, flow);
+#ifdef OUTPUT_INSTRUCTIONS
+			printf("svcont {%d}", arg1);
+			fflush(stdout);
+#endif
+
+			break;
+
+		case svcont_m_stp:
+			GET_ARG_INT4(arg1, flow);
+#ifdef OUTPUT_INSTRUCTIONS
+			printf("svcont [{%d}]", arg1);
+			fflush(stdout);
+#endif
+
+			break;
+
 		}
 
 #ifdef OUTPUT_INSTRUCTIONS

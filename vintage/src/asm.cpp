@@ -1527,6 +1527,82 @@ int assemble(char* code, int1* target, int4 max_target_size, int& error_line, in
 						RAISE_ERROR(ASM_NO_MEMORY)
 					}
 				}
+				else if (areEqual(tokens[instr_start], "svcont"))
+				{
+					int arg_vals[1];
+
+					int arg1_type;
+
+					if (tokens_num == instr_start + 2)
+					{
+						arg1_type = parseArg(pass, tokens[instr_start + 1], arg_vals[1], labels);
+					}
+					else
+					{
+						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENTS_NUMBER)
+					}
+
+					if (arg1_type == ARG_INVALID)
+					{
+						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT)
+					}
+					else if (arg1_type == ARG_STACK)
+					{
+						if (!addInstr(target, max_target_size, mem_pos, svcont_stp, arg_vals, 1))
+						{
+							RAISE_ERROR(ASM_NO_MEMORY)
+						}
+					}
+					else if (arg1_type == ARG_MEMORY_STACK)
+					{
+						if (!addInstr(target, max_target_size, mem_pos, svcont_m_stp, arg_vals, 1))
+						{
+							RAISE_ERROR(ASM_NO_MEMORY)
+						}
+					}
+					else
+					{
+						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT_TYPE)
+					}
+				}
+				else if (areEqual(tokens[instr_start], "ldcont"))
+				{
+					int arg_vals[1];
+
+					int arg1_type;
+
+					if (tokens_num == instr_start + 2)
+					{
+						arg1_type = parseArg(pass, tokens[instr_start + 1], arg_vals[1], labels);
+					}
+					else
+					{
+						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENTS_NUMBER)
+					}
+
+					if (arg1_type == ARG_INVALID)
+					{
+						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT)
+					}
+					else if (arg1_type == ARG_STACK)
+					{
+						if (!addInstr(target, max_target_size, mem_pos, ldcont_stp, arg_vals, 1))
+						{
+							RAISE_ERROR(ASM_NO_MEMORY)
+						}
+					}
+					else if (arg1_type == ARG_MEMORY_STACK)
+					{
+						if (!addInstr(target, max_target_size, mem_pos, ldcont_m_stp, arg_vals, 1))
+						{
+							RAISE_ERROR(ASM_NO_MEMORY)
+						}
+					}
+					else
+					{
+						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT_TYPE)
+					}
+				}
 				else if (areEqual(tokens[instr_start], "data"))
 				{
 					int arg_vals[1];

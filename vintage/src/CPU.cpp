@@ -56,9 +56,10 @@ void CPU::askDebugger(int1* stack, int4 stackPtr, int4 stackSize, int1* heap, in
 
 void CPU::ActivityFunction()
 {
-	int4 flow = heapStart;
-	int1* stack = &memory[stackStart];
-	int1* heap = &memory[heapStart];
+	int4 flow = initialHeapStart;
+	int1* stack = &memory[initialStackStart];
+	int1* heap = &memory[initialHeapStart];
+	int4 stackPtr = initialStackSize;
 
 	bool portHandlingJustFinished = false;
 
@@ -135,7 +136,7 @@ void CPU::ActivityFunction()
 					if (inputPortsWaitingCount == 1) someInputPortIsWaiting = false;
 
 					// If we have just stepped into a handler, let's report the debugger about it
-					reportToDebugger(stack, stackPtr, stackSize, heap, heapSize, flow, fsStepInHandler);
+					reportToDebugger(stack, stackPtr, initialStackSize, heap, initialHeapSize, flow, fsStepInHandler);
 				}
 			}
 			pthread_mutex_unlock(&portReadingMutex);
@@ -145,7 +146,7 @@ void CPU::ActivityFunction()
 			portHandlingJustFinished = false;
 		}
 
-		askDebugger(stack, stackPtr, stackSize, heap, heapSize, flow);
+		askDebugger(stack, stackPtr, initialStackSize, heap, initialHeapSize, flow);
 
 #ifdef OUTPUT_INSTRUCTIONS
 		printf("%d:\t", flow);
@@ -823,7 +824,7 @@ void CPU::ActivityFunction()
 			*((int4*)&stack[stackPtr]) = flow;
 			flow = *((int4*)&stack[stackPtr + arg1]);
 
-			reportToDebugger(stack, stackPtr, stackSize, heap, heapSize, flow, fsStepIn);
+			reportToDebugger(stack, stackPtr, initialStackSize, heap, initialHeapSize, flow, fsStepIn);
 			break;
 
 		case call_flow:
@@ -836,7 +837,7 @@ void CPU::ActivityFunction()
 			*((int4*)&stack[stackPtr]) = flow;
 			flow = (int4)arg1;
 
-			reportToDebugger(stack, stackPtr, stackSize, heap, heapSize, flow, fsStepIn);
+			reportToDebugger(stack, stackPtr, initialStackSize, heap, initialHeapSize, flow, fsStepIn);
 			break;
 
 		case ret_stp:
@@ -847,7 +848,7 @@ void CPU::ActivityFunction()
 			flow = *((int4*)&stack[stackPtr]);
 			stackPtr += 4;	// removing the callr's address
 
-			reportToDebugger(stack, stackPtr, stackSize, heap, heapSize, flow, fsStepOut);
+			reportToDebugger(stack, stackPtr, initialStackSize, heap, initialHeapSize, flow, fsStepOut);
 			break;
 
 		case hret_stp:
@@ -864,7 +865,7 @@ void CPU::ActivityFunction()
 				inputPortsCurrentlyHandlingCount--;
 
 				portHandlingJustFinished = true;
-				reportToDebugger(stack, stackPtr, stackSize, heap, heapSize, flow, fsStepOutHandler);
+				reportToDebugger(stack, stackPtr, initialStackSize, heap, initialHeapSize, flow, fsStepOutHandler);
 
 				pthread_mutex_unlock(&portReadingMutex);
 			}
@@ -963,8 +964,8 @@ void CPU::ActivityFunction()
 		if (instr != jmp_flow)
 		{
 		printf("\t\t\t{");
-		if (stackPtr < stackSize)  printf("%x", stack[stackPtr]);
-		for (int i = stackPtr + 1; i < stackSize; i++)
+		if (stackPtr < initialStackSize)  printf("%x", stack[stackPtr]);
+		for (int i = stackPtr + 1; i < initialStackSize; i++)
 			printf(", %x", stack[i]);
 		printf("}\n");
 		fflush(stdout);

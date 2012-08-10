@@ -21,12 +21,11 @@ private:
 	int1* memory;
 	int4 memorySize;
 
-	int4 heapStart;
-	int4 heapSize;
+	int4 initialHeapStart;
+	int4 initialHeapSize;
 
-	int4 stackStart;
-	int4 stackSize;
-	int4 stackPtr;
+	int4 initialStackStart;
+	int4 initialStackSize;
 
 	int4 portsCount;
 	int4 portDataLength;
@@ -117,13 +116,12 @@ public:
 		this->memorySize = memorySize;
 
 		// Initiating heap
-		this->heapStart = heapStart;
-		this->heapSize = heapSize;
+		this->initialHeapStart = heapStart;
+		this->initialHeapSize = heapSize;
 
 		// Initiating stack
-		this->stackStart = stackStart;
-		this->stackSize = stackSize;
-		stackPtr = stackSize;
+		this->initialStackStart = stackStart;
+		this->initialStackSize = stackSize;
 
 		this->portsCount = portsCount;
 		this->portDataLength = portDataLength;

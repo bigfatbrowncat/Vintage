@@ -12,6 +12,45 @@ class CPU;
 #include "Debugger.h"
 #include "FlowState.h"
 
+struct CPUContext
+{
+	int4 heapStart;
+	int4 heapSize;
+
+	int4 stackStart;
+	int4 stackSize;
+	int4 stackPtr;
+
+	int getSize()
+	{
+		return sizeof(heapStart) + sizeof(heapSize) +
+		       sizeof(stackStart) + sizeof(stackSize) + sizeof(stackPtr);
+	}
+
+	CPUContext(int4 heapStart, int4 heapSize, int4 stackStart, int4 stackSize, int4 stackPtr) :
+		heapStart(heapStart), heapSize(heapSize), stackStart(stackStart), stackSize(stackSize), stackPtr(stackPtr) { }
+
+	void write(int1* addr)
+	{
+		int4* p = (int4*)addr;
+		p[0] = heapStart;
+		p[1] = heapSize;
+		p[2] = stackStart;
+		p[3] = stackSize;
+		p[4] = stackPtr;
+	}
+
+	void read(int1* addr)
+	{
+		int4* p = (int4*)addr;
+		heapStart = p[0];
+		heapSize = p[1];
+		stackStart = p[2];
+		stackSize = p[3];
+		stackPtr = p[4];
+	}
+};
+
 class CPU
 {
 	friend class HardwareDevice;
@@ -21,11 +60,7 @@ private:
 	int1* memory;
 	int4 memorySize;
 
-	int4 initialHeapStart;
-	int4 initialHeapSize;
-
-	int4 initialStackStart;
-	int4 initialStackSize;
+	CPUContext initialContext;
 
 	int4 portsCount;
 	int4 portDataLength;
@@ -109,19 +144,12 @@ public:
 		this->debugger = &debugger;
 	}
 
-	CPU(int4 memorySize, int4 heapStart, int4 heapSize, int4 stackStart, int4 stackSize, int4 portsCount, int4 portDataLength) : debugger(NULL)
+	CPU(int4 memorySize, int4 heapStart, int4 heapSize, int4 stackStart, int4 stackSize, int4 portsCount, int4 portDataLength) :
+		debugger(NULL), initialContext(heapStart, heapSize, stackStart, stackSize, stackSize)
 	{
 		// Getting memory
 		memory = new int1[memorySize];
 		this->memorySize = memorySize;
-
-		// Initiating heap
-		this->initialHeapStart = heapStart;
-		this->initialHeapSize = heapSize;
-
-		// Initiating stack
-		this->initialStackStart = stackStart;
-		this->initialStackSize = stackSize;
 
 		this->portsCount = portsCount;
 		this->portDataLength = portDataLength;

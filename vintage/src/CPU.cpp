@@ -56,10 +56,12 @@ void CPU::askDebugger(int1* stack, int4 stackPtr, int4 stackSize, int1* heap, in
 
 void CPU::ActivityFunction()
 {
-	int4 flow = initialHeapStart;
-	int1* stack = &memory[initialStackStart];
-	int1* heap = &memory[initialHeapStart];
-	int4 stackPtr = initialStackSize;
+	CPUContext context = initialContext;
+
+	int4 flow = context.heapStart;
+	int1* stack = &memory[context.stackStart];
+	int1* heap = &memory[context.heapStart];
+	int4 stackPtr = context.stackSize;
 
 	bool portHandlingJustFinished = false;
 
@@ -136,7 +138,7 @@ void CPU::ActivityFunction()
 					if (inputPortsWaitingCount == 1) someInputPortIsWaiting = false;
 
 					// If we have just stepped into a handler, let's report the debugger about it
-					reportToDebugger(stack, stackPtr, initialStackSize, heap, initialHeapSize, flow, fsStepInHandler);
+					reportToDebugger(stack, stackPtr, context.stackSize, heap, context.heapSize, flow, fsStepInHandler);
 				}
 			}
 			pthread_mutex_unlock(&portReadingMutex);
@@ -146,7 +148,7 @@ void CPU::ActivityFunction()
 			portHandlingJustFinished = false;
 		}
 
-		askDebugger(stack, stackPtr, initialStackSize, heap, initialHeapSize, flow);
+		askDebugger(stack, stackPtr, context.stackSize, heap, context.heapSize, flow);
 
 #ifdef OUTPUT_INSTRUCTIONS
 		printf("%d:\t", flow);
@@ -824,7 +826,7 @@ void CPU::ActivityFunction()
 			*((int4*)&stack[stackPtr]) = flow;
 			flow = *((int4*)&stack[stackPtr + arg1]);
 
-			reportToDebugger(stack, stackPtr, initialStackSize, heap, initialHeapSize, flow, fsStepIn);
+			reportToDebugger(stack, stackPtr, context.stackSize, heap, context.heapSize, flow, fsStepIn);
 			break;
 
 		case call_flow:
@@ -837,7 +839,7 @@ void CPU::ActivityFunction()
 			*((int4*)&stack[stackPtr]) = flow;
 			flow = (int4)arg1;
 
-			reportToDebugger(stack, stackPtr, initialStackSize, heap, initialHeapSize, flow, fsStepIn);
+			reportToDebugger(stack, stackPtr, context.stackSize, heap, context.heapSize, flow, fsStepIn);
 			break;
 
 		case ret_stp:
@@ -848,7 +850,7 @@ void CPU::ActivityFunction()
 			flow = *((int4*)&stack[stackPtr]);
 			stackPtr += 4;	// removing the callr's address
 
-			reportToDebugger(stack, stackPtr, initialStackSize, heap, initialHeapSize, flow, fsStepOut);
+			reportToDebugger(stack, stackPtr, context.stackSize, heap, context.heapSize, flow, fsStepOut);
 			break;
 
 		case hret_stp:
@@ -865,7 +867,7 @@ void CPU::ActivityFunction()
 				inputPortsCurrentlyHandlingCount--;
 
 				portHandlingJustFinished = true;
-				reportToDebugger(stack, stackPtr, initialStackSize, heap, initialHeapSize, flow, fsStepOutHandler);
+				reportToDebugger(stack, stackPtr, context.stackSize, heap, context.heapSize, flow, fsStepOutHandler);
 
 				pthread_mutex_unlock(&portReadingMutex);
 			}
@@ -928,6 +930,12 @@ void CPU::ActivityFunction()
 			printf("ldcont {%d}", arg1);
 			fflush(stdout);
 #endif
+			context.read(&stack[stackPtr + arg1]);
+
+			int4 flow = context.heapStart;
+			int1* stack = &memory[context.stackStart];
+			int1* heap = &memory[context.heapStart];
+			int4 stackPtr = context.stackSize;
 
 			break;
 
@@ -938,6 +946,14 @@ void CPU::ActivityFunction()
 			fflush(stdout);
 #endif
 
+			tmpAddr = *((int4*)&stack[stackPtr + arg1]);
+			context.read(((int1*)&heap[tmpAddr]));
+
+			int4 flow = context.heapStart;
+			int1* stack = &memory[context.stackStart];
+			int1* heap = &memory[context.heapStart];
+			int4 stackPtr = context.stackSize;
+
 			break;
 
 		case svcont_stp:
@@ -946,6 +962,8 @@ void CPU::ActivityFunction()
 			printf("svcont {%d}", arg1);
 			fflush(stdout);
 #endif
+
+			context.write(&stack[stackPtr + arg1]);
 
 			break;
 
@@ -956,6 +974,9 @@ void CPU::ActivityFunction()
 			fflush(stdout);
 #endif
 
+			tmpAddr = *((int4*)&stack[stackPtr + arg1]);
+			context.write(((int1*)&heap[tmpAddr]));
+
 			break;
 
 		}
@@ -964,8 +985,8 @@ void CPU::ActivityFunction()
 		if (instr != jmp_flow)
 		{
 		printf("\t\t\t{");
-		if (stackPtr < initialStackSize)  printf("%x", stack[stackPtr]);
-		for (int i = stackPtr + 1; i < initialStackSize; i++)
+		if (stackPtr < context.stackSize)  printf("%x", stack[stackPtr]);
+		for (int i = stackPtr + 1; i < context.stackSize; i++)
 			printf(", %x", stack[i]);
 		printf("}\n");
 		fflush(stdout);

@@ -230,12 +230,11 @@ main:          alloc 8                           ; 4 * 2
                regin 3, {0}                       ; keyboard is on the port #3
 
                ; setting the context for keyboard handler
-getcont:       getcont {0}
+               getcont {0}
                add {8}, 128                       ; stack start
                sub {12}, 128                      ; stack size
                mov {16}, {12}                     ; stack ptr
-               add {20}, after_setcont
-               sub {20}, getcont
+               mov {20}, after_setcont
                setcont {0}
 after_setcont:
 

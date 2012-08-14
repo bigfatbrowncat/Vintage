@@ -40,7 +40,7 @@ struct CPUContext
 
 	void writeTo(int1* addr)
 	{
-		int4* p = (int4*)(&(*addr));
+		int4* p = (int4*)addr;
 		p[0] = heapStart;
 		p[1] = heapSize;
 		p[2] = stackStart;
@@ -51,7 +51,7 @@ struct CPUContext
 
 	void readFrom(int1* addr)
 	{
-		int4* p = (int4*)(&(*addr));
+		int4* p = (int4*)addr;
 		heapStart = p[0];
 		heapSize = p[1];
 		stackStart = p[2];

@@ -1535,7 +1535,7 @@ int assemble(char* code, int1* target, int4 max_target_size, int& error_line, in
 
 					if (tokens_num == instr_start + 2)
 					{
-						arg1_type = parseArg(pass, tokens[instr_start + 1], arg_vals[1], labels);
+						arg1_type = parseArg(pass, tokens[instr_start + 1], arg_vals[0], labels);
 					}
 					else
 					{
@@ -1573,7 +1573,7 @@ int assemble(char* code, int1* target, int4 max_target_size, int& error_line, in
 
 					if (tokens_num == instr_start + 2)
 					{
-						arg1_type = parseArg(pass, tokens[instr_start + 1], arg_vals[1], labels);
+						arg1_type = parseArg(pass, tokens[instr_start + 1], arg_vals[0], labels);
 					}
 					else
 					{

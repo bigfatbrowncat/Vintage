@@ -81,7 +81,7 @@ const instr_t if_stp_flow		= 0x00A8 + 0x0;
 const instr_t ifp_stp_flow		= 0x00A8 + 0x1;
 
 // call		{stp}
-const instr_t call_m_stp		= 0x00B8 + 0x0;
+const instr_t call_stp		= 0x00B8 + 0x0;
 // call		flow
 const instr_t call_flow			= 0x00B8 + 0x1;
 
@@ -97,21 +97,21 @@ const instr_t jmp_flow			= 0x00D0 + 0x0;
 const instr_t out_const			= 0x00D8 + 0x0;
 
 // regin	const, flow
-const instr_t regin_const_flow	= 0x00E0 + 0x0;
+const instr_t regin_const_stp	= 0x00E0 + 0x0;
 // uregin	const
-const instr_t uregin_const		= 0x00E0 + 0x1;
+const instr_t uregin_const		= 0x00E8 + 0x0;
 
 // halt
 const instr_t halt				= 0x00F0 + 0x0;
 
-// svcont {stp}
-const instr_t svcont_stp		= 0x0100 + 0x0;
-// svcont [{stp}]
-const instr_t svcont_m_stp		= 0x0100 + 0x1;
+// setcont {stp}
+const instr_t setcont_stp		= 0x0100 + 0x0;
+// setcont [{stp}]
+const instr_t setcont_m_stp		= 0x0100 + 0x1;
 
-// ldcont {stp}
-const instr_t ldcont_stp		= 0x0108 + 0x0;
-// ldcont [{stp}]
-const instr_t ldcont_m_stp		= 0x0108 + 0x1;
+// getcont {stp}
+const instr_t getcont_stp		= 0x0108 + 0x0;
+// getcont [{stp}]
+const instr_t getcont_m_stp		= 0x0108 + 0x1;
 
 #endif

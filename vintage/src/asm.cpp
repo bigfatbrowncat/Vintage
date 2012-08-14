@@ -1363,9 +1363,9 @@ int assemble(char* code, int1* target, int4 max_target_size, int& error_line, in
 					{
 						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT)
 					}
-					else if (arg1_type == ARG_CONST && arg2_type == ARG_CONST)
+					else if (arg1_type == ARG_CONST && arg2_type == ARG_STACK)
 					{
-						if (!addInstr(target, max_target_size, mem_pos, regin_const_flow, arg_vals, 2))
+						if (!addInstr(target, max_target_size, mem_pos, regin_const_stp, arg_vals, 2))
 						{
 							RAISE_ERROR(ASM_NO_MEMORY)
 						}
@@ -1419,7 +1419,7 @@ int assemble(char* code, int1* target, int4 max_target_size, int& error_line, in
 					}
 					else if (arg1_type == ARG_STACK)
 					{
-						if (!addInstr(target, max_target_size, mem_pos, call_m_stp, arg_vals, 1))
+						if (!addInstr(target, max_target_size, mem_pos, call_stp, arg_vals, 1))
 						{
 							RAISE_ERROR(ASM_NO_MEMORY)
 						}
@@ -1527,7 +1527,7 @@ int assemble(char* code, int1* target, int4 max_target_size, int& error_line, in
 						RAISE_ERROR(ASM_NO_MEMORY)
 					}
 				}
-				else if (areEqual(tokens[instr_start], "svcont"))
+				else if (areEqual(tokens[instr_start], "setcont"))
 				{
 					int arg_vals[1];
 
@@ -1548,14 +1548,14 @@ int assemble(char* code, int1* target, int4 max_target_size, int& error_line, in
 					}
 					else if (arg1_type == ARG_STACK)
 					{
-						if (!addInstr(target, max_target_size, mem_pos, svcont_stp, arg_vals, 1))
+						if (!addInstr(target, max_target_size, mem_pos, setcont_stp, arg_vals, 1))
 						{
 							RAISE_ERROR(ASM_NO_MEMORY)
 						}
 					}
 					else if (arg1_type == ARG_MEMORY_STACK)
 					{
-						if (!addInstr(target, max_target_size, mem_pos, svcont_m_stp, arg_vals, 1))
+						if (!addInstr(target, max_target_size, mem_pos, setcont_m_stp, arg_vals, 1))
 						{
 							RAISE_ERROR(ASM_NO_MEMORY)
 						}
@@ -1565,7 +1565,7 @@ int assemble(char* code, int1* target, int4 max_target_size, int& error_line, in
 						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT_TYPE)
 					}
 				}
-				else if (areEqual(tokens[instr_start], "ldcont"))
+				else if (areEqual(tokens[instr_start], "getcont"))
 				{
 					int arg_vals[1];
 
@@ -1586,14 +1586,14 @@ int assemble(char* code, int1* target, int4 max_target_size, int& error_line, in
 					}
 					else if (arg1_type == ARG_STACK)
 					{
-						if (!addInstr(target, max_target_size, mem_pos, ldcont_stp, arg_vals, 1))
+						if (!addInstr(target, max_target_size, mem_pos, getcont_stp, arg_vals, 1))
 						{
 							RAISE_ERROR(ASM_NO_MEMORY)
 						}
 					}
 					else if (arg1_type == ARG_MEMORY_STACK)
 					{
-						if (!addInstr(target, max_target_size, mem_pos, ldcont_m_stp, arg_vals, 1))
+						if (!addInstr(target, max_target_size, mem_pos, getcont_m_stp, arg_vals, 1))
 						{
 							RAISE_ERROR(ASM_NO_MEMORY)
 						}

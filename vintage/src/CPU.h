@@ -5,12 +5,15 @@ class CPU;
 
 #include <pthread.h>
 #include <unistd.h>
+#include <string>
 
 #include "instructions.h"
 #include "chain.h"
 #include "HardwareDevice.h"
 #include "Debugger.h"
 #include "FlowState.h"
+
+using namespace std;
 
 struct CPUContext
 {
@@ -21,34 +24,49 @@ struct CPUContext
 	int4 stackSize;
 	int4 stackPtr;
 
+	int4 flow;
+
 	int getSize()
 	{
 		return sizeof(heapStart) + sizeof(heapSize) +
-		       sizeof(stackStart) + sizeof(stackSize) + sizeof(stackPtr);
+		       sizeof(stackStart) + sizeof(stackSize) + sizeof(stackPtr) +
+		       sizeof(flow);
 	}
 
-	CPUContext(int4 heapStart, int4 heapSize, int4 stackStart, int4 stackSize, int4 stackPtr) :
-		heapStart(heapStart), heapSize(heapSize), stackStart(stackStart), stackSize(stackSize), stackPtr(stackPtr) { }
+	CPUContext() {}
 
-	void write(int1* addr)
+	CPUContext(int4 heapStart, int4 heapSize, int4 stackStart, int4 stackSize, int4 stackPtr, int4 flow) :
+		heapStart(heapStart), heapSize(heapSize), stackStart(stackStart), stackSize(stackSize), stackPtr(stackPtr), flow(flow) { }
+
+	void writeTo(int1* addr)
 	{
-		int4* p = (int4*)addr;
+		int4* p = (int4*)(&(*addr));
 		p[0] = heapStart;
 		p[1] = heapSize;
 		p[2] = stackStart;
 		p[3] = stackSize;
 		p[4] = stackPtr;
+		p[5] = flow;
 	}
 
-	void read(int1* addr)
+	void readFrom(int1* addr)
 	{
-		int4* p = (int4*)addr;
+		int4* p = (int4*)(&(*addr));
 		heapStart = p[0];
 		heapSize = p[1];
 		stackStart = p[2];
 		stackSize = p[3];
 		stackPtr = p[4];
+		flow = p[5];
 	}
+
+};
+
+struct PortInputHandler
+{
+	CPUContext context;
+	bool assigned;
+	PortInputHandler() : assigned(false) {}
 };
 
 class CPU
@@ -66,7 +84,7 @@ private:
 	int4 portDataLength;
 
 	HardwareDevice** devices;
-	volatile int4* inputPortHandlersAddresses;
+	PortInputHandler* portInputHandlers;
 
 	bool* inputPortIsWaiting;
 	int1* portInWaitingData;
@@ -101,7 +119,7 @@ public:
 		pthread_mutex_unlock(&portReadingMutex);
 
 		// Checking if we have a handler for the port
-		if (inputPortHandlersAddresses[port] != 0)
+		if (portInputHandlers[port].assigned)
 		{
 			// Waiting until for the CPU to handle the port
 			bool notHandledYet;
@@ -145,7 +163,7 @@ public:
 	}
 
 	CPU(int4 memorySize, int4 heapStart, int4 heapSize, int4 stackStart, int4 stackSize, int4 portsCount, int4 portDataLength) :
-		debugger(NULL), initialContext(heapStart, heapSize, stackStart, stackSize, stackSize)
+		debugger(NULL), initialContext(heapStart, heapSize, stackStart, stackSize, stackSize, 0)
 	{
 		// Getting memory
 		memory = new int1[memorySize];
@@ -155,8 +173,7 @@ public:
 		this->portDataLength = portDataLength;
 
 		devices = new HardwareDevice*[portsCount];
-		inputPortHandlersAddresses = new int4[portsCount];
-		for (int i = 0; i < portsCount; i++) inputPortHandlersAddresses[i] = 0;
+		portInputHandlers = new PortInputHandler[portsCount];
 
 		inputPortIsWaiting = new bool[portsCount];
 		for (int i = 0; i < portsCount; i++) inputPortIsWaiting[i] = false;
@@ -187,7 +204,7 @@ public:
 	{
 		delete[] memory;
 		delete[] devices;
-		delete[] inputPortHandlersAddresses;
+		delete[] portInputHandlers;
 		delete[] inputPortIsWaiting;
 		delete[] portInWaitingData;
 		delete[] portInWaitingDataLength;

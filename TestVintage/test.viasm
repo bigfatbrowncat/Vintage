@@ -211,9 +211,36 @@ main:          alloc 8                           ; 4 * 2
                mov {0}, 1
                out 2              
 
-               regin 1, timer_handler            ; timer is on the port #1
-               regin 3, kbd_handler              ; keyboard is on the port #3
+               alloc 24                           ; allocating space for context data
 
+               ; setting the context for timer handler
+               getcont {0}
+               add {8}, 0                         ; stack start
+               mov {12}, 64                       ; stack size
+               mov {16}, {12}                     ; stack ptr
+               mov {20}, timer_handler
+               regin 1, {0}                       ; assuming timer is on the port #1
+
+               ; setting the context for keyboard handler
+               getcont {0}
+               add {8}, 64                        ; stack start
+               mov {12}, 64                       ; stack size
+               mov {16}, {12}                     ; stack ptr
+               mov {20}, kbd_handler
+               regin 3, {0}                       ; keyboard is on the port #3
+
+               ; setting the context for keyboard handler
+getcont:       getcont {0}
+               add {8}, 128                       ; stack start
+               sub {12}, 128                      ; stack size
+               mov {16}, {12}                     ; stack ptr
+               add {20}, after_setcont
+               sub {20}, getcont
+               setcont {0}
+after_setcont:
+
+               free 24
+               
                free 8
 
 eternal:       

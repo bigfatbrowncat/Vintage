@@ -120,7 +120,7 @@ int main(int argc, char* argv[])
 	}
 	GLenum err = glGetError();
 
-	cpu.TurnOff();
+	cpu.turnOff();
 	kbd.TurnOff();
 	hardTimer.TurnOff();
 	cpuConsole.TurnOff();

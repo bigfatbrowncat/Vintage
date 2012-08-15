@@ -147,9 +147,14 @@ public:
 		}
 	}
 
-	void TurnOff()
+	void turnOff()
 	{
-		terminationPending = true;
+		if (!terminationPending && !terminated)
+		{
+			terminationPending = true;
+			void* value;
+			pthread_join(activity, &value);
+		}
 	}
 
 	bool isTerminated()
@@ -163,7 +168,7 @@ public:
 	}
 
 	CPU(int4 memorySize, int4 heapStart, int4 heapSize, int4 stackStart, int4 stackSize, int4 portsCount, int4 portDataLength) :
-		debugger(NULL), initialContext(heapStart, heapSize, stackStart, stackSize, stackSize, 0)
+		initialContext(heapStart, heapSize, stackStart, stackSize, stackSize, 0), debugger(NULL)
 	{
 		// Getting memory
 		memory = new int1[memorySize];
@@ -202,6 +207,11 @@ public:
 
 	virtual ~CPU()
 	{
+		if (!terminated)
+		{
+			turnOff();
+		}
+
 		delete[] memory;
 		delete[] devices;
 		delete[] portInputHandlers;

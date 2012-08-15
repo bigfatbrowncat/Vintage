@@ -93,8 +93,14 @@ const instr_t hret_stp			= 0x00C0 + 0x1;
 // jmp		flow
 const instr_t jmp_flow			= 0x00D0 + 0x0;
 
-// out		const
-const instr_t out_const			= 0x00D8 + 0x0;
+// out		const, {stp}, [{stp}]
+const instr_t out_const_stp_m_stp	= 0x00D8 + 0x0;
+// out		const, {stp}, {stp}
+const instr_t out_const_stp_stp		= 0x00D8 + 0x1;
+// out		const, const, [{stp}]
+const instr_t out_const_const_m_stp	= 0x00D8 + 0x2;
+// out		const, const, {stp}
+const instr_t out_const_const_stp	= 0x00D8 + 0x3;
 
 // regin	const, flow
 const instr_t regin_const_stp	= 0x00E0 + 0x0;

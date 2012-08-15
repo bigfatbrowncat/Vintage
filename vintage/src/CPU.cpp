@@ -13,18 +13,6 @@
 
 #define OUTPUT_INSTRUCTIONS
 
-void* CPUActivityFunction(void* arg)
-{
-	((CPU*)arg)->ActivityFunction();
-	return NULL;
-}
-
-void CPU::TurnOn()
-{
-	terminationPending = false;
-	pthread_create(&this->activity, NULL, &CPUActivityFunction, this);
-}
-
 void CPU::reportToDebugger(int1* stack, int4 stackPtr, int4 stackSize, int1* heap, int4 heapSize, int4 flow, FlowState state)
 {
 	if (debugger != NULL)
@@ -41,15 +29,15 @@ void CPU::askDebugger(int1* stack, int4 stackPtr, int4 stackSize, int1* heap, in
 		debugger->reportCPUState(flow, &stack[stackPtr], stackSize, stackSize - stackPtr, heap, heapSize);
 
 		DebuggerOrder order;
-		while (((order = debugger->askForOrder()) == doWait) && !terminationPending)
+		while (((order = debugger->askForOrder()) == doWait) && getState() == hdsOn)
 		{
 			Sleep(10);
 			debugger->reportCPUState(flow, &stack[stackPtr], stackSize, stackSize - stackPtr, heap, heapSize);
 		}
 
-		if (order == doHalt)
+		if (order == doHalt && getState() == hdsOn)
 		{
-			terminationPending = true;
+			issueTurningOff();
 		}
 	}
 }
@@ -62,7 +50,7 @@ void CPU::ActivityFunction()
 
 	bool portHandlingJustFinished = false;
 
-	while (!terminationPending)
+	while (getState() == hdsOn)
 	{
 		if (!portHandlingJustFinished)
 		{
@@ -898,13 +886,52 @@ void CPU::ActivityFunction()
 			context.flow = arg1;
 			break;
 
-		case out_const:
+		case out_const_stp_m_stp:
 			GET_ARG_INT4(arg1, context.flow);
+			GET_ARG_INT4(arg2, context.flow);
+			GET_ARG_INT4(arg3, context.flow);
 #ifdef OUTPUT_INSTRUCTIONS
-			printf("out %d", arg1);
+			printf("out %d, {%d}, [{%d}]", arg1, arg2, arg3);
 			fflush(stdout);
 #endif
-			devices[arg1]->CallHandler(heap, stack, context.stackPtr);
+			tmpAddr = *((int4*)&stack[context.stackPtr + arg3]);
+
+			sendMessage(arg1, &heap[tmpAddr], *((int4*)&stack[context.stackPtr + arg2]));
+			break;
+
+		case out_const_stp_stp:
+			GET_ARG_INT4(arg1, context.flow);
+			GET_ARG_INT4(arg2, context.flow);
+			GET_ARG_INT4(arg3, context.flow);
+#ifdef OUTPUT_INSTRUCTIONS
+			printf("out %d, {%d}, {%d}", arg1, arg2, arg3);
+			fflush(stdout);
+#endif
+			sendMessage(arg1, &stack[context.stackPtr + arg3], *((int4*)&stack[context.stackPtr + arg2]));
+			break;
+
+		case out_const_const_m_stp:
+			GET_ARG_INT4(arg1, context.flow);
+			GET_ARG_INT4(arg2, context.flow);
+			GET_ARG_INT4(arg3, context.flow);
+#ifdef OUTPUT_INSTRUCTIONS
+			printf("out %d, %d, [{%d}]", arg1, arg2, arg3);
+			fflush(stdout);
+#endif
+			tmpAddr = *((int4*)&stack[context.stackPtr + arg3]);
+
+			sendMessage(arg1, &heap[tmpAddr], arg2);
+			break;
+
+		case out_const_const_stp:
+			GET_ARG_INT4(arg1, context.flow);
+			GET_ARG_INT4(arg2, context.flow);
+			GET_ARG_INT4(arg3, context.flow);
+#ifdef OUTPUT_INSTRUCTIONS
+			printf("out %d, %d, {%d}", arg1, arg2, arg3);
+			fflush(stdout);
+#endif
+			sendMessage(arg1, &stack[context.stackPtr + arg3], arg2);
 			break;
 
 		case regin_const_stp:
@@ -937,7 +964,7 @@ void CPU::ActivityFunction()
 			fflush(stdout);
 #endif
 			// Halt
-			terminationPending = true;		// Close the world...
+			issueTurningOff();		// Close the world...
 			break;
 
 		case setcont_stp:
@@ -1000,6 +1027,4 @@ void CPU::ActivityFunction()
 		fflush(stdout);
 #endif
 	}
-
-	terminated = true;
 }

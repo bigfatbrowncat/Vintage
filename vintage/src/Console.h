@@ -11,9 +11,11 @@ private:
 	SDLScreen* window;
 protected:
 	void ActivityFunction() {}
-	void CallHandler(int1* heap, int1* stack, int4 stp);
+	virtual void onMessageReceived(int4 port, int1* data, int4 length);
+
 public:
-	Console(CPU& cpu, int port, SDLScreen* window);
+	Console(SDLScreen* window);
+	virtual ~Console() {}
 };
 
 #endif

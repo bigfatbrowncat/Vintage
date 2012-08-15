@@ -1,13 +1,12 @@
 #include "CPUKeyboardController.h"
 
 #include <pthread.h>
+#include <unistd.h>
 
-CPUKeyboardController::CPUKeyboardController(CPU& cpu, int port, int2 bufferLength):
-	HardwareDevice(cpu, port),
+CPUKeyboardController::CPUKeyboardController(int2 bufferLength):
 	bufferLength(bufferLength)
 {
 	keyDown = new bool[bufferLength];
-	//modifiers = new int2[bufferLength];
 	keyCode = new int4[bufferLength];
 
 	pthread_mutex_init(&keyBufferLock, NULL);
@@ -19,7 +18,6 @@ CPUKeyboardController::~CPUKeyboardController()
 {
 	pthread_mutex_destroy(&keyBufferLock);
 	delete [] keyDown;
-	//delete [] modifiers;
 	delete [] keyCode;
 }
 
@@ -41,7 +39,7 @@ void CPUKeyboardController::ChangeKeyState(bool key_down, int4 key_code)
 
 void CPUKeyboardController::ActivityFunction()
 {
-	while (!TurnOffPending())
+	while (getState() != hdsOff)
 	{
 		// Taking the event away from the buffer.
 		// This is synchronized with adding event to the buffer
@@ -65,7 +63,8 @@ void CPUKeyboardController::ActivityFunction()
 		// we send it to the CPU.
 		if (notEmpty)
 		{
-			GetCPU().handleInputPort(GetPort(), msg, 5);
+			broadcastMessage(msg, 5);
+			//GetCPU().handleInputPort(GetPort(), msg, 5);
 		}
 		else
 		{

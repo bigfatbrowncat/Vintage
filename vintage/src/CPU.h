@@ -69,9 +69,8 @@ struct PortInputHandler
 	PortInputHandler() : assigned(false) {}
 };
 
-class CPU
+class CPU : public HardwareDevice
 {
-	friend class HardwareDevice;
 private:
 	pthread_mutex_t portReadingMutex;
 
@@ -83,7 +82,7 @@ private:
 	int4 portsCount;
 	int4 portDataLength;
 
-	HardwareDevice** devices;
+	//HardwareDevice** devices;
 	PortInputHandler* portInputHandlers;
 
 	bool* inputPortIsWaiting;
@@ -96,20 +95,16 @@ private:
 	volatile bool someInputPortIsWaiting;
 
 	pthread_t activity;
-	friend void* CPUActivityFunction(void* arg);
 
 	Debugger* debugger;
 
-	void ActivityFunction();
-	volatile bool terminationPending;
-	volatile bool terminated;
-
 protected:
+	void ActivityFunction();
+
 	void reportToDebugger(int1* stack, int4 stackPtr, int4 stackSize, int1* heap, int4 heapSize, int4 flow, FlowState state);
 	void askDebugger(int1* stack, int4 stackPtr, int4 stackSize, int1* heap, int4 heapSize, int4 flow);
 
-public:
-	void handleInputPort(int4 port, const int1* data, int4 data_len)
+	void onMessageReceived(int4 port, const int1* data, int4 data_len)
 	{
 		pthread_mutex_lock(&portReadingMutex);
 		someInputPortIsWaiting = true;
@@ -143,24 +138,10 @@ public:
 
 				usleep(100);
 			}
-			while (notHandledYet && !terminated);
+			while (notHandledYet && getState() == hdsOn);
 		}
 	}
-
-	void turnOff()
-	{
-		if (!terminationPending && !terminated)
-		{
-			terminationPending = true;
-			void* value;
-			pthread_join(activity, &value);
-		}
-	}
-
-	bool isTerminated()
-	{
-		return terminated;
-	}
+public:
 
 	void setDebugger(Debugger& debugger)
 	{
@@ -177,7 +158,7 @@ public:
 		this->portsCount = portsCount;
 		this->portDataLength = portDataLength;
 
-		devices = new HardwareDevice*[portsCount];
+		//devices = new HardwareDevice*[portsCount];
 		portInputHandlers = new PortInputHandler[portsCount];
 
 		inputPortIsWaiting = new bool[portsCount];
@@ -207,13 +188,8 @@ public:
 
 	virtual ~CPU()
 	{
-		if (!terminated)
-		{
-			turnOff();
-		}
-
 		delete[] memory;
-		delete[] devices;
+		//delete[] devices;
 		delete[] portInputHandlers;
 		delete[] inputPortIsWaiting;
 		delete[] portInWaitingData;
@@ -223,7 +199,6 @@ public:
 		pthread_mutex_destroy(&portReadingMutex);
 	}
 
-	void TurnOn();
 };
 
 #endif /* CPU_H_ */

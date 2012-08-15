@@ -23,7 +23,7 @@ using namespace std;
 bool handleTerminalCustomEvents(void* data)
 {
 	CPU* cpu = (CPU*)data;
-	if (cpu->isTerminated())
+	if (cpu->getState() == hdsOff)
 	{
 		return false;
 	}
@@ -52,9 +52,17 @@ int main(int argc, char* argv[])
 	SDLScreen& debuggerScreen = terminal.getScreen(1);		// Ctrl + F2
 
 
-	HardwareTimer hardTimer(cpu, 1);					// Hardware timer on port 1 -- the highest priority
-	Console cpuConsole(cpu, 2, &cpuScreen);				// Terminal on port 2
-	CPUKeyboardController kbd(cpu, 3, 256);				// Keyboard on the port 3
+	//HardwareTimer hardTimer(cpu, 1);					// Hardware timer on port 1 -- the highest priority
+	//Console cpuConsole(cpu, 2, &cpuScreen);				// Terminal on port 2
+	//CPUKeyboardController kbd(cpu, 3, 256);				// Keyboard on the port 3
+
+	HardwareTimer hardTimer;
+	Console cpuConsole(&cpuScreen);
+	CPUKeyboardController kbd(256);
+
+	HardwareDevice::connectDevices(hardTimer, 1, cpu, 1);		// Hardware timer on port 1 -- the highest priority
+	HardwareDevice::connectDevices(cpuConsole, 1, cpu, 2);		// Terminal on port 2
+	HardwareDevice::connectDevices(kbd, 1, cpu, 3);				// Keyboard on the port 3
 
 	cpuScreen.setKeyboardController(&kbd);
 
@@ -105,10 +113,10 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	cpuConsole.TurnOn();
-	hardTimer.TurnOn();
-	kbd.TurnOn();
-	cpu.TurnOn();
+	cpuConsole.turnOn();
+	hardTimer.turnOn();
+	kbd.turnOn();
+	cpu.turnOn();
 
 	try
 	{
@@ -121,9 +129,9 @@ int main(int argc, char* argv[])
 	GLenum err = glGetError();
 
 	cpu.turnOff();
-	kbd.TurnOff();
-	hardTimer.TurnOff();
-	cpuConsole.TurnOff();
+	kbd.turnOff();
+	hardTimer.turnOff();
+	cpuConsole.turnOff();
 
 	if (dbg != NULL)
 	{

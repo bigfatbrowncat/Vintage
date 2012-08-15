@@ -20,7 +20,8 @@ static const char* error_messages[] =
 		/* MISSING_COMMA */				 		"missing comma between arguments",
 		/* INCORRECT_ARGUMENT */			 	"incorrect argument",
 		/* INCORRECT_ARGUMENT_TYPE */		 	"incorrect argument type",
-		/* ASM_INCORRECT_ARGUMENTS_NUMBER */	"incorrect arguments number"
+		/* INCORRECT_ARGUMENT_VALUE */		 	"incorrect argument value",
+		/* INCORRECT_ARGUMENTS_NUMBER */		"incorrect arguments number"
 };
 
 #define		RESULT_OK			0

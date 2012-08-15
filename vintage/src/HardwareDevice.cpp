@@ -1,44 +1,102 @@
 #include <time.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #include "HardwareDevice.h"
 
 void* HardwareDevice_activity_function(void* arg)
 {
 	((HardwareDevice*)arg)->ActivityFunction();
+	((HardwareDevice*)arg)->state = hdsOff;
 	return NULL;
 }
 
 
-HardwareDevice::HardwareDevice(CPU& cpu, int port): cpu(cpu), port(port)
+HardwareDevice::HardwareDevice()
 {
-	isTurnedOff = true;
-	cpu.devices[port] = this;
+	pthread_mutex_init(&controlMutex, NULL);
+
+	// The initial state os "Off"
+	state = hdsOff;
 }
 
 HardwareDevice::~HardwareDevice()
 {
-	if (!isTurnedOff)
-		TurnOff();
+	// Turning off before destruction
+	turnOff();
+
+	pthread_mutex_destroy(&controlMutex);
 }
 
-void HardwareDevice::TurnOn()
+bool HardwareDevice::turnOn()
 {
-	if (isTurnedOff)
+	// Checking if the device is turned off
+	if (state == hdsOff)
 	{
-		turnOffPending = false;
-		isTurnedOff = false;
+		pthread_mutex_lock(&controlMutex);
+
+		state = hdsTurningOnPending;
+		// Turning it on
 		pthread_create(&this->activity, NULL, &HardwareDevice_activity_function, this);
+		state = hdsOn;
+
+		pthread_mutex_unlock(&controlMutex);
+
+		return true;
+	}
+	else
+	{
+		// Returning false otherwise
+		return false;
 	}
 }
 
-void HardwareDevice::TurnOff()
+bool HardwareDevice::turnOff()
 {
-	if (!isTurnedOff)
+	// Checking if the device is turned on
+	if (state == hdsOn)
 	{
-		turnOffPending = true;
+		pthread_mutex_lock(&controlMutex);
+
+		state = hdsTurningOffPending;
 		void* value;
 		pthread_join(activity, &value);
-		isTurnedOff = true;
+		state = hdsOff;
+
+		pthread_mutex_unlock(&controlMutex);
+
+		return true;
 	}
+	else
+	{
+		// Returning false otherwise
+		return false;
+	}
+
+}
+
+void HardwareDevice::connectDevices(HardwareDevice& dev1, int port1, HardwareDevice& dev2, int port2)
+{
+	pthread_mutex_lock(&dev1.controlMutex);
+	pthread_mutex_lock(&dev2.controlMutex);
+
+	dev1.connections.insert(pair<int, HardwareDeviceConnection>(port1, HardwareDeviceConnection(&dev2, port2)));
+	dev2.connections.insert(pair<int, HardwareDeviceConnection>(port2, HardwareDeviceConnection(&dev1, port1)));
+	dev1.onOtherDeviceConnected(port1);
+	dev2.onOtherDeviceConnected(port2);
+
+	pthread_mutex_unlock(&dev1.controlMutex);
+	pthread_mutex_unlock(&dev2.controlMutex);
+}
+
+void HardwareDevice::sendMessage(int4 port, int1* data, int4 length)
+{
+	pthread_mutex_lock(&controlMutex);
+
+	if (connections.find(port) != connections.end())
+	{
+		connections[port].other->onMessageReceived(connections[port].othersPort, data, length);
+	}
+
+	pthread_mutex_unlock(&controlMutex);
 }

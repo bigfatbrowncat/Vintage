@@ -2,10 +2,10 @@
 
 void HardwareTimer::ActivityFunction()
 {
-	while (!TurnOffPending())
+	while (getState() == hdsOn)
 	{
     	clock_t tt = clock();
-    	GetCPU().handleInputPort(GetPort(), (int1*)(&tt), 8);
+    	broadcastMessage((int1*)(&tt), 8);
     	usleep(100);	// 0.1 millisecond
 	}
 }

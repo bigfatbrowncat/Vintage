@@ -1,29 +1,28 @@
 #include "Console.h"
 
-Console::Console(SDLScreen* window)
+Console::Console(SDLScreen* window, int1* memory, int4 memorySize) :
+	HardwareDevice(memory, memorySize)
 {
 	this->window = window;
 }
 
-void Console::onMessageReceived(int4 port, int1* data, int4 length)
+void Console::onMessageReceived(int4 port, const CPUContext& context)
 {
-	int1 cutData[length + 1];
-	switch (data[0])
+	int1* stack = &(getMemory()[context.stackStart]);
+	int1* heap = &(getMemory()[context.heapStart]);
+
+	int1 command = stack[context.stackPtr + 0];
+	if (command == TERMINAL_CALL_PRINT)
 	{
-	case TERMINAL_CALL_PRINT:
-		// getting the text to print and add null-termination
-		memcpy(cutData, &data[1], length - 1);
-		cutData[length - 1] = 0;
-		cutData[length] = 0;
+		int4 addr = *((int4*)&stack[context.stackPtr + 4]);
 
 		// printing the text out
-		window->Write((wchar_t*)cutData);
-		break;
-
-	case TERMINAL_CALL_MOVECURSOR:
-		int2 x = *((int2*)&data[1]);
-		int2 y = *((int2*)&data[3]);
+		window->Write((wchar_t*)(&heap[addr]));
+	}
+	else if (command == TERMINAL_CALL_MOVECURSOR)
+	{
+		int2 x = *((int2*)&stack[context.stackPtr + 4]);
+		int2 y = *((int2*)&stack[context.stackPtr + 6]);
 		window->SetCursorPosition(x, y);
-		break;
 	}
 }

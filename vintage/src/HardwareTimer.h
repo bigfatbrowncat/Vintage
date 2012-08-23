@@ -8,11 +8,17 @@ class HardwareTimer;
 
 class HardwareTimer : public HardwareDevice
 {
+private:
+	bool active;
+	CPUContext activityContext;
 protected:
 	void ActivityFunction();
 	void callHandler(int1* heap, int1* stack, int4 stp) {}
 public:
-	HardwareTimer() {}
+	HardwareTimer(int1* memory, int4 memorySize) :
+		HardwareDevice(memory, memorySize),
+		active(false)
+	{}
 	virtual ~HardwareTimer() {}
 };
 

@@ -1,5 +1,3 @@
-class CPU;
-
 #ifndef CPU_H_
 #define CPU_H_
 
@@ -12,55 +10,9 @@ class CPU;
 #include "HardwareDevice.h"
 #include "Debugger.h"
 #include "FlowState.h"
+#include "CPUContext.h"
 
 using namespace std;
-
-struct CPUContext
-{
-	int4 heapStart;
-	int4 heapSize;
-
-	int4 stackStart;
-	int4 stackSize;
-	int4 stackPtr;
-
-	int4 flow;
-
-	int getSize()
-	{
-		return sizeof(heapStart) + sizeof(heapSize) +
-		       sizeof(stackStart) + sizeof(stackSize) + sizeof(stackPtr) +
-		       sizeof(flow);
-	}
-
-	CPUContext() {}
-
-	CPUContext(int4 heapStart, int4 heapSize, int4 stackStart, int4 stackSize, int4 stackPtr, int4 flow) :
-		heapStart(heapStart), heapSize(heapSize), stackStart(stackStart), stackSize(stackSize), stackPtr(stackPtr), flow(flow) { }
-
-	void writeTo(int1* addr)
-	{
-		int4* p = (int4*)addr;
-		p[0] = heapStart;
-		p[1] = heapSize;
-		p[2] = stackStart;
-		p[3] = stackSize;
-		p[4] = stackPtr;
-		p[5] = flow;
-	}
-
-	void readFrom(int1* addr)
-	{
-		int4* p = (int4*)addr;
-		heapStart = p[0];
-		heapSize = p[1];
-		stackStart = p[2];
-		stackSize = p[3];
-		stackPtr = p[4];
-		flow = p[5];
-	}
-
-};
 
 struct PortInputHandler
 {
@@ -73,9 +25,6 @@ class CPU : public HardwareDevice
 {
 private:
 	pthread_mutex_t portReadingMutex;
-
-	int1* memory;
-	int4 memorySize;
 
 	CPUContext initialContext;
 
@@ -148,13 +97,11 @@ public:
 		this->debugger = &debugger;
 	}
 
-	CPU(int4 memorySize, int4 heapStart, int4 heapSize, int4 stackStart, int4 stackSize, int4 portsCount, int4 portDataLength) :
-		initialContext(heapStart, heapSize, stackStart, stackSize, stackSize, 0), debugger(NULL)
+	CPU(int1* memory, int4 memorySize, const CPUContext& initialContext, int4 portsCount, int4 portDataLength) :
+		HardwareDevice(memory, memorySize),
+		initialContext(initialContext),
+		debugger(NULL)
 	{
-		// Getting memory
-		memory = new int1[memorySize];
-		this->memorySize = memorySize;
-
 		this->portsCount = portsCount;
 		this->portDataLength = portDataLength;
 
@@ -176,19 +123,8 @@ public:
 		pthread_mutex_init(&portReadingMutex, NULL);
 	}
 
-	int1* GetMemory()
-	{
-		return memory;
-	}
-
-	int4 GetMemorySize()
-	{
-		return memorySize;
-	}
-
 	virtual ~CPU()
 	{
-		delete[] memory;
 		//delete[] devices;
 		delete[] portInputHandlers;
 		delete[] inputPortIsWaiting;

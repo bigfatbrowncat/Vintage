@@ -3,8 +3,10 @@
 #include <pthread.h>
 #include <unistd.h>
 
-CPUKeyboardController::CPUKeyboardController(int2 bufferLength):
-	bufferLength(bufferLength)
+CPUKeyboardController::CPUKeyboardController(int4 bufferLength, int1* memory, int4 memorySize) :
+	bufferLength(bufferLength),
+	HardwareDevice(memory, memorySize),
+	active(false)
 {
 	keyDown = new bool[bufferLength];
 	keyCode = new int4[bufferLength];
@@ -45,13 +47,15 @@ void CPUKeyboardController::ActivityFunction()
 		// This is synchronized with adding event to the buffer
 		pthread_mutex_lock(&keyBufferLock);
 		bool notEmpty = (current != last);
-		int1 msg[5];
-		if (notEmpty)
+		if (notEmpty && active)
 		{
 			// First 4 bytes -- key code
 			// 5th byte:
 			//     0 bit - boolean - is key down
+			//   1-7 bit - unused
 
+			int1* heap = &(getMemory()[activityContext.heapStart]);
+			int1* msg = &heap[0];
 			*((int4*)&msg[0]) = keyCode[current];
 			*((int1*)&msg[4]) = keyDown[current] ? 1 : 0;
 			printf("<- (%d, %d) %d %d\n", current, last, keyCode[current], keyDown[current]);
@@ -61,10 +65,9 @@ void CPUKeyboardController::ActivityFunction()
 
 		// After taking the last event from the buffer,
 		// we send it to the CPU.
-		if (notEmpty)
+		if (notEmpty && active)
 		{
-			broadcastMessage(msg, 5);
-			//GetCPU().handleInputPort(GetPort(), msg, 5);
+			broadcastMessage(activityContext);
 		}
 		else
 		{

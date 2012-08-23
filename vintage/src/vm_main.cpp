@@ -7,6 +7,7 @@
 #include "SDLScreen.h"
 #include "Debugger.h"
 #include "CPU.h"
+#include "CPUContext.h"
 #include "../../FontEditor/include/Font.h"
 #include "HardwareTimer.h"
 #include "Console.h"
@@ -35,13 +36,19 @@ bool handleTerminalCustomEvents(void* data)
 
 int main(int argc, char* argv[])
 {
-	int4 initHeapSize = 1024 * 1024;									// 1MB
-	int4 initStackSize = 1024 * 1024;									// 1MB
-
 	int4 portsCount = 256;												// 256 ports with buffer length of 64
 	int4 portDataLength = 64;
 
-	CPU cpu(initHeapSize + initStackSize, 0, initHeapSize, initHeapSize, initStackSize, portsCount, portDataLength);
+	int4 initialHeapSize = 1024 * 1024;									// 1MB
+	int4 initialStackSize = 1024 * 1024;								// 1MB
+	int4 memorySize = initialHeapSize + initialStackSize;
+
+	int1* memory = new int1[memorySize];
+
+	// (int4 heapStart, int4 heapSize, int4 stackStart, int4 stackSize, int4 stackPtr, int4 flow)
+
+	CPUContext initialContext(0, initialHeapSize, initialHeapSize, initialStackSize, initialStackSize, 0);
+	CPU cpu(memory, memorySize, initialContext, portsCount, portDataLength);
 
 	CachedFont font("res/font.txt");
 	CachedFont curfont("res/curfont.txt");
@@ -56,9 +63,9 @@ int main(int argc, char* argv[])
 	//Console cpuConsole(cpu, 2, &cpuScreen);				// Terminal on port 2
 	//CPUKeyboardController kbd(cpu, 3, 256);				// Keyboard on the port 3
 
-	HardwareTimer hardTimer;
-	Console cpuConsole(&cpuScreen);
-	CPUKeyboardController kbd(256);
+	HardwareTimer hardTimer(memory, memorySize);
+	Console cpuConsole(&cpuScreen, memory, memorySize);
+	CPUKeyboardController kbd(256, memory, memorySize);
 
 	HardwareDevice::connectDevices(hardTimer, 1, cpu, 1);		// Hardware timer on port 1 -- the highest priority
 	HardwareDevice::connectDevices(cpuConsole, 1, cpu, 2);		// Terminal on port 2
@@ -93,7 +100,7 @@ int main(int argc, char* argv[])
 			printf("Loading the binary...\n");
 
 			int4 act_read;
-			act_read = fread(cpu.GetMemory(), 1, cpu.GetMemorySize(), binfile);
+			act_read = fread(cpu.getMemory(), 1, cpu.getMemorySize(), binfile);
 			printf("Loaded %d bytes.\n", act_read);
 
 			if (dbg_symbols_file != NULL)

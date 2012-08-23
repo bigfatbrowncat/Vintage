@@ -578,7 +578,7 @@ int assemble(char* code, int1* target, int4 max_target_size, int& error_line, in
 				}
 				else if (areEqual(tokens[instr_start], "add"))
 				{
-					int arg_vals[3];
+					int4 arg_vals[3];
 					arg_vals[0] = 4;		// default size in bytes
 
 					int arg1_type;
@@ -649,7 +649,7 @@ int assemble(char* code, int1* target, int4 max_target_size, int& error_line, in
 				}
 				else if (areEqual(tokens[instr_start], "sub"))
 				{
-					int arg_vals[3];
+					int4 arg_vals[3];
 					arg_vals[0] = 4;		// default size in bytes
 
 					int arg1_type;
@@ -721,7 +721,7 @@ int assemble(char* code, int1* target, int4 max_target_size, int& error_line, in
 				}
 				else if (areEqual(tokens[instr_start], "mul"))
 				{
-					int arg_vals[3];
+					int4 arg_vals[3];
 					arg_vals[0] = 4;		// default size in bytes
 
 					int arg1_type;
@@ -793,7 +793,7 @@ int assemble(char* code, int1* target, int4 max_target_size, int& error_line, in
 				}
 				else if (areEqual(tokens[instr_start], "div"))
 				{
-					int arg_vals[3];
+					int4 arg_vals[3];
 					arg_vals[0] = 4;		// default size in bytes
 
 					int arg1_type;
@@ -865,7 +865,7 @@ int assemble(char* code, int1* target, int4 max_target_size, int& error_line, in
 				}
 				else if (areEqual(tokens[instr_start], "mod"))
 				{
-					int arg_vals[3];
+					int4 arg_vals[3];
 					arg_vals[0] = 4;		// default size in bytes
 
 					int arg1_type;
@@ -937,7 +937,7 @@ int assemble(char* code, int1* target, int4 max_target_size, int& error_line, in
 				}
 				else if (areEqual(tokens[instr_start], "not"))
 				{
-					int arg_vals[2];
+					int4 arg_vals[2];
 					arg_vals[0] = 4;		// default size in bytes
 
 					int arg1_type;
@@ -990,7 +990,7 @@ int assemble(char* code, int1* target, int4 max_target_size, int& error_line, in
 				}
 				else if (areEqual(tokens[instr_start], "and"))
 				{
-					int arg_vals[3];
+					int4 arg_vals[3];
 					arg_vals[0] = 4;		// default size in bytes
 
 					int arg1_type;
@@ -1062,7 +1062,7 @@ int assemble(char* code, int1* target, int4 max_target_size, int& error_line, in
 				}
 				else if (areEqual(tokens[instr_start], "or"))
 				{
-					int arg_vals[3];
+					int4 arg_vals[3];
 					arg_vals[0] = 4;		// default size in bytes
 
 					int arg1_type;
@@ -1134,7 +1134,7 @@ int assemble(char* code, int1* target, int4 max_target_size, int& error_line, in
 				}
 				else if (areEqual(tokens[instr_start], "xor"))
 				{
-					int arg_vals[3];
+					int4 arg_vals[3];
 					arg_vals[0] = 4;		// default size in bytes
 
 					int arg1_type;
@@ -1208,7 +1208,7 @@ int assemble(char* code, int1* target, int4 max_target_size, int& error_line, in
 				}
 				else if (areEqual(tokens[instr_start], "if"))
 				{
-					int arg_vals[3];
+					int4 arg_vals[3];
 					arg_vals[0] = 4;		// default size in bytes
 
 					int arg1_type;
@@ -1272,7 +1272,7 @@ int assemble(char* code, int1* target, int4 max_target_size, int& error_line, in
 				}
 				else if (areEqual(tokens[instr_start], "ifp"))
 				{
-					int arg_vals[3];
+					int4 arg_vals[3];
 					arg_vals[0] = 4;		// default size in bytes
 
 					int arg1_type;
@@ -1337,7 +1337,7 @@ int assemble(char* code, int1* target, int4 max_target_size, int& error_line, in
 				}
 				else if (areEqual(tokens[instr_start], "regin"))
 				{
-					int arg_vals[2];
+					int4 arg_vals[2];
 
 					int arg1_type;
 					int arg2_type;
@@ -1382,7 +1382,7 @@ int assemble(char* code, int1* target, int4 max_target_size, int& error_line, in
 						RAISE_L_ERROR(ASM_UNEXPECTED_IDENTIFIER)
 					}
 
-					int arg_vals[1];
+					int4 arg_vals[1];
 
 					int arg1_type = parseArg(pass, tokens[instr_start + 1], arg_vals[0], labels);
 
@@ -1409,7 +1409,7 @@ int assemble(char* code, int1* target, int4 max_target_size, int& error_line, in
 						RAISE_L_ERROR(ASM_UNEXPECTED_IDENTIFIER)
 					}
 
-					int arg_vals[1];
+					int4 arg_vals[1];
 
 					int arg1_type = parseArg(pass, tokens[instr_start + 1], arg_vals[0], labels);
 
@@ -1468,7 +1468,7 @@ int assemble(char* code, int1* target, int4 max_target_size, int& error_line, in
 						RAISE_L_ERROR(ASM_UNEXPECTED_IDENTIFIER)
 					}
 
-					int arg_vals[1];
+					int4 arg_vals[1];
 
 					int arg1_type = parseArg(pass, tokens[instr_start + 1], arg_vals[0], labels);
 
@@ -1490,24 +1490,12 @@ int assemble(char* code, int1* target, int4 max_target_size, int& error_line, in
 				}
 				else if (areEqual(tokens[instr_start], "out"))
 				{
-					int arg_vals[3];
-					int arg_types[3];
+					int4 arg_vals[1];
+					int arg_types[1];
 
-					if (tokens_num == instr_start + 4)
+					if (tokens_num == instr_start + 2)
 					{
-						for (int i = 0; i < 3; i ++)
-						{
-							arg_types[i] = parseArg(pass, tokens[instr_start + 1 + 2 * i], arg_vals[i], labels);
-						}
-
-						for (int i = 0; i < 2; i ++)
-						{
-							if (!areEqual(tokens[instr_start + 2 + 2 * i], ","))
-							{
-								RAISE_L_ERROR(ASM_MISSING_COMMA)
-							}
-						}
-
+						arg_types[0] = parseArg(pass, tokens[instr_start + 1], arg_vals[0], labels);
 					}
 					else
 					{
@@ -1515,34 +1503,20 @@ int assemble(char* code, int1* target, int4 max_target_size, int& error_line, in
 					}
 
 
-					if (arg_types[0] == ARG_INVALID || arg_types[1] == ARG_INVALID || arg_types[2] == ARG_INVALID)
+					if (arg_types[0] == ARG_INVALID)
 					{
 						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT)
 					}
-					else if (arg_types[0] == ARG_CONST && arg_types[1] == ARG_STACK && arg_types[2] == ARG_MEMORY_STACK)
+					else if (arg_types[0] == ARG_CONST)
 					{
-						if (!addInstr(target, max_target_size, mem_pos, out_const_stp_m_stp, arg_vals, 3))
+						if (!addInstr(target, max_target_size, mem_pos, out_const, arg_vals, 1))
 						{
 							RAISE_ERROR(ASM_NO_MEMORY)
 						}
 					}
-					else if (arg_types[0] == ARG_CONST && arg_types[1] == ARG_STACK && arg_types[2] == ARG_STACK)
+					else if (arg_types[0] == ARG_STACK)
 					{
-						if (!addInstr(target, max_target_size, mem_pos, out_const_stp_stp, arg_vals, 3))
-						{
-							RAISE_ERROR(ASM_NO_MEMORY)
-						}
-					}
-					else if (arg_types[0] == ARG_CONST && arg_types[1] == ARG_CONST && arg_types[2] == ARG_MEMORY_STACK)
-					{
-						if (!addInstr(target, max_target_size, mem_pos, out_const_const_m_stp, arg_vals, 3))
-						{
-							RAISE_ERROR(ASM_NO_MEMORY)
-						}
-					}
-					else if (arg_types[0] == ARG_CONST && arg_types[1] == ARG_CONST && arg_types[2] == ARG_STACK)
-					{
-						if (!addInstr(target, max_target_size, mem_pos, out_const_const_stp, arg_vals, 3))
+						if (!addInstr(target, max_target_size, mem_pos, out_stp, arg_vals, 1))
 						{
 							RAISE_ERROR(ASM_NO_MEMORY)
 						}
@@ -1567,7 +1541,7 @@ int assemble(char* code, int1* target, int4 max_target_size, int& error_line, in
 				}
 				else if (areEqual(tokens[instr_start], "setcont"))
 				{
-					int arg_vals[1];
+					int4 arg_vals[1];
 
 					int arg1_type;
 
@@ -1605,7 +1579,7 @@ int assemble(char* code, int1* target, int4 max_target_size, int& error_line, in
 				}
 				else if (areEqual(tokens[instr_start], "getcont"))
 				{
-					int arg_vals[1];
+					int4 arg_vals[1];
 
 					int arg1_type;
 
@@ -1707,7 +1681,7 @@ int assemble(char* code, int1* target, int4 max_target_size, int& error_line, in
 								*res_cur = arg_val % 256;
 								res_cur ++;
 							}
-							else
+							else if (pass > 1)
 							{
 								RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT_VALUE)
 							}

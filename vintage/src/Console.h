@@ -4,6 +4,7 @@ class Console;
 #define CONSOLE_H_
 
 #include "SDLScreen.h"
+#include "CPUContext.h"
 
 class Console : public HardwareDevice
 {
@@ -11,10 +12,10 @@ private:
 	SDLScreen* window;
 protected:
 	void ActivityFunction() {}
-	virtual void onMessageReceived(int4 port, int1* data, int4 length);
+	virtual void onMessageReceived(int4 port, const CPUContext& context);
 
 public:
-	Console(SDLScreen* window);
+	Console(SDLScreen* window, int1* memory, int4 memorySize);
 	virtual ~Console() {}
 };
 

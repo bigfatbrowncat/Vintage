@@ -45,8 +45,8 @@ void CPU::askDebugger(int1* stack, int4 stackPtr, int4 stackSize, int1* heap, in
 void CPU::ActivityFunction()
 {
 	CPUContext context = initialContext;
-	int1* stack = &memory[context.stackStart];
-	int1* heap = &memory[context.heapStart];
+	int1* stack = &(getMemory()[context.stackStart]);
+	int1* heap = &(getMemory()[context.heapStart]);
 
 	bool portHandlingJustFinished = false;
 
@@ -113,8 +113,8 @@ void CPU::ActivityFunction()
 
 					// Selecting the new context
 					context = portInputHandlers[portToHandle].context;
-					stack = &memory[context.stackStart];
-					heap = &memory[context.heapStart];
+					stack = &(getMemory()[context.stackStart]);
+					heap = &(getMemory()[context.heapStart]);
 
 					// Saving the old context to the new stack
 					context.stackPtr -= tmpContext.getSize();
@@ -860,8 +860,8 @@ void CPU::ActivityFunction()
 				//context.stackPtr += 4;	// removing the callr's address
 
 				context.readFrom(&stack[context.stackPtr]);
-				stack = &memory[context.stackStart];
-				heap = &memory[context.heapStart];
+				stack = &(getMemory()[context.stackStart]);
+				heap = &(getMemory()[context.heapStart]);
 
 				inputPortsCurrentlyHandlingCount--;
 
@@ -886,55 +886,25 @@ void CPU::ActivityFunction()
 			context.flow = arg1;
 			break;
 
-		case out_const_stp_m_stp:
+		case out_const:
 			GET_ARG_INT4(arg1, context.flow);
-			GET_ARG_INT4(arg2, context.flow);
-			GET_ARG_INT4(arg3, context.flow);
 #ifdef OUTPUT_INSTRUCTIONS
-			printf("out %d, {%d}, [{%d}]", arg1, arg2, arg3);
+			printf("out %d", arg1);
 			fflush(stdout);
 #endif
-			tmpAddr = *((int4*)&stack[context.stackPtr + arg3]);
-
-			sendMessage(arg1, &heap[tmpAddr], *((int4*)&stack[context.stackPtr + arg2]));
+			sendMessage(arg1, context);
 			break;
 
-		case out_const_stp_stp:
+		case out_stp:
 			GET_ARG_INT4(arg1, context.flow);
-			GET_ARG_INT4(arg2, context.flow);
-			GET_ARG_INT4(arg3, context.flow);
 #ifdef OUTPUT_INSTRUCTIONS
-			printf("out %d, {%d}, {%d}", arg1, arg2, arg3);
+			printf("out {%d}", arg1);
 			fflush(stdout);
 #endif
-			sendMessage(arg1, &stack[context.stackPtr + arg3], *((int4*)&stack[context.stackPtr + arg2]));
+			sendMessage(*((int2*)&stack[context.stackPtr + arg1]), context);
 			break;
 
-		case out_const_const_m_stp:
-			GET_ARG_INT4(arg1, context.flow);
-			GET_ARG_INT4(arg2, context.flow);
-			GET_ARG_INT4(arg3, context.flow);
-#ifdef OUTPUT_INSTRUCTIONS
-			printf("out %d, %d, [{%d}]", arg1, arg2, arg3);
-			fflush(stdout);
-#endif
-			tmpAddr = *((int4*)&stack[context.stackPtr + arg3]);
-
-			sendMessage(arg1, &heap[tmpAddr], arg2);
-			break;
-
-		case out_const_const_stp:
-			GET_ARG_INT4(arg1, context.flow);
-			GET_ARG_INT4(arg2, context.flow);
-			GET_ARG_INT4(arg3, context.flow);
-#ifdef OUTPUT_INSTRUCTIONS
-			printf("out %d, %d, {%d}", arg1, arg2, arg3);
-			fflush(stdout);
-#endif
-			sendMessage(arg1, &stack[context.stackPtr + arg3], arg2);
-			break;
-
-		case regin_const_stp:
+/*		case regin_const_stp:
 			GET_ARG_INT4(arg1, context.flow);
 			GET_ARG_INT4(arg2, context.flow);
 #ifdef OUTPUT_INSTRUCTIONS
@@ -957,7 +927,7 @@ void CPU::ActivityFunction()
 			portInputHandlers[arg1].assigned = false;
 			pthread_mutex_unlock(&portReadingMutex);
 			break;
-
+*/
 		case halt:
 #ifdef OUTPUT_INSTRUCTIONS
 			printf("halt");
@@ -974,8 +944,8 @@ void CPU::ActivityFunction()
 			fflush(stdout);
 #endif
 			context.readFrom(&stack[context.stackPtr + arg1]);
-			stack = &memory[context.stackStart];
-			heap = &memory[context.heapStart];
+			stack = &(getMemory()[context.stackStart]);
+			heap = &(getMemory()[context.heapStart]);
 
 			break;
 
@@ -988,8 +958,8 @@ void CPU::ActivityFunction()
 
 			tmpAddr = *((int4*)&stack[context.stackPtr + arg1]);
 			context.readFrom(((int1*)&heap[tmpAddr]));
-			stack = &memory[context.stackStart];
-			heap = &memory[context.heapStart];
+			stack = &(getMemory()[context.stackStart]);
+			heap = &(getMemory()[context.heapStart]);
 
 			break;
 
@@ -1021,7 +991,7 @@ void CPU::ActivityFunction()
 #ifdef OUTPUT_INSTRUCTIONS
 		printf("\t\t\t{");
 		if (context.stackPtr < context.stackSize)  printf("%d", stack[context.stackPtr]);
-		for (int i = context.stackPtr + 1; i < context.stackSize; i++)
+		for (unsigned int i = context.stackPtr + 1; i < context.stackSize; i++)
 			printf(", %d", stack[i]);
 		printf("}\n");
 		fflush(stdout);

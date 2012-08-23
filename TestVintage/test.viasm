@@ -77,8 +77,8 @@ kbd_handler:   alloc 4
 
 ; *** UI SECTION ********************************************************************************************************
 
-timer_calls:   int1 2
-               text "Timer: " 0
+               int1 2
+timer_calls:   text "Timer: " 0
 timer_print:
                ; port in handler, should free 8 additional bytes on end
                alloc 10
@@ -87,7 +87,7 @@ timer_print:
                mov {0}, 2
                mov 2, {4}, 0
                mov 2, {6}, 3
-               out 2, 8, {0}
+               out 2
               
                ; printing out "timer: "
                mov {0}, 1                        ; 1 means "print the text out"

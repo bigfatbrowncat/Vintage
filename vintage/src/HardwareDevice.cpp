@@ -12,10 +12,12 @@ void* HardwareDevice_activity_function(void* arg)
 }
 
 
-HardwareDevice::HardwareDevice()
+HardwareDevice::HardwareDevice(int1* memory, int4 memorySize)
 {
 	pthread_mutex_init(&controlMutex, NULL);
 
+	this->memory = memory;
+	this->memorySize = memorySize;
 	// The initial state os "Off"
 	state = hdsOff;
 }
@@ -89,13 +91,13 @@ void HardwareDevice::connectDevices(HardwareDevice& dev1, int port1, HardwareDev
 	pthread_mutex_unlock(&dev2.controlMutex);
 }
 
-void HardwareDevice::sendMessage(int4 port, int1* data, int4 length)
+void HardwareDevice::sendMessage(int4 port, const CPUContext& context)
 {
 	pthread_mutex_lock(&controlMutex);
 
 	if (connections.find(port) != connections.end())
 	{
-		connections[port].other->onMessageReceived(connections[port].othersPort, data, length);
+		connections[port].other->onMessageReceived(connections[port].othersPort, context);
 	}
 
 	pthread_mutex_unlock(&controlMutex);

@@ -47,7 +47,8 @@ its_exit:      mov {16}, {0}                     ; result saved
 
 ; *** HANDLERS SECTION **************************************************************************************************
 
-timer_value:   text 0 0                          ; 4 bytes allocated for timer value
+timer_value:   text 0 0                                                     ; 4 bytes for timer value  
+timer_stack:   text 0 0                                                     ; 4 bytes allocated for timer handler stack
 
 timer_handler: alloc 4
 
@@ -180,15 +181,24 @@ main:          alloc 8                           ; 4 * 2
                mov {0}, 256
                out 2              
 
-               ;alloc 24                           ; allocating space for context data
+               alloc 40                            ; allocating space for context data
 
+               ; *** Initializing devices ***
+               mov {0}, 0                          ; 0 is "HARDWARE_INITIALIZE" command
+
+               mov {32}, timer_stack
+               mov {36}, timer_value
+               mov [{32}], {36}
+                
                ; setting the context for timer handler
-               ;getcont {0}
-               ;add {8}, 0                         ; stack start
-               ;mov {12}, 64                       ; stack size
-               ;mov {16}, {12}                     ; stack ptr
-               ;mov {20}, timer_handler
-               ;regin 1, {0}                       ; assuming timer is on the port #1
+               getcont {4}
+               mov {12+4}, timer_stack             ; stack start
+               mov {16+4}, 4                       ; stack size
+               mov {20+4}, 0                       ; stack ptr
+               mov {24+4}, timer_handler           ; flow
+
+
+               out 1                               ; assuming timer is on the port #1 and sending the command to it
 
                ; setting the context for keyboard handler
                ;getcont {0}
@@ -198,16 +208,11 @@ main:          alloc 8                           ; 4 * 2
                ;mov {20}, kbd_handler
                ;regin 3, {0}                       ; keyboard is on the port #3
 
-               ; setting the context for keyboard handler
-               ;getcont {0}
-               ;add {8}, 128                       ; stack start
-               ;sub {12}, 128                      ; stack size
-               ;mov {16}, {12}                     ; stack ptr
-               ;mov {20}, after_setcont
-               ;setcont {0}
-after_setcont:
+               ; *** Initializing devices ***
+               mov {0}, 1                          ; 1 is "HARDWARE_ACTIVATE" command
+               out 1                               ; assuming timer is on the port #1 and sending the command to it
 
-               ;free 24
+               free 32
                
                free 8
 

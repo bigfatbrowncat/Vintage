@@ -11,7 +11,11 @@ void HardwareTimer::ActivityFunction()
 			int1* stack = &getMemory()[getActivityContext().stackStart];
 			int1* heap = &getMemory()[getActivityContext().heapStart];
 
-			*(clock_t*)(&heap[0]) = tt;
+			// Getting address from the top of stack
+			int addr = *((int4*)&stack[getActivityContext().stackPtr]);
+
+			// Writing the current clock data there
+			*(clock_t*)(&heap[addr]) = tt;
 
 			sendMessage(getActivityContext());
 		}

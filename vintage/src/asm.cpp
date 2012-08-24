@@ -89,6 +89,7 @@ int parseConst(char* arg, int4& value, id_pair* labels)
 			{
 				cur_val -= tmp_value;
 			}
+			cur_const_len = 0;
 
 		}
 

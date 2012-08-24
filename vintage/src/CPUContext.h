@@ -29,13 +29,13 @@ struct CPUContext
 	void writeTo(int1* addr)
 	{
 		int4* p = (int4*)addr;
-		p[0] = port;
-		p[1] = heapStart;
-		p[2] = heapSize;
-		p[3] = stackStart;
-		p[4] = stackSize;
-		p[5] = stackPtr;
-		p[6] = flow;
+		p[0] = port;			// 0
+		p[1] = heapStart;		// 4
+		p[2] = heapSize;		// 8
+		p[3] = stackStart;		// 12
+		p[4] = stackSize;		// 16
+		p[5] = stackPtr;		// 20
+		p[6] = flow;			// 24
 	}
 
 	void readFrom(int1* addr)
@@ -44,10 +44,10 @@ struct CPUContext
 		port = p[0];
 		heapStart = p[1];
 		heapSize = p[2];
-		stackStart = p[2];
-		stackSize = p[3];
-		stackPtr = p[4];
-		flow = p[5];
+		stackStart = p[3];
+		stackSize = p[4];
+		stackPtr = p[5];
+		flow = p[6];
 	}
 
 };

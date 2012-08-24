@@ -4,14 +4,16 @@ void HardwareTimer::ActivityFunction()
 {
 	while (getState() == hdsOn)
 	{
-		if (active)
+		if (isActive())
 		{
 			clock_t tt = clock();
 
-			int1* stack = &getMemory()[activityContext.stackStart];
-			int1* heap = &getMemory()[activityContext.heapStart];
+			int1* stack = &getMemory()[getActivityContext().stackStart];
+			int1* heap = &getMemory()[getActivityContext().heapStart];
+
 			*(clock_t*)(&heap[0]) = tt;
-			broadcastMessage(activityContext);
+
+			sendMessage(getActivityContext());
 		}
     	usleep(100);	// 0.1 millisecond
 	}

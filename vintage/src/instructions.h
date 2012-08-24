@@ -4,10 +4,10 @@
 typedef unsigned short instr_t;
 
 // Integer types
-typedef unsigned char int1;
-typedef unsigned short int2;
-typedef unsigned int int4;
-typedef unsigned long int8;
+typedef signed char int1;
+typedef signed short int2;
+typedef signed int int4;
+typedef signed long int8;
 
 typedef unsigned int addr;
 
@@ -99,9 +99,9 @@ const instr_t out_const			= 0x00D8 + 0x0;
 const instr_t out_stp			= 0x00D8 + 0x1;
 
 // regin	const, flow
-const instr_t regin_const_stp	= 0x00E0 + 0x0;
+//const instr_t regin_const_stp	= 0x00E0 + 0x0;
 // uregin	const
-const instr_t uregin_const		= 0x00E8 + 0x0;
+//const instr_t uregin_const		= 0x00E8 + 0x0;
 
 // halt
 const instr_t halt				= 0x00F0 + 0x0;

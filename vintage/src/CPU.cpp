@@ -45,6 +45,7 @@ void CPU::askDebugger(int1* stack, int4 stackPtr, int4 stackSize, int1* heap, in
 void CPU::ActivityFunction()
 {
 	CPUContext context = initialContext;
+	CPUContext contextToSend;
 	int1* stack = &(getMemory()[context.stackStart]);
 	int1* heap = &(getMemory()[context.heapStart]);
 
@@ -77,10 +78,10 @@ void CPU::ActivityFunction()
 				// (i.e. the least index) port
 				for (int i = 0; i < portsCount; i++)
 				{
-					if (inputPortIsWaiting[i] && portInputHandlers[i].assigned)
+					if (inputPortIsWaiting[i])
 					{
 						inputPortsWaitingCount++;
-						if (portToHandle == -1 && i < inputPortsCurrentlyHandlingStack[inputPortsCurrentlyHandlingCount - 1])
+						if (portToHandle == -1 && i < contextStack.back().port)
 						{
 							// If it is the first port we found
 							// and it's priority is greater than the currently handling ones,
@@ -102,9 +103,8 @@ void CPU::ActivityFunction()
 				// Calling the handler
 				if (portToHandle >= 0)		// it's better to use a flag here
 				{
-					// Adding the port we are handling to input-ports-we-are-currently-handling stack
-					inputPortsCurrentlyHandlingStack[inputPortsCurrentlyHandlingCount] = portToHandle;
-					inputPortsCurrentlyHandlingCount++;
+					// Adding the context of the port we are handling to the contexts stack
+					contextStack.push_back(portInWaitingContext[portToHandle]);
 
 					inputPortIsWaiting[portToHandle] = false;
 
@@ -112,25 +112,14 @@ void CPU::ActivityFunction()
 					CPUContext tmpContext = context;
 
 					// Selecting the new context
-					context = portInputHandlers[portToHandle].context;
+					context = portInWaitingContext[portToHandle];
 					stack = &(getMemory()[context.stackStart]);
 					heap = &(getMemory()[context.heapStart]);
 
-					// Saving the old context to the new stack
-					context.stackPtr -= tmpContext.getSize();
-					tmpContext.writeTo(&stack[context.stackPtr]);
-
-					// Loading input data to stack
-					context.stackPtr -= portInWaitingDataLength[portToHandle];
-
-					for (int i = 0; i < portInWaitingDataLength[portToHandle]; i++)
-					{
-						*((int1*)&stack[context.stackPtr + i]) = *((int1*)&portInWaitingData[portToHandle * portDataLength + i]);
-					}
-
+					// If it was the last port to handle, clearing the flag
 					if (inputPortsWaitingCount == 1) someInputPortIsWaiting = false;
 
-					// If we have just stepped into a handler, let's report the debugger about it
+					// As far as we have just stepped into a handler, let's report the debugger about it
 					reportToDebugger(stack, context.stackPtr, context.stackSize, heap, context.heapSize, context.flow, fsStepInHandler);
 				}
 			}
@@ -841,7 +830,7 @@ void CPU::ActivityFunction()
 			fflush(stdout);
 #endif
 			context.flow = *((int4*)&stack[context.stackPtr]);
-			context.stackPtr += 4;	// removing the callr's address
+			context.stackPtr += 4;	// removing the caller's address
 
 			reportToDebugger(stack, context.stackPtr, context.stackSize, heap, context.heapSize, context.flow, fsStepOut);
 			break;
@@ -851,19 +840,17 @@ void CPU::ActivityFunction()
 			printf("hret");
 			fflush(stdout);
 #endif
-			if (inputPortsCurrentlyHandlingCount > 0)
+			if (contextStack.size() > 1)
 			{
 				pthread_mutex_lock(&portReadingMutex);
-				context.stackPtr += portInWaitingDataLength[inputPortsCurrentlyHandlingStack[inputPortsCurrentlyHandlingCount - 1]];	// removing port data
 
-				//context.flow = *((int4*)&stack[context.stackPtr]);
-				//context.stackPtr += 4;	// removing the callr's address
+				// Removing the last context from the context stack
+				contextStack.pop_back();
 
-				context.readFrom(&stack[context.stackPtr]);
+				// Setting the next context from the stack as the current
+				context = contextStack.back();
 				stack = &(getMemory()[context.stackStart]);
 				heap = &(getMemory()[context.heapStart]);
-
-				inputPortsCurrentlyHandlingCount--;
 
 				portHandlingJustFinished = true;
 				reportToDebugger(stack, context.stackPtr, context.stackSize, heap, context.heapSize, context.flow, fsStepOutHandler);
@@ -872,7 +859,7 @@ void CPU::ActivityFunction()
 			}
 			else
 			{
-				// TODO: Implement some exception here :)
+				// TODO: Put some exception code here :)
 			}
 
 			break;
@@ -892,7 +879,9 @@ void CPU::ActivityFunction()
 			printf("out %d", arg1);
 			fflush(stdout);
 #endif
-			sendMessage(arg1, context);
+			contextToSend = context;
+			contextToSend.port = arg1;
+			sendMessage(contextToSend);
 			break;
 
 		case out_stp:
@@ -901,33 +890,11 @@ void CPU::ActivityFunction()
 			printf("out {%d}", arg1);
 			fflush(stdout);
 #endif
-			sendMessage(*((int2*)&stack[context.stackPtr + arg1]), context);
+			contextToSend = context;
+			contextToSend.port = *((int4*)&stack[context.stackPtr + arg1]);
+			sendMessage(contextToSend);
 			break;
 
-/*		case regin_const_stp:
-			GET_ARG_INT4(arg1, context.flow);
-			GET_ARG_INT4(arg2, context.flow);
-#ifdef OUTPUT_INSTRUCTIONS
-			printf("regin %d, {%d}", arg1, arg2);
-			fflush(stdout);
-#endif
-			pthread_mutex_lock(&portReadingMutex);
-			portInputHandlers[arg1].assigned = true;
-			portInputHandlers[arg1].context.readFrom(&stack[context.stackPtr + arg2]);
-			pthread_mutex_unlock(&portReadingMutex);
-			break;
-
-		case uregin_const:
-			GET_ARG_INT4(arg1, context.flow);
-#ifdef OUTPUT_INSTRUCTIONS
-			printf("uregin %d", arg1);
-			fflush(stdout);
-#endif
-			pthread_mutex_lock(&portReadingMutex);
-			portInputHandlers[arg1].assigned = false;
-			pthread_mutex_unlock(&portReadingMutex);
-			break;
-*/
 		case halt:
 #ifdef OUTPUT_INSTRUCTIONS
 			printf("halt");

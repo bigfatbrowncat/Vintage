@@ -41,7 +41,7 @@ void CPUKeyboardController::ChangeKeyState(bool key_down, int4 key_code)
 
 void CPUKeyboardController::ActivityFunction()
 {
-	while (getState() != hdsOff)
+	while (getState() == hdsOn)
 	{
 		// Taking the event away from the buffer.
 		// This is synchronized with adding event to the buffer
@@ -67,7 +67,7 @@ void CPUKeyboardController::ActivityFunction()
 		// we send it to the CPU.
 		if (notEmpty && active)
 		{
-			broadcastMessage(activityContext);
+			sendMessage(getActivityContext());
 		}
 		else
 		{

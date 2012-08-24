@@ -12,7 +12,8 @@ void* HardwareDevice_activity_function(void* arg)
 }
 
 
-HardwareDevice::HardwareDevice(int1* memory, int4 memorySize)
+HardwareDevice::HardwareDevice(int1* memory, int4 memorySize) :
+	active(false)
 {
 	pthread_mutex_init(&controlMutex, NULL);
 
@@ -91,14 +92,47 @@ void HardwareDevice::connectDevices(HardwareDevice& dev1, int port1, HardwareDev
 	pthread_mutex_unlock(&dev2.controlMutex);
 }
 
-void HardwareDevice::sendMessage(int4 port, const CPUContext& context)
+void HardwareDevice::sendMessage(const CPUContext& context)
 {
 	pthread_mutex_lock(&controlMutex);
 
-	if (connections.find(port) != connections.end())
+	if (connections.find(context.port) != connections.end())
 	{
-		connections[port].other->onMessageReceived(connections[port].othersPort, context);
+		// Creating "context to receive"
+		CPUContext contextToReceive = context;
+		contextToReceive.port = connections[context.port].othersPort;
+
+		connections[context.port].other->onMessageReceived(context);
 	}
 
 	pthread_mutex_unlock(&controlMutex);
+}
+
+
+bool HardwareDevice::onMessageReceived(const CPUContext& context)
+{
+	int1* stack = &(getMemory()[context.stackStart]);
+	int1* heap = &(getMemory()[context.heapStart]);
+
+	int4 command = *((int4*)&stack[context.stackPtr + 0]);
+	if (command == HARDWARE_INITIALIZE)
+	{
+		int1* new_activity_context = ((int1*)&stack[context.stackPtr + 4]);
+		activityContext.readFrom(new_activity_context);
+		return true;	// Handled
+	}
+	else if (command == HARDWARE_ACTIVATE)
+	{
+		active = true;
+		return true;	// Handled
+	}
+	else if (command == HARDWARE_DEACTIVATE)
+	{
+		active = false;
+		return true;	// Handled
+	}
+	else
+	{
+		return false;	// Not handled
+	}
 }

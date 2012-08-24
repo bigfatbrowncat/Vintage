@@ -37,7 +37,6 @@ bool handleTerminalCustomEvents(void* data)
 int main(int argc, char* argv[])
 {
 	int4 portsCount = 256;												// 256 ports with buffer length of 64
-	int4 portDataLength = 64;
 
 	int4 initialHeapSize = 1024 * 1024;									// 1MB
 	int4 initialStackSize = 1024 * 1024;								// 1MB
@@ -47,8 +46,8 @@ int main(int argc, char* argv[])
 
 	// (int4 heapStart, int4 heapSize, int4 stackStart, int4 stackSize, int4 stackPtr, int4 flow)
 
-	CPUContext initialContext(0, initialHeapSize, initialHeapSize, initialStackSize, initialStackSize, 0);
-	CPU cpu(memory, memorySize, initialContext, portsCount, portDataLength);
+	CPUContext initialContext(0, 0, initialHeapSize, initialHeapSize, initialStackSize, initialStackSize, 0);
+	CPU cpu(memory, memorySize, initialContext, portsCount);
 
 	CachedFont font("res/font.txt");
 	CachedFont curfont("res/curfont.txt");
@@ -57,11 +56,6 @@ int main(int argc, char* argv[])
 
 	SDLScreen& cpuScreen = terminal.getScreen(0);			// Ctrl + F1
 	SDLScreen& debuggerScreen = terminal.getScreen(1);		// Ctrl + F2
-
-
-	//HardwareTimer hardTimer(cpu, 1);					// Hardware timer on port 1 -- the highest priority
-	//Console cpuConsole(cpu, 2, &cpuScreen);				// Terminal on port 2
-	//CPUKeyboardController kbd(cpu, 3, 256);				// Keyboard on the port 3
 
 	HardwareTimer hardTimer(memory, memorySize);
 	Console cpuConsole(&cpuScreen, memory, memorySize);

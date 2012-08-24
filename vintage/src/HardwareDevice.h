@@ -12,8 +12,11 @@
 
 using namespace std;
 
-#define	TERMINAL_CALL_PRINT									1
-#define	TERMINAL_CALL_MOVECURSOR							2
+#define	HARDWARE_INITIALIZE									0
+#define	HARDWARE_ACTIVATE									1
+#define	HARDWARE_DEACTIVATE									2
+
+#define HARDWARE_CUSTOM										256
 
 class HardwareDevice;
 
@@ -38,21 +41,17 @@ private:
 	pthread_t activity;
 	int1* memory;
 	int4 memorySize;
+
+	bool active;
+	CPUContext activityContext;
+
 	friend void* HardwareDevice_activity_function(void* arg);
 protected:
 	virtual void ActivityFunction() = 0;
 	virtual void onOtherDeviceConnected(int4 port) {}
-	virtual void onMessageReceived(int4 port, const CPUContext& context) {}
+	virtual bool onMessageReceived(const CPUContext& context);
 
-	void sendMessage(int4 port, const CPUContext& context);
-	void broadcastMessage(const CPUContext& context)
-	{
-		for (map<int, HardwareDeviceConnection>::const_iterator citer = connections.begin(); citer != connections.end(); citer++)
-		{
-			sendMessage((*citer).first, context);
-		}
-
-	}
+	void sendMessage(const CPUContext& context);
 
 	void issueTurningOff()
 	{
@@ -69,6 +68,15 @@ public:
 
 	bool turnOn();
 	bool turnOff();
+	CPUContext getActivityContext()
+	{
+		return activityContext;
+	}
+
+	bool isActive()
+	{
+		return active;
+	}
 	int1* getMemory()
 	{
 		return memory;

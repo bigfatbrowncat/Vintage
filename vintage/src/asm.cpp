@@ -5,6 +5,9 @@
 #include "asm.h"
 #include "chain.h"
 
+#define OP_ADD			0
+#define OP_SUB			1
+
 #define SYMBOL_TEXT						0
 #define SYMBOL_IDENTIFIER				1
 #define SYMBOL_WHITESPACE				2
@@ -21,11 +24,95 @@
 #define ARG_MEMORY						3
 #define ARG_MEMORY_STACK				4
 
+#define PARSECONST_OK					0
+#define PARSECONST_INVALID_TOKEN		1
+#define PARSECONST_DIV_BY_ZERO			2
+
 bool isLetter(char);
 bool isDigit(char);
 bool toDefint(char* str, int4& res);
 
 typedef chain<int4> id_pair;
+
+int parseConst(char* arg, int4& value, id_pair* labels)
+{
+	int cur_op = OP_ADD;
+	char cur_const[MAX_TOKEN_LENGTH];
+	int cur_const_len = 0;
+	int4 cur_val = 0;
+
+	int l = strlen(arg);
+	if (l == 0)
+	{
+		return PARSECONST_INVALID_TOKEN;
+	}
+
+	int i = 0;
+
+	// Checking if the first char is an operator
+	if (arg[i] == '+')
+	{
+		cur_op = OP_ADD;
+		i++;
+	}
+	if (arg[i] == '-')
+	{
+		cur_op = OP_SUB;
+		i++;
+	}
+
+	for (; i <= l; i++)
+	{
+		if (i == l || (arg[i] == '+' || arg[i] == '-' || arg[i] == '*' || arg[i] == '/'))
+		{
+			int4 tmp_value;
+			cur_const[cur_const_len] = 0;
+
+			if (labels->findId(cur_const, tmp_value))
+			{
+				// Identifier found and resolved
+			}
+			else if (toDefint(cur_const, tmp_value))
+			{
+				// Constant parsed
+			}
+			else
+			{
+				return ARG_INVALID;
+			}
+
+			if (cur_op == OP_ADD)
+			{
+				cur_val += tmp_value;
+			}
+			else if (cur_op == OP_SUB)
+			{
+				cur_val -= tmp_value;
+			}
+
+		}
+
+		if (i < l)
+		{
+			if (arg[i] == '+')
+			{
+				cur_op = OP_ADD;
+			}
+			else if (arg[i] == '-')
+			{
+				cur_op = OP_SUB;
+			}
+			else
+			{
+				cur_const[cur_const_len] = arg[i];
+				cur_const_len ++;
+			}
+		}
+	}
+
+	value = cur_val;
+	return PARSECONST_OK;
+}
 
 int parseArg(int pass, char* arg, int4& value, id_pair* labels)
 {
@@ -75,14 +162,9 @@ int parseArg(int pass, char* arg, int4& value, id_pair* labels)
 	else //if (pass == 2)	 on the second step we should parse the label
 	{
 		// Checking if the inner value is an identifier
-		if (labels->findId(argval, value))
+		if (parseConst(argval, value, labels) == PARSECONST_OK)
 		{
 			// Identifier found and resolved
-			return tpe;
-		}
-		else if (toDefint(argval, value))
-		{
-			// Constant parsed
 			return tpe;
 		}
 		else
@@ -91,40 +173,6 @@ int parseArg(int pass, char* arg, int4& value, id_pair* labels)
 		}
 	}
 }
-
-/*
-bool validateInstruction(char* token)
-{
-	char* cur = token;
-	while (*cur != 0)
-	{
-		if (*cur < 'a' || *cur > 'z' )
-		{
-			return false;
-		}
-		cur ++;
-	}
-	if (cur == token) return false;
-	return true;
-}
-
-bool validateIdentifier(char* token)
-{
-	char* cur = token;
-	while (*cur != 0)
-	{
-		if (cur == token && !isLetter(*cur) && *cur != '_') return false;
-
-		if (isLetter(*cur) || isDigit(*cur) || *cur == '_')
-		{
-			return false;
-		}
-		cur ++;
-	}
-	if (cur == token) return false;
-	return true;
-}
-*/
 
 bool toDefint(char* str, int4& res)
 {
@@ -216,14 +264,8 @@ bool addInstr(int1* target, int4 target_size, int4& mem_pos, instr_t instr, int4
 
 bool addData(int1* target, int4 target_size, int4& mem_pos, wchar_t* data, int4 data_length)
 {
-	if (mem_pos + /*1 + sizeof(defint) +*/ data_length * sizeof(wchar_t) < target_size)
+	if (mem_pos + data_length * sizeof(wchar_t) < target_size)
 	{
-		/*target[mem_pos] = data_data;
-		mem_pos ++;
-
-		*(defint*)(&target[mem_pos]) = data_length * sizeof(wchar_t);
-		mem_pos += sizeof(defint);*/
-
 		for (int i = 0; i < data_length; i++)
 		{
 			*(wchar_t*)(&target[mem_pos]) = data[i];
@@ -1335,6 +1377,7 @@ int assemble(char* code, int1* target, int4 max_target_size, int& error_line, in
 						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT_TYPE)
 					}
 				}
+				/*
 				else if (areEqual(tokens[instr_start], "regin"))
 				{
 					int4 arg_vals[2];
@@ -1401,7 +1444,7 @@ int assemble(char* code, int1* target, int4 max_target_size, int& error_line, in
 					{
 						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT_TYPE)
 					}
-				}
+				}*/
 				else if (areEqual(tokens[instr_start], "call"))
 				{
 					if (tokens_num > instr_start + 2)
@@ -1675,7 +1718,6 @@ int assemble(char* code, int1* target, int4 max_target_size, int& error_line, in
 						}
 						else if (arg_type == ARG_CONST)
 						{
-							printf("%d, %d\n", arg_val, arg_val % 256);
 							if (arg_val == arg_val % 256)
 							{
 								*res_cur = arg_val % 256;

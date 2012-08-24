@@ -77,20 +77,20 @@ kbd_handler:   alloc 4
 
 ; *** UI SECTION ********************************************************************************************************
 
-               int1 2
+               ;int1 2
 timer_calls:   text "Timer: " 0
 timer_print:
                ; port in handler, should free 8 additional bytes on end
                alloc 10
               
                ; moving the cursor to 0,3
-               mov {0}, 2
+               mov {0}, 257
                mov 2, {4}, 0
                mov 2, {6}, 3
                out 2
               
                ; printing out "timer: "
-               mov {0}, 1                        ; 1 means "print the text out"
+               mov {0}, 256                      ; 256 means "print the text out"
                mov {4}, timer_calls              ; address of the text buffer
                out 2                             ; call terminal
 
@@ -103,7 +103,7 @@ timer_print:
               
                ; printing out the timer
                mov {4}, {0}
-               mov {0}, 1
+               mov {0}, 256
                out 2
               
                free 10
@@ -120,22 +120,16 @@ kbd_print:     alloc 10                           ; 4 * 2 + 2
                ;jmp kbd_exit                      ; taking away the fake '0' events
 kbd_next:
                ; moving the cursor to 0,4
-               mov {0}, 2                        ; 2 means "set cursor position"
+               mov {0}, 257                      ; 257 means "set cursor position"
                mov 2, {4}, 0                     ; X
                mov 2, {6}, 4                     ; Y
                out 2
               
                ; printing the text out
-               mov {0}, 1                        ; 1 means "print the text out"
+               mov {0}, 256                      ; 256 means "print the text out"
                mov {4}, kbd_key_str              ; address of the text buffer
                out 2                             ; call terminal
 
-               ; moving the cursor to 5,4 (after "Key: ")
-               ;mov {0}, 2                        ; 2 means "set cursor position"
-               ;mov 2, {4}, 5                     ; X
-               ;mov 2, {6}, 4                     ; Y
-               ;out 2
-              
                ; converting key code to string
                mov {0}, kbd_key
                mov {0}, [{0}]
@@ -145,18 +139,11 @@ kbd_next:
 
                ; printing out the key code
                mov {4}, {0}
-               mov {0}, 1
+               mov {0}, 256
                out 2
-
-               ; moving the cursor to 12,4 
-               ;mov {0}, 2                        ; 2 means "set cursor position"
-               ;mov 2, {4}, 12                    ; X
-               ;mov 2, {6}, 4                     ; Y
-               ;out 2
 
                mov {0}, kbd_isdown
                mov 1, {0}, [{0}]
-               ;and 1, {0}, 1
 
                if 1, {0}, kbd_down 
 kbd_up:        mov {4}, kbd_isup_str
@@ -165,25 +152,6 @@ kbd_down:      mov {4}, kbd_isdown_str
 
 kbd_print_ud:  mov {0}, 1
                out 2
-              
-               ; moving the cursor to 29,4 
-               ;mov {0}, 2
-               ;mov 2, {4}, 29
-               ;mov 2, {6}, 4
-               ;out 2
-              
-               ; converting modifiers to string
-               ;mov 2, {0}, {11}                  ; 8 + 3
-               ;mov 2, {2}, 0
-
-               ;mov 1, {4}, 2                     ; radix
-               ;mov 1, {5}, 11                    ; digits
-               ;call inttostr
-
-               ; printing out the key code
-               ;mov {4}, {0}
-               ;mov {0}, 1
-               ;out 2
               
 kbd_exit:      free 10
               
@@ -198,48 +166,48 @@ main_devs:     text "Devices printout:" 10 0
 main:          alloc 8                           ; 4 * 2
           
                ; printing the text out
-               mov {0}, 1                        ; 1 means "print the text out"
+               mov {0}, 256                      ; 256 means "print the text out"
                mov {4}, main_fox                 ; address of the text buffer
                out 2                             ; call terminal
 
                ; printing the text out
-               mov {0}, 1                        ; 1 means "print the text out"
+               mov {0}, 256                      ; 256 means "print the text out"
                mov {4}, main_devs                ; address of the text buffer
                out 2                             ; call terminal
 
                ; printing out the value
                mov {4}, {0}
-               mov {0}, 1
+               mov {0}, 256
                out 2              
 
-               alloc 24                           ; allocating space for context data
+               ;alloc 24                           ; allocating space for context data
 
                ; setting the context for timer handler
-               getcont {0}
-               add {8}, 0                         ; stack start
-               mov {12}, 64                       ; stack size
-               mov {16}, {12}                     ; stack ptr
-               mov {20}, timer_handler
-               regin 1, {0}                       ; assuming timer is on the port #1
+               ;getcont {0}
+               ;add {8}, 0                         ; stack start
+               ;mov {12}, 64                       ; stack size
+               ;mov {16}, {12}                     ; stack ptr
+               ;mov {20}, timer_handler
+               ;regin 1, {0}                       ; assuming timer is on the port #1
 
                ; setting the context for keyboard handler
-               getcont {0}
-               add {8}, 64                        ; stack start
-               mov {12}, 64                       ; stack size
-               mov {16}, {12}                     ; stack ptr
-               mov {20}, kbd_handler
-               regin 3, {0}                       ; keyboard is on the port #3
+               ;getcont {0}
+               ;add {8}, 64                        ; stack start
+               ;mov {12}, 64                       ; stack size
+               ;mov {16}, {12}                     ; stack ptr
+               ;mov {20}, kbd_handler
+               ;regin 3, {0}                       ; keyboard is on the port #3
 
                ; setting the context for keyboard handler
-               getcont {0}
-               add {8}, 128                       ; stack start
-               sub {12}, 128                      ; stack size
-               mov {16}, {12}                     ; stack ptr
-               mov {20}, after_setcont
-               setcont {0}
+               ;getcont {0}
+               ;add {8}, 128                       ; stack start
+               ;sub {12}, 128                      ; stack size
+               ;mov {16}, {12}                     ; stack ptr
+               ;mov {20}, after_setcont
+               ;setcont {0}
 after_setcont:
 
-               free 24
+               ;free 24
                
                free 8
 

@@ -43,10 +43,11 @@ private:
 	int4 memorySize;
 
 	bool active;
-	CPUContext activityContext;
 
 	friend void* HardwareDevice_activity_function(void* arg);
 protected:
+	CPUContext activityContext;
+
 	virtual void ActivityFunction() = 0;
 	virtual void onOtherDeviceConnected(int4 port) {}
 	virtual bool onMessageReceived(const CPUContext& context);

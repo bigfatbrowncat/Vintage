@@ -78,7 +78,7 @@ int parseConst(char* arg, int4& value, id_pair* labels)
 			}
 			else
 			{
-				return ARG_INVALID;
+				return PARSECONST_INVALID_TOKEN;
 			}
 
 			if (cur_op == OP_ADD)

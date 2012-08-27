@@ -11,6 +11,7 @@ class HardwareTimer : public HardwareDevice
 private:
 protected:
 	void ActivityFunction();
+	virtual bool onMessageReceived(const CPUContext& context);
 
 public:
 	HardwareTimer(int1* memory, int4 memorySize) :

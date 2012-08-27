@@ -47,16 +47,9 @@ its_exit:      mov {16}, {0}                     ; result saved
 
 ; *** HANDLERS SECTION **************************************************************************************************
 
-timer_value:   text 0 0                                                     ; 4 bytes for timer value  
-timer_stack:   text 0 0                                                     ; 4 bytes allocated for timer handler stack
+timer_value:   text 0 0                                                    ; 4 bytes allocated for timer handler stack
 
-timer_handler: alloc 4
-
-               ; getting the first 4 bytes of stack as the timer value
-               mov {0}, timer_value 
-               mov [{0}], {4}
-
-               free 4
+timer_handler: ; just relax and do nothing
                hret
 
 kbd_key:       text 0 0                          ; 4 bytes allocated for scan code
@@ -186,15 +179,14 @@ main:          alloc 8                           ; 4 * 2
                ; *** Initializing devices ***
                mov {0}, 0                          ; 0 is "HARDWARE_INITIALIZE" command
 
-               mov {32}, timer_stack
                mov {36}, timer_value
                mov [{32}], {36}
                 
                ; setting the context for timer handler
                getcont {4}
-               mov {12+4}, timer_stack             ; stack start
+               mov {12+4}, timer_value             ; stack start
                mov {16+4}, 4                       ; stack size
-               mov {20+4}, 0                       ; stack ptr
+               mov {20+4}, 4                       ; stack ptr
                mov {24+4}, timer_handler           ; flow
 
 

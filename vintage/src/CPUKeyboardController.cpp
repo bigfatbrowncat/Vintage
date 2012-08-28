@@ -4,16 +4,14 @@
 #include <unistd.h>
 
 CPUKeyboardController::CPUKeyboardController(int4 bufferLength, int1* memory, int4 memorySize) :
-	bufferLength(bufferLength),
 	HardwareDevice(memory, memorySize),
-	active(false)
+	bufferLength(bufferLength),
+	current(0), last(0)
 {
 	keyDown = new bool[bufferLength];
 	keyCode = new int4[bufferLength];
 
 	pthread_mutex_init(&keyBufferLock, NULL);
-
-	current = 0; last = 0;
 }
 
 CPUKeyboardController::~CPUKeyboardController()
@@ -23,7 +21,7 @@ CPUKeyboardController::~CPUKeyboardController()
 	delete [] keyCode;
 }
 
-void CPUKeyboardController::ChangeKeyState(bool key_down, int4 key_code)
+void CPUKeyboardController::processKeyEvent(bool key_down, int4 key_code)
 {
 	pthread_mutex_lock(&keyBufferLock);
 	if (last != current - 1)
@@ -43,35 +41,61 @@ void CPUKeyboardController::ActivityFunction()
 {
 	while (getState() == hdsOn)
 	{
-		// Taking the event away from the buffer.
-		// This is synchronized with adding event to the buffer
-		pthread_mutex_lock(&keyBufferLock);
-		bool notEmpty = (current != last);
-		if (notEmpty && active)
+		if (isActive())
 		{
-			// First 4 bytes -- key code
-			// 5th byte:
-			//     0 bit - boolean - is key down
-			//   1-7 bit - unused
+			// Taking the event away from the buffer.
+			// This is synchronized with adding event to the buffer
+			pthread_mutex_lock(&keyBufferLock);
+			bool notEmpty = (current != last);
+			if (notEmpty)
+			{
+				// First 4 bytes -- key code
+				// 5th byte:
+				//     0 bit - boolean - is key down
+				//   1-7 bit - unused
 
-			int1* heap = &(getMemory()[activityContext.heapStart]);
-			int1* msg = &heap[0];
-			*((int4*)&msg[0]) = keyCode[current];
-			*((int1*)&msg[4]) = keyDown[current] ? 1 : 0;
-			printf("<- (%d, %d) %d %d\n", current, last, keyCode[current], keyDown[current]);
-			current = (current + 1) % bufferLength;
-		}
-		pthread_mutex_unlock(&keyBufferLock);
+				int1* stack = &getMemory()[activityContext.stackStart];
+				int1* heap = &getMemory()[activityContext.heapStart];
 
-		// After taking the last event from the buffer,
-		// we send it to the CPU.
-		if (notEmpty && active)
-		{
-			sendMessage(getActivityContext());
+				int1* msg = &stack[activityContext.stackPtr];
+				*((int4*)&msg[0]) = keyCode[current];
+				*((int1*)&msg[4]) = keyDown[current] ? 1 : 0;
+				printf("<- (%d, %d) %d %d\n", current, last, keyCode[current], keyDown[current]);
+				current = (current + 1) % bufferLength;
+			}
+			pthread_mutex_unlock(&keyBufferLock);
+
+			// After taking the last event from the buffer,
+			// we send it to the CPU.
+			if (notEmpty)
+			{
+				sendMessage();
+			}
 		}
-		else
-		{
-			usleep(100);	// 0.1 millisecond
-		}
+		usleep(100);
+	}
+}
+
+bool CPUKeyboardController::onMessageReceived(const MessageContext& context)
+{
+	bool baseResult = HardwareDevice::onMessageReceived(context);
+
+	int1* stack = &(getMemory()[context.stackStart]);
+	int1* heap = &(getMemory()[context.heapStart]);
+
+	int4 command = *((int4*)&stack[context.stackPtr + 0]);
+	if (command == HARDWARE_ACTIVATE)
+	{
+		activityContext.stackPtr -= MessageContext::getSize();
+		return true;	// Handled
+	}
+	else if (command == HARDWARE_DEACTIVATE)
+	{
+		activityContext.stackPtr += MessageContext::getSize();
+		return true;	// Handled
+	}
+	else
+	{
+		return baseResult;	// Not handled. Maybe it's already handled in base...
 	}
 }

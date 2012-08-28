@@ -36,7 +36,7 @@ VM_OBJS =			$(OBJ_PATH)/SDLTerminal.o $(OBJ_PATH)/SDLScreen.o $(OBJ_PATH)/vm_mai
 ASM_OBJS =			$(OBJ_PATH)/asm.o $(OBJ_PATH)/asm_main.o \
 					$(OBJ_PATH)/globals.o
 					
-VM_HEADERS = 		$(SRC_PATH)/SDLTerminal.h $(SRC_PATH)/SDLScreen.h \
+VM_HEADERS = 		$(SRC_PATH)/SDLTerminal.h $(SRC_PATH)/SDLScreen.h $(SRC_PATH)/MessageContext.h \
 					$(SRC_PATH)/../../FontEditor/include/Font.h \
 					$(SRC_PATH)/HardwareDevice.h \
 					$(SRC_PATH)/CPU.h $(SRC_PATH)/instructions.h \

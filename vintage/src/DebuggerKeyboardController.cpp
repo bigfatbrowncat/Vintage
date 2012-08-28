@@ -1,6 +1,6 @@
 #include "DebuggerKeyboardController.h"
 
-void DebuggerKeyboardController::ChangeKeyState(bool key_down, int4 key_code)
+void DebuggerKeyboardController::processKeyEvent(bool key_down, int4 key_code)
 {
 	if (key_down)
 	{

@@ -6,7 +6,7 @@ Console::Console(SDLScreen* window, int1* memory, int4 memorySize) :
 	this->window = window;
 }
 
-bool Console::onMessageReceived(const CPUContext& context)
+bool Console::onMessageReceived(const MessageContext& context)
 {
 	if (HardwareDevice::onMessageReceived(context))
 	{

@@ -1,7 +1,7 @@
-#ifndef CPU_CONTEXT_H_
-#define CPU_CONTEXT_H_
+#ifndef MESSAGE_CONTEXT_H_
+#define MESSAGE_CONTEXT_H_
 
-struct CPUContext
+struct MessageContext
 {
 	int4 port;
 
@@ -14,16 +14,16 @@ struct CPUContext
 
 	int4 flow;
 
-	int getSize()
+	static int getSize()
 	{
 		return sizeof(port) + sizeof(heapStart) + sizeof(heapSize) +
 		       sizeof(stackStart) + sizeof(stackSize) + sizeof(stackPtr) +
 		       sizeof(flow);
 	}
 
-	CPUContext() {}
+	MessageContext() {}
 
-	CPUContext(int4 port, int4 heapStart, int4 heapSize, int4 stackStart, int4 stackSize, int4 stackPtr, int4 flow) :
+	MessageContext(int4 port, int4 heapStart, int4 heapSize, int4 stackStart, int4 stackSize, int4 stackPtr, int4 flow) :
 		port(port), heapStart(heapStart), heapSize(heapSize), stackStart(stackStart), stackSize(stackSize), stackPtr(stackPtr), flow(flow) { }
 
 	void writeTo(int1* addr)

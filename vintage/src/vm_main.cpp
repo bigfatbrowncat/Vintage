@@ -7,7 +7,7 @@
 #include "SDLScreen.h"
 #include "Debugger.h"
 #include "CPU.h"
-#include "CPUContext.h"
+#include "MessageContext.h"
 #include "../../FontEditor/include/Font.h"
 #include "HardwareTimer.h"
 #include "Console.h"
@@ -46,7 +46,7 @@ int main(int argc, char* argv[])
 
 	// (int4 heapStart, int4 heapSize, int4 stackStart, int4 stackSize, int4 stackPtr, int4 flow)
 
-	CPUContext initialContext(0, 0, initialHeapSize, initialHeapSize, initialStackSize, initialStackSize, 0);
+	MessageContext initialContext(0, 0, initialHeapSize, initialHeapSize, initialStackSize, initialStackSize, 0);
 	CPU cpu(memory, memorySize, initialContext, portsCount);
 
 	CachedFont font("res/font.txt");

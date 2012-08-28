@@ -3,6 +3,7 @@
 #include <pthread.h>
 
 #include "HardwareDevice.h"
+#include "MessageContext.h"
 
 void* HardwareDevice_activity_function(void* arg)
 {
@@ -92,24 +93,24 @@ void HardwareDevice::connectDevices(HardwareDevice& dev1, int port1, HardwareDev
 	pthread_mutex_unlock(&dev2.controlMutex);
 }
 
-void HardwareDevice::sendMessage(const CPUContext& context)
+void HardwareDevice::sendMessage()
 {
 	pthread_mutex_lock(&controlMutex);
 
-	if (connections.find(context.port) != connections.end())
+	if (connections.find(activityContext.port) != connections.end())
 	{
 		// Creating "context to receive"
-		CPUContext contextToReceive = context;
-		contextToReceive.port = connections[context.port].othersPort;
+		MessageContext contextToReceive = activityContext;
+		contextToReceive.port = connections[activityContext.port].othersPort;
 
-		connections[context.port].other->onMessageReceived(context);
+		connections[activityContext.port].other->onMessageReceived(activityContext);
 	}
 
 	pthread_mutex_unlock(&controlMutex);
 }
 
 
-bool HardwareDevice::onMessageReceived(const CPUContext& context)
+bool HardwareDevice::onMessageReceived(const MessageContext& context)
 {
 	int1* stack = &(getMemory()[context.stackStart]);
 	int1* heap = &(getMemory()[context.heapStart]);

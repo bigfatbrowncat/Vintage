@@ -12,7 +12,7 @@ private:
 public:
 	DebuggerKeyboardController(Debugger& debugger) : debugger(debugger) {}
 	virtual ~DebuggerKeyboardController() {}
-	void ChangeKeyState(bool key_down, int4 key_code);
+	void processKeyEvent(bool key_down, int4 key_code);
 };
 
 #endif

@@ -8,22 +8,22 @@ void HardwareTimer::ActivityFunction()
 		{
 			clock_t tt = clock();
 
-			int1* stack = &getMemory()[getActivityContext().stackStart];
-			int1* heap = &getMemory()[getActivityContext().heapStart];
+			int1* stack = &getMemory()[activityContext.stackStart];
+			int1* heap = &getMemory()[activityContext.heapStart];
 
 			// Getting address from the top of stack
-			int4* target = ((int4*)&stack[getActivityContext().stackPtr]);
+			int4* target = ((int4*)&stack[activityContext.stackPtr]);
 
 			// Writing the current clock data there
 			*target = tt;
 
-			sendMessage(getActivityContext());
+			sendMessage();
 		}
     	usleep(100);	// 0.1 millisecond
 	}
 }
 
-bool HardwareTimer::onMessageReceived(const CPUContext& context)
+bool HardwareTimer::onMessageReceived(const MessageContext& context)
 {
 	bool baseResult = HardwareDevice::onMessageReceived(context);
 

@@ -6,7 +6,7 @@
 #include "instructions.h"
 #include "SDLScreen.h"
 #include "Debugger.h"
-#include "CPUContext.h"
+#include "MessageContext.h"
 
 #include <map>
 
@@ -46,13 +46,13 @@ private:
 
 	friend void* HardwareDevice_activity_function(void* arg);
 protected:
-	CPUContext activityContext;
+	MessageContext activityContext;
 
 	virtual void ActivityFunction() = 0;
 	virtual void onOtherDeviceConnected(int4 port) {}
-	virtual bool onMessageReceived(const CPUContext& context);
+	virtual bool onMessageReceived(const MessageContext& context);
 
-	void sendMessage(const CPUContext& context);
+	void sendMessage();
 
 	void issueTurningOff()
 	{
@@ -69,10 +69,6 @@ public:
 
 	bool turnOn();
 	bool turnOff();
-	CPUContext getActivityContext()
-	{
-		return activityContext;
-	}
 
 	bool isActive()
 	{

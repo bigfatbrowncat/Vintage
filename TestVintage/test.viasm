@@ -47,9 +47,14 @@ its_exit:      mov {16}, {0}                     ; result saved
 
 ; *** HANDLERS SECTION **************************************************************************************************
 
-timer_value:   text 0 0                                                    ; 4 bytes allocated for timer handler stack
+timer_value:   text 0 0
+timer_stack:   text 0 0                                                    ; 4 bytes allocated for timer handler stack
 
-timer_handler: ; just relax and do nothing
+timer_handler: ; moving timer data to the "timer_value" address
+               alloc 4
+               mov {0}, timer_value
+               mov [{0}], {4}
+               free 4
                hret
 
 kbd_key:       text 0 0                          ; 4 bytes allocated for scan code
@@ -71,7 +76,6 @@ kbd_handler:   alloc 4
 
 ; *** UI SECTION ********************************************************************************************************
 
-               ;int1 2
 timer_calls:   text "Timer: " 0
 timer_print:
                ; port in handler, should free 8 additional bytes on end
@@ -184,7 +188,8 @@ main:          alloc 8                           ; 4 * 2
                 
                ; setting the context for timer handler
                getcont {4}
-               mov {12+4}, timer_value             ; stack start
+               mov {0+4},  1                       ; port
+               mov {12+4}, timer_stack             ; stack start
                mov {16+4}, 4                       ; stack size
                mov {20+4}, 4                       ; stack ptr
                mov {24+4}, timer_handler           ; flow

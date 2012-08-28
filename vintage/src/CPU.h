@@ -11,7 +11,7 @@
 #include "HardwareDevice.h"
 #include "Debugger.h"
 #include "FlowState.h"
-#include "CPUContext.h"
+#include "MessageContext.h"
 
 using namespace std;
 
@@ -19,20 +19,13 @@ class CPU : public HardwareDevice
 {
 private:
 	pthread_mutex_t portReadingMutex;
-
-	CPUContext initialContext;
-
+	MessageContext initialContext;
 	int4 portsCount;
-
 	bool* inputPortIsWaiting;
-	CPUContext* portInWaitingContext;
-
-	list<CPUContext> contextStack;
-
+	MessageContext* portInWaitingContext;
+	list<MessageContext> contextStack;
 	volatile bool someInputPortIsWaiting;
-
 	pthread_t activity;
-
 	Debugger* debugger;
 
 protected:
@@ -41,13 +34,16 @@ protected:
 	void reportToDebugger(int1* stack, int4 stackPtr, int4 stackSize, int1* heap, int4 heapSize, int4 flow, FlowState state);
 	void askDebugger(int1* stack, int4 stackPtr, int4 stackSize, int1* heap, int4 heapSize, int4 flow);
 
-	virtual void onMessageReceived(int4 port, const CPUContext& context)
+	virtual bool onMessageReceived(const MessageContext& context)
 	{
+		// TODO: No call to base method. This should be thinked over
+
 		pthread_mutex_lock(&portReadingMutex);
 		someInputPortIsWaiting = true;
-		inputPortIsWaiting[port] = true;
-		portInWaitingContext[port] = context;
+		inputPortIsWaiting[context.port] = true;
+		portInWaitingContext[context.port] = context;
 		pthread_mutex_unlock(&portReadingMutex);
+		return true;
 	}
 public:
 
@@ -56,7 +52,7 @@ public:
 		this->debugger = &debugger;
 	}
 
-	CPU(int1* memory, int4 memorySize, const CPUContext& initialContext, int4 portsCount) :
+	CPU(int1* memory, int4 memorySize, const MessageContext& initialContext, int4 portsCount) :
 		HardwareDevice(memory, memorySize),
 		initialContext(initialContext),
 		debugger(NULL)
@@ -66,7 +62,7 @@ public:
 		inputPortIsWaiting = new bool[portsCount];
 		for (int i = 0; i < portsCount; i++) inputPortIsWaiting[i] = false;
 
-		portInWaitingContext = new CPUContext[portsCount];
+		portInWaitingContext = new MessageContext[portsCount];
 
 		someInputPortIsWaiting = false;
 

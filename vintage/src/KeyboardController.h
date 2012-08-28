@@ -8,7 +8,7 @@ class KeyboardController;
 class KeyboardController
 {
 public:
-	virtual void ChangeKeyState(bool key_down, int4 key_code) = 0;
+	virtual void processKeyEvent(bool key_down, int4 key_code) = 0;
 };
 
 #endif

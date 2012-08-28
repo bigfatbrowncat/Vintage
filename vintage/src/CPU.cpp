@@ -44,8 +44,7 @@ void CPU::askDebugger(int1* stack, int4 stackPtr, int4 stackSize, int1* heap, in
 
 void CPU::ActivityFunction()
 {
-	CPUContext context = initialContext;
-	CPUContext contextToSend;
+	MessageContext context = initialContext;
 	int1* stack = &(getMemory()[context.stackStart]);
 	int1* heap = &(getMemory()[context.heapStart]);
 
@@ -109,7 +108,7 @@ void CPU::ActivityFunction()
 					inputPortIsWaiting[portToHandle] = false;
 
 					// Backing up the current context
-					CPUContext tmpContext = context;
+					MessageContext tmpContext = context;
 
 					// Selecting the new context
 					context = portInWaitingContext[portToHandle];
@@ -879,9 +878,9 @@ void CPU::ActivityFunction()
 			printf("out %d", arg1);
 			fflush(stdout);
 #endif
-			contextToSend = context;
-			contextToSend.port = arg1;
-			sendMessage(contextToSend);
+			activityContext = context;
+			activityContext.port = arg1;
+			sendMessage();
 			break;
 
 		case out_stp:
@@ -890,9 +889,9 @@ void CPU::ActivityFunction()
 			printf("out {%d}", arg1);
 			fflush(stdout);
 #endif
-			contextToSend = context;
-			contextToSend.port = *((int4*)&stack[context.stackPtr + arg1]);
-			sendMessage(contextToSend);
+			activityContext = context;
+			activityContext.port = *((int4*)&stack[context.stackPtr + arg1]);
+			sendMessage();
 			break;
 
 		case halt:

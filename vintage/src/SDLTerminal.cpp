@@ -117,7 +117,7 @@ void SDLTerminal::processEvents()
 //					printf("-> %d %d\n", event.key.keysym.sym, true);
 					if (screens[activeScreen]->getKeyboardController() != NULL)
 					{
-						screens[activeScreen]->getKeyboardController()->ChangeKeyState(true, event.key.keysym.sym);
+						screens[activeScreen]->getKeyboardController()->processKeyEvent(true, event.key.keysym.sym);
 					}
 				}
 			}
@@ -134,7 +134,7 @@ void SDLTerminal::processEvents()
 //					printf("-> %d %d\n", event.key.keysym.sym, false);
 					if (screens[activeScreen]->getKeyboardController() != NULL)
 					{
-						screens[activeScreen]->getKeyboardController()->ChangeKeyState(false, event.key.keysym.sym);
+						screens[activeScreen]->getKeyboardController()->processKeyEvent(false, event.key.keysym.sym);
 					}
 				}
 			}

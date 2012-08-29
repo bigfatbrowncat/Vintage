@@ -19,7 +19,6 @@ class CPU : public HardwareDevice
 {
 private:
 	pthread_mutex_t portReadingMutex;
-	MessageContext initialContext;
 	int4 portsCount;
 	bool* inputPortIsWaiting;
 	MessageContext* portInWaitingContext;
@@ -54,7 +53,6 @@ public:
 
 	CPU(int1* memory, int4 memorySize, const MessageContext& initialContext, int4 portsCount) :
 		HardwareDevice(memory, memorySize),
-		initialContext(initialContext),
 		debugger(NULL)
 	{
 		this->portsCount = portsCount;
@@ -65,6 +63,7 @@ public:
 		portInWaitingContext = new MessageContext[portsCount];
 
 		someInputPortIsWaiting = false;
+		contextStack.push_back(initialContext);
 
 		pthread_mutex_init(&portReadingMutex, NULL);
 	}

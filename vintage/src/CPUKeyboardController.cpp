@@ -86,12 +86,12 @@ bool CPUKeyboardController::onMessageReceived(const MessageContext& context)
 	int4 command = *((int4*)&stack[context.stackPtr + 0]);
 	if (command == HARDWARE_ACTIVATE)
 	{
-		activityContext.stackPtr -= MessageContext::getSize();
+		activityContext.stackPtr -= 5; // keyboard message size
 		return true;	// Handled
 	}
 	else if (command == HARDWARE_DEACTIVATE)
 	{
-		activityContext.stackPtr += MessageContext::getSize();
+		activityContext.stackPtr += 5; // keyboard message size
 		return true;	// Handled
 	}
 	else

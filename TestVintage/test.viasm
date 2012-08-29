@@ -47,18 +47,22 @@ its_exit:      mov {16}, {0}                     ; result saved
 
 ; *** HANDLERS SECTION **************************************************************************************************
 
-timer_value:   text 0 0
-timer_stack:   text 0 0                                                    ; 4 bytes allocated for timer handler stack
+timer_value:   text 0 0                          ; 4 bytes for timer value
+timer_stack:   text 0 0 0 0                      ; 8 bytes allocated for timer handler stack
 
-timer_handler: ; moving timer data to the "timer_value" address
-               alloc 4
+timer_handler: alloc 4
+
+               ; moving timer data to the "timer_value" address
                mov {0}, timer_value
                mov [{0}], {4}
+               
                free 4
                hret
 
 kbd_key:       text 0 0                          ; 4 bytes allocated for scan code
 kbd_isdown:    text 0                            ; 1 byte allocated for "is key down" value
+
+kbd_stack:     text 0 0 0 0 0 0 0 0              ; 16 bytes allocated for keyboard handler stack
 
 kbd_handler:   alloc 4
 
@@ -137,7 +141,7 @@ kbd_next:
 
                ; printing out the key code
                mov {4}, {0}
-               mov {0}, 256
+               mov {0}, 256                      ; 256 means "print the text out"
                out 2
 
                mov {0}, kbd_isdown
@@ -148,7 +152,7 @@ kbd_up:        mov {4}, kbd_isup_str
                jmp kbd_print_ud
 kbd_down:      mov {4}, kbd_isdown_str
 
-kbd_print_ud:  mov {0}, 1
+kbd_print_ud:  mov {0}, 256                      ; 256 means "print the text out"
                out 2
               
 kbd_exit:      free 10
@@ -178,38 +182,35 @@ main:          alloc 8                           ; 4 * 2
                mov {0}, 256
                out 2              
 
-               alloc 40                            ; allocating space for context data
+               alloc 28                            ; allocating space for context data
 
                ; *** Initializing devices ***
                mov {0}, 0                          ; 0 is "HARDWARE_INITIALIZE" command
 
-               mov {36}, timer_value
-               mov [{32}], {36}
-                
                ; setting the context for timer handler
                getcont {4}
                mov {0+4},  1                       ; port
                mov {12+4}, timer_stack             ; stack start
-               mov {16+4}, 4                       ; stack size
-               mov {20+4}, 4                       ; stack ptr
+               mov {16+4}, 8                       ; stack size
+               mov {20+4}, 8                       ; stack ptr
                mov {24+4}, timer_handler           ; flow
-
-
                out 1                               ; assuming timer is on the port #1 and sending the command to it
 
                ; setting the context for keyboard handler
-               ;getcont {0}
-               ;add {8}, 64                        ; stack start
-               ;mov {12}, 64                       ; stack size
-               ;mov {16}, {12}                     ; stack ptr
-               ;mov {20}, kbd_handler
-               ;regin 3, {0}                       ; keyboard is on the port #3
+               getcont {4}
+               mov {0+4},  1                       ; port
+               mov {12+4}, kbd_stack               ; stack start
+               mov {16+4}, 16                      ; stack size
+               mov {20+4}, 16                      ; stack ptr
+               mov {24+4}, kbd_handler             ; flow
+               out 3                               ; assuming keyboard is on the port #3 and sending the command to it
 
-               ; *** Initializing devices ***
+               ; *** Activating devices ***
                mov {0}, 1                          ; 1 is "HARDWARE_ACTIVATE" command
-               out 1                               ; assuming timer is on the port #1 and sending the command to it
+               out 1                               ; sending to timer
+               out 3                               ; sending to keyboard
 
-               free 32
+               free 28
                
                free 8
 

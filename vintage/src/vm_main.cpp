@@ -62,7 +62,7 @@ int main(int argc, char* argv[])
 	CPUKeyboardController kbd(256, memory, memorySize);
 
 	HardwareDevice::connectDevices(hardTimer, 1, cpu, 1);		// Hardware timer on port 1 -- the highest priority
-	HardwareDevice::connectDevices(cpuConsole, 1, cpu, 2);		// Terminal on port 2
+	HardwareDevice::connectDevices(cpuConsole, 1, cpu, 2);		// Console on port 2
 	HardwareDevice::connectDevices(kbd, 1, cpu, 3);				// Keyboard on the port 3
 
 	cpuScreen.setKeyboardController(&kbd);

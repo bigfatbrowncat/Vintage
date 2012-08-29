@@ -103,7 +103,7 @@ void HardwareDevice::sendMessage()
 		MessageContext contextToReceive = activityContext;
 		contextToReceive.port = connections[activityContext.port].othersPort;
 
-		connections[activityContext.port].other->onMessageReceived(activityContext);
+		connections[activityContext.port].other->onMessageReceived(contextToReceive);
 	}
 
 	pthread_mutex_unlock(&controlMutex);

@@ -1,7 +1,7 @@
 #include "Console.h"
 
 Console::Console(SDLScreen* window, int1* memory, int4 memorySize) :
-	HardwareDevice(memory, memorySize)
+	HardwareDevice(1, memory, memorySize)
 {
 	this->window = window;
 }

@@ -13,13 +13,17 @@ void* HardwareDevice_activity_function(void* arg)
 }
 
 
-HardwareDevice::HardwareDevice(int1* memory, int4 memorySize) :
-	active(false)
+HardwareDevice::HardwareDevice(int4 portsCount, int1* memory, int4 memorySize) :
+	portsCount(portsCount), active(false)
 {
 	pthread_mutex_init(&controlMutex, NULL);
 
 	this->memory = memory;
 	this->memorySize = memorySize;
+
+	devicesConnectedToPorts = new HardwareDevice*[portsCount];
+	for (int i = 0; i < portsCount; i++) devicesConnectedToPorts[i] = NULL;
+
 	// The initial state os "Off"
 	state = hdsOff;
 }
@@ -84,8 +88,9 @@ void HardwareDevice::connectDevices(HardwareDevice& dev1, int port1, HardwareDev
 	pthread_mutex_lock(&dev1.controlMutex);
 	pthread_mutex_lock(&dev2.controlMutex);
 
-	dev1.connections.insert(pair<int, HardwareDeviceConnection>(port1, HardwareDeviceConnection(&dev2, port2)));
-	dev2.connections.insert(pair<int, HardwareDeviceConnection>(port2, HardwareDeviceConnection(&dev1, port1)));
+	dev1.devicesConnectedToPorts[port1] = &dev2;
+	dev2.devicesConnectedToPorts[port2] = &dev1;
+
 	dev1.onOtherDeviceConnected(port1);
 	dev2.onOtherDeviceConnected(port2);
 
@@ -97,13 +102,13 @@ void HardwareDevice::sendMessage()
 {
 	pthread_mutex_lock(&controlMutex);
 
-	if (connections.find(activityContext.port) != connections.end())
+	if (devicesConnectedToPorts[activityContext.port] != NULL)
 	{
 		// Creating "context to receive"
 		MessageContext contextToReceive = activityContext;
-		contextToReceive.port = connections[activityContext.port].othersPort;
+		contextToReceive.port = devicesConnectedToPorts[activityContext.port]->portIndexOfConnectedDevice(*this);
 
-		connections[activityContext.port].other->onMessageReceived(contextToReceive);
+		devicesConnectedToPorts[activityContext.port]->onMessageReceived(contextToReceive);
 	}
 
 	pthread_mutex_unlock(&controlMutex);

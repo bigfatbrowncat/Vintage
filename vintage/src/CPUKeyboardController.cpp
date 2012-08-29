@@ -4,7 +4,7 @@
 #include <unistd.h>
 
 CPUKeyboardController::CPUKeyboardController(int4 bufferLength, int1* memory, int4 memorySize) :
-	HardwareDevice(memory, memorySize),
+	HardwareDevice(1, memory, memorySize),
 	bufferLength(bufferLength),
 	current(0), last(0)
 {

@@ -15,7 +15,7 @@ protected:
 
 public:
 	HardwareTimer(int1* memory, int4 memorySize) :
-		HardwareDevice(memory, memorySize) {}
+		HardwareDevice(1, memory, memorySize) {}
 	virtual ~HardwareTimer() {}
 };
 

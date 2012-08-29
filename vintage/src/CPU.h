@@ -19,7 +19,6 @@ class CPU : public HardwareDevice
 {
 private:
 	pthread_mutex_t portReadingMutex;
-	int4 portsCount;
 	bool* inputPortIsWaiting;
 	MessageContext* portInWaitingContext;
 	list<MessageContext> contextStack;
@@ -51,11 +50,10 @@ public:
 		this->debugger = &debugger;
 	}
 
-	CPU(int1* memory, int4 memorySize, const MessageContext& initialContext, int4 portsCount) :
-		HardwareDevice(memory, memorySize),
+	CPU(int4 portsCount, int1* memory, int4 memorySize, const MessageContext& initialContext) :
+		HardwareDevice(portsCount, memory, memorySize),
 		debugger(NULL)
 	{
-		this->portsCount = portsCount;
 
 		inputPortIsWaiting = new bool[portsCount];
 		for (int i = 0; i < portsCount; i++) inputPortIsWaiting[i] = false;

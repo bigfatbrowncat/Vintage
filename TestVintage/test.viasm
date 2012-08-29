@@ -118,8 +118,6 @@ kbd_isup_str:  text " is up  " 10 0
               
 kbd_print:     alloc 10                           ; 4 * 2 + 2
 
-               ;if {13}, kbd_next
-               ;jmp kbd_exit                      ; taking away the fake '0' events
 kbd_next:
                ; moving the cursor to 0,4
                mov {0}, 257                      ; 257 means "set cursor position"

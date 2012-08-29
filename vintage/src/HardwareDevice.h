@@ -20,23 +20,15 @@ using namespace std;
 
 class HardwareDevice;
 
-struct HardwareDeviceConnection
-{
-	HardwareDevice* other;
-	int othersPort;
-
-	HardwareDeviceConnection() {}
-	HardwareDeviceConnection(HardwareDevice* other, int othersPort) :
-		other(other), othersPort(othersPort) {}
-};
-
 enum HardwareDeviceState { hdsTurningOnPending, hdsOn, hdsTurningOffPending, hdsOff };
 
 class HardwareDevice
 {
 private:
 	pthread_mutex_t controlMutex;
-	map<int, HardwareDeviceConnection> connections;
+
+	HardwareDevice** devicesConnectedToPorts;
+
 	volatile HardwareDeviceState state;
 	pthread_t activity;
 	int1* memory;
@@ -47,12 +39,22 @@ private:
 	friend void* HardwareDevice_activity_function(void* arg);
 protected:
 	MessageContext activityContext;
+	int portsCount;
 
 	virtual void ActivityFunction() = 0;
 	virtual void onOtherDeviceConnected(int4 port) {}
 	virtual bool onMessageReceived(const MessageContext& context);
 
 	void sendMessage();
+
+	int portIndexOfConnectedDevice(const HardwareDevice& dev)
+	{
+		for (int i = 0; i < portsCount; i++)
+		{
+			if (devicesConnectedToPorts[i] == &dev) return i;
+		}
+		return -1;
+	}
 
 	void issueTurningOff()
 	{
@@ -83,7 +85,7 @@ public:
 		return memorySize;
 	}
 
-	HardwareDevice(int1* memory, int4 memorySize);
+	HardwareDevice(int4 portsCount, int1* memory, int4 memorySize);
 	virtual ~HardwareDevice();
 
 };

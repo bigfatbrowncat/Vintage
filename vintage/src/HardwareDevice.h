@@ -26,6 +26,9 @@ class HardwareDevice
 {
 private:
 	pthread_mutex_t controlMutex;
+	bool* inputPortIsWaiting;
+	MessageContext* portInWaitingContext;
+	volatile bool someInputPortIsWaiting;
 
 	HardwareDevice** devicesConnectedToPorts;
 
@@ -34,22 +37,25 @@ private:
 	int1* memory;
 	int4 memorySize;
 
-	bool active;
+	volatile bool active;
 
 	friend void* HardwareDevice_activity_function(void* arg);
 protected:
+
 	MessageContext activityContext;
 	int portsCount;
 
-	virtual void ActivityFunction() = 0;
+	void activityFunction();
 	virtual void onOtherDeviceConnected(int4 port) {}
 	virtual bool onMessageReceived(const MessageContext& context);
+	virtual bool doAction() = 0;
 
 	void sendMessage();
+	void receiveMessage(const MessageContext& context);
 
 	int portIndexOfConnectedDevice(const HardwareDevice& dev)
 	{
-		for (int i = 0; i < portsCount; i++)
+		for (int i = 0; i <= portsCount; i++)
 		{
 			if (devicesConnectedToPorts[i] == &dev) return i;
 		}
@@ -85,7 +91,7 @@ public:
 		return memorySize;
 	}
 
-	HardwareDevice(int4 portsCount, int1* memory, int4 memorySize);
+	HardwareDevice(bool initiallyActive, int4 portsCount, int1* memory, int4 memorySize);
 	virtual ~HardwareDevice();
 
 };

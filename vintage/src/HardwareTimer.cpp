@@ -1,26 +1,20 @@
 #include "HardwareTimer.h"
 
-void HardwareTimer::ActivityFunction()
+bool HardwareTimer::doAction()
 {
-	while (getState() == hdsOn)
-	{
-		if (isActive())
-		{
-			clock_t tt = clock();
+	clock_t tt = clock();
 
-			int1* stack = &getMemory()[activityContext.stackStart];
-			int1* heap = &getMemory()[activityContext.heapStart];
+	int1* stack = &getMemory()[activityContext.stackStart];
+	int1* heap = &getMemory()[activityContext.heapStart];
 
-			// Getting address from the top of stack
-			int4* target = ((int4*)&stack[activityContext.stackPtr]);
+	// Getting address from the top of stack
+	int4* target = ((int4*)&stack[activityContext.stackPtr]);
 
-			// Writing the current clock data there
-			*target = tt;
+	// Writing the current clock data there
+	*target = tt;
 
-			sendMessage();
-		}
-    	usleep(100);	// 0.1 millisecond
-	}
+	sendMessage();
+	return true;
 }
 
 bool HardwareTimer::onMessageReceived(const MessageContext& context)

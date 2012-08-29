@@ -4,7 +4,7 @@
 #include <unistd.h>
 
 CPUKeyboardController::CPUKeyboardController(int4 bufferLength, int1* memory, int4 memorySize) :
-	HardwareDevice(1, memory, memorySize),
+	HardwareDevice(false, 1, memory, memorySize),
 	bufferLength(bufferLength),
 	current(0), last(0)
 {
@@ -37,42 +37,35 @@ void CPUKeyboardController::processKeyEvent(bool key_down, int4 key_code)
 	pthread_mutex_unlock(&keyBufferLock);
 }
 
-void CPUKeyboardController::ActivityFunction()
+bool CPUKeyboardController::doAction()
 {
-	while (getState() == hdsOn)
+	// Taking the event away from the buffer.
+	// This is synchronized with adding event to the buffer
+	pthread_mutex_lock(&keyBufferLock);
+	bool notEmpty = (current != last);
+	if (notEmpty)
 	{
-		if (isActive())
-		{
-			// Taking the event away from the buffer.
-			// This is synchronized with adding event to the buffer
-			pthread_mutex_lock(&keyBufferLock);
-			bool notEmpty = (current != last);
-			if (notEmpty)
-			{
-				// First 4 bytes -- key code
-				// 5th byte:
-				//     0 bit - boolean - is key down
-				//   1-7 bit - unused
+		// First 4 bytes -- key code
+		// 5th byte:
+		//     0 bit - boolean - is key down
+		//   1-7 bit - unused
 
-				int1* stack = &getMemory()[activityContext.stackStart];
-				int1* heap = &getMemory()[activityContext.heapStart];
+		int1* stack = &getMemory()[activityContext.stackStart];
+		int1* heap = &getMemory()[activityContext.heapStart];
 
-				int1* msg = &stack[activityContext.stackPtr];
-				*((int4*)&msg[0]) = keyCode[current];
-				*((int1*)&msg[4]) = keyDown[current] ? 1 : 0;
-				printf("<- (%d, %d) %d %d\n", current, last, keyCode[current], keyDown[current]);
-				current = (current + 1) % bufferLength;
-			}
-			pthread_mutex_unlock(&keyBufferLock);
+		int1* msg = &stack[activityContext.stackPtr];
+		*((int4*)&msg[0]) = keyCode[current];
+		*((int1*)&msg[4]) = keyDown[current] ? 1 : 0;
+		printf("<- (%d, %d) %d %d\n", current, last, keyCode[current], keyDown[current]);
+		current = (current + 1) % bufferLength;
+	}
+	pthread_mutex_unlock(&keyBufferLock);
 
-			// After taking the last event from the buffer,
-			// we send it to the CPU.
-			if (notEmpty)
-			{
-				sendMessage();
-			}
-		}
-		usleep(100);
+	// After taking the last event from the buffer,
+	// we send it to the CPU.
+	if (notEmpty)
+	{
+		sendMessage();
 	}
 }
 

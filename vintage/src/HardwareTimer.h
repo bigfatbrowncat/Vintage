@@ -10,12 +10,12 @@ class HardwareTimer : public HardwareDevice
 {
 private:
 protected:
-	virtual void ActivityFunction();
+	virtual bool doAction();
 	virtual bool onMessageReceived(const MessageContext& context);
 
 public:
 	HardwareTimer(int1* memory, int4 memorySize) :
-		HardwareDevice(1, memory, memorySize) {}
+		HardwareDevice(false, 1, memory, memorySize) {}
 	virtual ~HardwareTimer() {}
 };
 

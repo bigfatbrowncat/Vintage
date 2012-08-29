@@ -42,12 +42,12 @@ void CPU::askDebugger(int1* stack, int4 stackPtr, int4 stackSize, int1* heap, in
 	}
 }
 
-void CPU::ActivityFunction()
+bool CPU::doAction()
 {
 	int1* stack = &(getMemory()[contextStack.back().stackStart]);
 	int1* heap = &(getMemory()[contextStack.back().heapStart]);
 
-	bool portHandlingJustFinished = false;
+/*	bool portHandlingJustFinished = false;
 
 	while (getState() == hdsOn)
 	{
@@ -124,7 +124,7 @@ void CPU::ActivityFunction()
 		{
 			portHandlingJustFinished = false;
 		}
-
+*/
 		askDebugger(stack, contextStack.back().stackPtr, contextStack.back().stackSize, heap, contextStack.back().heapSize, contextStack.back().flow);
 
 #ifdef OUTPUT_INSTRUCTIONS
@@ -846,7 +846,7 @@ void CPU::ActivityFunction()
 				stack = &(getMemory()[contextStack.back().stackStart]);
 				heap = &(getMemory()[contextStack.back().heapStart]);
 
-				portHandlingJustFinished = true;
+				//portHandlingJustFinished = true;
 				reportToDebugger(stack, contextStack.back().stackPtr, contextStack.back().stackSize, heap, contextStack.back().heapSize, contextStack.back().flow, fsStepOutHandler);
 
 				pthread_mutex_unlock(&portReadingMutex);
@@ -957,5 +957,5 @@ void CPU::ActivityFunction()
 		printf("}\n");
 		fflush(stdout);
 #endif
-	}
+//	}
 }

@@ -20,7 +20,7 @@ private:
 	int4* keyCode;
 
 protected:
-	virtual void ActivityFunction();
+	virtual bool doAction();
 	virtual bool onMessageReceived(const MessageContext& context);
 
 public:

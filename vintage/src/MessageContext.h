@@ -21,7 +21,9 @@ struct MessageContext
 		       sizeof(flow);
 	}
 
-	MessageContext() {}
+	MessageContext() :
+		port(0), heapStart(0), heapSize(0), stackStart(0), stackSize(0), stackPtr(0), flow(0) { }
+
 
 	MessageContext(int4 port, int4 heapStart, int4 heapSize, int4 stackStart, int4 stackSize, int4 stackPtr, int4 flow) :
 		port(port), heapStart(heapStart), heapSize(heapSize), stackStart(stackStart), stackSize(stackSize), stackPtr(stackPtr), flow(flow) { }

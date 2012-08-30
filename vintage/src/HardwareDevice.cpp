@@ -34,7 +34,7 @@ void HardwareDevice::activityFunction()
 				// We don't consider ports, which numbers are greater or equal
 				// than the currently handling one.
 				// This means that the least the index of the port is, the most priority does it have.
-				// (The only exception is if the currently handling one has index 0 \
+				// (The only exception is if the currently handling one has index 0
 				// -- in that case it's priority is the lowest)
 
 				// Example: if we are handling port #3 and port #4 is waiting,
@@ -50,7 +50,7 @@ void HardwareDevice::activityFunction()
 					if (inputPortIsWaiting[i])
 					{
 						inputPortsWaitingCount++;
-						if (portToHandle == -1/* && (contextStack.back().port == 0 || i > contextStack.back().port)*/)
+						if (portToHandle == -1 && (contextStack.back().port == 0 || i > contextStack.back().port))
 						{
 							// If it is the first port we found
 							// and it's priority is greater than the currently handling ones,
@@ -76,19 +76,12 @@ void HardwareDevice::activityFunction()
 					// If it was the last port to handle, clearing the flag
 					if (inputPortsWaitingCount == 1) someInputPortIsWaiting = false;
 
-					onMessageReceived(this->portInWaitingContext[portToHandle]);
-
-	/*				// Adding the context of the port we are handling to the contexts stack
+					// Adding the context of the port we are handling to the contexts stack
 					contextStack.push_back(portInWaitingContext[portToHandle]);
-					// Selecting the new context
-					stack = &(getMemory()[contextStack.back().stackStart]);
-					heap = &(getMemory()[contextStack.back().heapStart]);
 
-					// If it was the last port to handle, clearing the flag
-					if (inputPortsWaitingCount == 1) someInputPortIsWaiting = false;
-
-					// As far as we have just stepped into a handler, let's report the debugger about it
-					reportToDebugger(stack, contextStack.back().stackPtr, contextStack.back().stackSize, heap, contextStack.back().heapSize, contextStack.back().flow, fsStepInHandler);*/
+					int1* stack = &(getMemory()[contextStack.back().stackStart]);
+					int4 command = *((int4*)&stack[contextStack.back().stackPtr + 0]);
+					handleCommand(command);
 				}
 			}
 			pthread_mutex_unlock(&controlMutex);
@@ -98,13 +91,13 @@ void HardwareDevice::activityFunction()
 			portHandlingJustFinished = false;
 		}
 
-		if (active)
+		if (contextStack.size() > 0)
 		{
-			bool actionIsDone = doAction();
-			if (!actionIsDone)
-			{
-				usleep(100);
-			}
+			handleCommand(-1);
+		}
+		else
+		{
+			usleep(100);
 		}
 	}
 }
@@ -234,16 +227,14 @@ void HardwareDevice::receiveMessage(const MessageContext& context)
 	pthread_mutex_unlock(&controlMutex);
 }
 
-
-bool HardwareDevice::onMessageReceived(const MessageContext& context)
+bool HardwareDevice::handleCommand(int4 command)
 {
-	int1* stack = &(getMemory()[context.stackStart]);
-	int1* heap = &(getMemory()[context.heapStart]);
+	int1* stack = &(getMemory()[contextStack.back().stackStart]);
+	int1* heap = &(getMemory()[contextStack.back().heapStart]);
 
-	int4 command = *((int4*)&stack[context.stackPtr + 0]);
 	if (command == HARDWARE_INITIALIZE)
 	{
-		int1* new_activity_context = ((int1*)&stack[context.stackPtr + 4]);
+		int1* new_activity_context = ((int1*)&stack[contextStack.back().stackPtr + 4]);
 		activityContext.readFrom(new_activity_context);
 		return true;	// Handled
 	}
@@ -262,3 +253,4 @@ bool HardwareDevice::onMessageReceived(const MessageContext& context)
 		return false;	// Not handled
 	}
 }
+

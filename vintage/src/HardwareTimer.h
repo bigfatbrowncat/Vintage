@@ -10,8 +10,7 @@ class HardwareTimer : public HardwareDevice
 {
 private:
 protected:
-	virtual bool doAction();
-	virtual bool onMessageReceived(const MessageContext& context);
+	virtual bool handleCommand(int4 command);
 
 public:
 	HardwareTimer(int1* memory, int4 memorySize) :

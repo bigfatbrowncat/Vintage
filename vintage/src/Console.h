@@ -14,8 +14,7 @@ class Console : public HardwareDevice
 private:
 	SDLScreen* window;
 protected:
-	virtual bool doAction() {}
-	virtual bool onMessageReceived(const MessageContext& context);
+	virtual bool handleCommand(int4 command);
 
 public:
 	Console(SDLScreen* window, int1* memory, int4 memorySize);

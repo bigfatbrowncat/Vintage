@@ -20,8 +20,7 @@ private:
 	int4* keyCode;
 
 protected:
-	virtual bool doAction();
-	virtual bool onMessageReceived(const MessageContext& context);
+	virtual bool handleCommand(int4 command);
 
 public:
 	CPUKeyboardController(int4 bufferLength, int1* memory, int4 memorySize);

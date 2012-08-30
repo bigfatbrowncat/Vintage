@@ -1,42 +1,43 @@
 #include "HardwareTimer.h"
 
-bool HardwareTimer::doAction()
+bool HardwareTimer::handleCommand(int4 command)
 {
-	clock_t tt = clock();
+	// Handling base commands
+	bool result = HardwareDevice::handleCommand(command);
 
-	int1* stack = &getMemory()[activityContext.stackStart];
-	int1* heap = &getMemory()[activityContext.heapStart];
-
-	// Getting address from the top of stack
-	int4* target = ((int4*)&stack[activityContext.stackPtr]);
-
-	// Writing the current clock data there
-	*target = tt;
-
-	sendMessage();
-	return true;
-}
-
-bool HardwareTimer::onMessageReceived(const MessageContext& context)
-{
-	bool baseResult = HardwareDevice::onMessageReceived(context);
-
-	int1* stack = &(getMemory()[context.stackStart]);
-	int1* heap = &(getMemory()[context.heapStart]);
-
-	int4 command = *((int4*)&stack[context.stackPtr + 0]);
+	// Handling additional commands
 	if (command == HARDWARE_ACTIVATE)
 	{
 		activityContext.stackPtr -= sizeof(clock_t);
-		return true;	// Handled
+		result = true;	// Handled
 	}
 	else if (command == HARDWARE_DEACTIVATE)
 	{
 		activityContext.stackPtr += sizeof(clock_t);
-		return true;	// Handled
+		result = true;	// Handled
 	}
-	else
+
+	// Doing the activity
+	if (isActive())
 	{
-		return baseResult;	// Not handled. Maybe it's already handled in base...
+		clock_t tt = clock();
+
+		int1* stack = &getMemory()[activityContext.stackStart];
+		int1* heap = &getMemory()[activityContext.heapStart];
+
+		// Getting address from the top of stack
+		int4* target = ((int4*)&stack[activityContext.stackPtr]);
+
+		// Writing the current clock data there
+		*target = tt;
+
+		sendMessage();
+		result = true;
 	}
+
+	// Everything's done. Clearing the context
+	contextStack.pop_back();
+
+	return result;
 }
+

@@ -42,89 +42,13 @@ void CPU::askDebugger(int1* stack, int4 stackPtr, int4 stackSize, int1* heap, in
 	}
 }
 
-bool CPU::doAction()
+bool CPU::handleCommand(int4 command)
 {
 	int1* stack = &(getMemory()[contextStack.back().stackStart]);
 	int1* heap = &(getMemory()[contextStack.back().heapStart]);
 
-/*	bool portHandlingJustFinished = false;
 
-	while (getState() == hdsOn)
-	{
-		if (!portHandlingJustFinished)
-		{
-			// Checking ports input
-			pthread_mutex_lock(&portReadingMutex);
-			if (someInputPortIsWaiting)
-			{
-				// Clearing our flag (doing this by default, we will check it later)
-				someInputPortIsWaiting = false;
 
-				int inputPortsWaitingCount = 0;
-				int portToHandle = -1;
-
-				// Here we are checking if any port is waiting.
-				// We don't consider ports, which numbers are greater or equal
-				// than the currently handling one.
-				// This means that the least the index of the port is, the most priority does it have.
-				// (The only Exception is if the currently handling one has index 0 \
-				// -- in that case it's priority is the lowest)
-
-				// Example: if we are handling port #3 and port #4 is waiting,
-				//          the handler for the port #4 will not be executed
-				//          until port #3 handling is done.
-
-				// And we start handling for the highest priority
-				// (i.e. the least index) port
-				for (int i = 0; i < portsCount; i++)
-				{
-					if (inputPortIsWaiting[i])
-					{
-						inputPortsWaitingCount++;
-						if (portToHandle == -1 && (contextStack.back().port == 0 || i > contextStack.back().port))
-						{
-							// If it is the first port we found
-							// and it's priority is greater than the currently handling ones,
-							// saving it for handling NOW
-							portToHandle = i;
-						}
-						else
-						{
-							// In all other cases it should be handled LATER,
-							// so we have the flag to set
-							someInputPortIsWaiting = true;
-
-							// Nothing to search more
-							break;
-						}
-					}
-				}
-
-				// Calling the handler
-				if (portToHandle >= 0)		// it's better to use a flag here
-				{
-					inputPortIsWaiting[portToHandle] = false;
-
-					// Adding the context of the port we are handling to the contexts stack
-					contextStack.push_back(portInWaitingContext[portToHandle]);
-					// Selecting the new context
-					stack = &(getMemory()[contextStack.back().stackStart]);
-					heap = &(getMemory()[contextStack.back().heapStart]);
-
-					// If it was the last port to handle, clearing the flag
-					if (inputPortsWaitingCount == 1) someInputPortIsWaiting = false;
-
-					// As far as we have just stepped into a handler, let's report the debugger about it
-					reportToDebugger(stack, contextStack.back().stackPtr, contextStack.back().stackSize, heap, contextStack.back().heapSize, contextStack.back().flow, fsStepInHandler);
-				}
-			}
-			pthread_mutex_unlock(&portReadingMutex);
-		}
-		else
-		{
-			portHandlingJustFinished = false;
-		}
-*/
 		askDebugger(stack, contextStack.back().stackPtr, contextStack.back().stackSize, heap, contextStack.back().heapSize, contextStack.back().flow);
 
 #ifdef OUTPUT_INSTRUCTIONS

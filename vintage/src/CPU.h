@@ -18,16 +18,16 @@ using namespace std;
 class CPU : public HardwareDevice
 {
 private:
-	list<MessageContext> contextStack;
 	Debugger* debugger;
 	pthread_mutex_t portReadingMutex;
 
 protected:
-	virtual bool doAction();
+	virtual bool handleCommand(int4 command);
 
 	void reportToDebugger(int1* stack, int4 stackPtr, int4 stackSize, int1* heap, int4 heapSize, int4 flow, FlowState state);
 	void askDebugger(int1* stack, int4 stackPtr, int4 stackSize, int1* heap, int4 heapSize, int4 flow);
 
+	/*
 	virtual bool onMessageReceived(const MessageContext& context)
 	{
 		pthread_mutex_lock(&portReadingMutex);
@@ -43,7 +43,7 @@ protected:
 		pthread_mutex_unlock(&portReadingMutex);
 
 		return true;
-	}
+	}*/
 
 public:
 

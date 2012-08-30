@@ -8,7 +8,7 @@
 #include "Debugger.h"
 #include "MessageContext.h"
 
-#include <map>
+#include <list>
 
 using namespace std;
 
@@ -40,18 +40,20 @@ private:
 	volatile bool active;
 
 	friend void* HardwareDevice_activity_function(void* arg);
+
+	void activityFunction();
+	void receiveMessage(const MessageContext& context);
 protected:
+	list<MessageContext> contextStack;
 
 	MessageContext activityContext;
 	int portsCount;
 
-	void activityFunction();
 	virtual void onOtherDeviceConnected(int4 port) {}
-	virtual bool onMessageReceived(const MessageContext& context);
-	virtual bool doAction() = 0;
+
+	virtual bool handleCommand(int4 command);
 
 	void sendMessage();
-	void receiveMessage(const MessageContext& context);
 
 	int portIndexOfConnectedDevice(const HardwareDevice& dev)
 	{

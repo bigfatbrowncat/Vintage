@@ -47,6 +47,9 @@ its_exit:      mov {16}, {0}                     ; result saved
 
 ; *** HANDLERS SECTION **************************************************************************************************
 
+
+               ; ***** Timer *****
+
 timer_value:   text 0 0                          ; 4 bytes for timer value
 timer_stack:   text 0 0 0 0                      ; 8 bytes allocated for timer handler stack
 
@@ -58,6 +61,9 @@ timer_handler: alloc 4
                
                free 4
                hret
+
+               
+               ; ***** Keyboard *****
 
 kbd_key:       text 0 0                          ; 4 bytes allocated for scan code
 kbd_isdown:    text 0                            ; 1 byte allocated for "is key down" value
@@ -78,6 +84,52 @@ kbd_handler:   alloc 4
                free 4
                hret
 
+               
+               ; ***** Console *****
+
+console_success_flag:
+               text 0                            ; 1 byte for success flag. 
+                                                 ; "0" means "not handled yet"
+                                                 ; "1" means "just handled" and 
+                                                 ; should be changed to "0" immediately 
+                                                 ; after it's readed
+
+console_stack: text 0 0 0 0                      ; 8 bytes for console stack
+
+console_handler:
+               alloc 8
+               mov {0}, {4}
+               sub {0}, 64                       ; 64 means HARDWARE_SUCCEEDED
+               
+               ifp 1, {0}, console_zero
+console_one:   mov {0}, console_success_flag
+               mov 1, {4}, 1
+               mov 1, [{0}], {4}
+               jmp console_end
+               
+console_zero:  mov {0}, console_success_flag
+               mov 1, {4}, 0
+               mov 1, [{0}], {4} 
+
+console_end:   free 8
+               hret
+
+
+out_to_console_sync:
+               alloc 8
+console_wait_loop:
+               mov {0}, console_success_flag
+               mov 1, {0}, [{0}]
+               ifp 1, {0}, console_wait_end
+               jmp console_wait_loop
+console_wait_end:
+               ; clearing the flag
+               mov {0}, console_success_flag
+               mov 1, {4}, 0
+               mov 1, [{0}], {4} 
+               free 8
+               ret
+               
 ; *** UI SECTION ********************************************************************************************************
 
 timer_calls:   text "Timer: " 0
@@ -90,11 +142,13 @@ timer_print:
                mov 2, {4}, 0
                mov 2, {6}, 3
                out 2
+               call out_to_console_sync
               
                ; printing out "timer: "
                mov {0}, 256                      ; 256 means "print the text out"
                mov {4}, timer_calls              ; address of the text buffer
-               out 2                             ; call terminal
+               out 2
+               call out_to_console_sync                             ; call terminal
 
                ; converting timer value to string
                mov {0}, timer_value
@@ -107,6 +161,7 @@ timer_print:
                mov {4}, {0}
                mov {0}, 256
                out 2
+               call out_to_console_sync
               
                free 10
               
@@ -124,11 +179,13 @@ kbd_next:
                mov 2, {4}, 0                     ; X
                mov 2, {6}, 4                     ; Y
                out 2
+               call out_to_console_sync
               
                ; printing the text out
                mov {0}, 256                      ; 256 means "print the text out"
                mov {4}, kbd_key_str              ; address of the text buffer
-               out 2                             ; call terminal
+               out 2
+               call out_to_console_sync                             ; call terminal
 
                ; converting key code to string
                mov {0}, kbd_key
@@ -141,6 +198,7 @@ kbd_next:
                mov {4}, {0}
                mov {0}, 256                      ; 256 means "print the text out"
                out 2
+               call out_to_console_sync
 
                mov {0}, kbd_isdown
                mov 1, {0}, [{0}]
@@ -152,6 +210,7 @@ kbd_down:      mov {4}, kbd_isdown_str
 
 kbd_print_ud:  mov {0}, 256                      ; 256 means "print the text out"
                out 2
+               call out_to_console_sync
               
 kbd_exit:      free 10
               
@@ -163,24 +222,7 @@ kbd_exit:      free 10
 main_fox:      text "The quick brown fox jumps over the lazy dog." 10 10 0
 main_devs:     text "Devices printout:" 10 0
 
-main:          alloc 8                           ; 4 * 2
-          
-               ; printing the text out
-               mov {0}, 256                      ; 256 means "print the text out"
-               mov {4}, main_fox                 ; address of the text buffer
-               out 2                             ; call terminal
-
-               ; printing the text out
-               mov {0}, 256                      ; 256 means "print the text out"
-               mov {4}, main_devs                ; address of the text buffer
-               out 2                             ; call terminal
-
-               ; printing out the value
-               mov {4}, {0}
-               mov {0}, 256
-               out 2              
-
-               alloc 28                            ; allocating space for context data
+main:          alloc 28                            ; allocating space for context data
 
                ; *** Initializing devices ***
                mov {0}, 0                          ; 0 is "HARDWARE_INITIALIZE" command
@@ -194,6 +236,16 @@ main:          alloc 8                           ; 4 * 2
                mov {24+4}, timer_handler           ; flow
                out 1                               ; assuming timer is on the port #1 and sending the command to it
 
+               ; setting the context for console handler
+               getcont {4}
+               mov {0+4},  1                       ; port
+               mov {12+4}, console_stack           ; stack start
+               mov {16+4}, 8                       ; stack size
+               mov {20+4}, 8                       ; stack ptr
+               mov {24+4}, console_handler         ; flow
+               out 2
+               call out_to_console_sync            ; assuming consol is on the port #2 and sending the command to it
+
                ; setting the context for keyboard handler
                getcont {4}
                mov {0+4},  1                       ; port
@@ -203,13 +255,39 @@ main:          alloc 8                           ; 4 * 2
                mov {24+4}, kbd_handler             ; flow
                out 3                               ; assuming keyboard is on the port #3 and sending the command to it
 
+
                ; *** Activating devices ***
                mov {0}, 1                          ; 1 is "HARDWARE_ACTIVATE" command
                out 1                               ; sending to timer
+               out 2
+               call out_to_console_sync            ; sending to console
                out 3                               ; sending to keyboard
 
                free 28
-               
+
+
+               ; *** Printing the welcome text ***
+
+               alloc 8                           ; 4 * 2
+          
+               ; printing the text out
+               mov {0}, 256                      ; 256 means "print the text out"
+               mov {4}, main_fox                 ; address of the text buffer
+               out 2
+               call out_to_console_sync                             ; call terminal
+
+               ; printing the text out
+               mov {0}, 256                      ; 256 means "print the text out"
+               mov {4}, main_devs                ; address of the text buffer
+               out 2
+               call out_to_console_sync                             ; call terminal
+
+               ; printing out the value
+               mov {4}, {0}
+               mov {0}, 256
+               out 2
+               call out_to_console_sync              
+
                free 8
 
 eternal:       

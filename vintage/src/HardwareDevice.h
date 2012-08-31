@@ -16,6 +16,9 @@ using namespace std;
 #define	HARDWARE_ACTIVATE									1
 #define	HARDWARE_DEACTIVATE									2
 
+#define	HARDWARE_SUCCEEDED									64 + 0
+#define	HARDWARE_FAILED										64 + 1
+
 #define HARDWARE_CUSTOM										256
 
 class HardwareDevice;

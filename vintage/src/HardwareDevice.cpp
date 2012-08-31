@@ -242,11 +242,13 @@ bool HardwareDevice::handleMessage()
 	else if (command == HARDWARE_ACTIVATE)
 	{
 		active = true;
+		contextStack.back().stackPtr -= 4;	// preparing the place for status code
 		return true;	// Handled
 	}
 	else if (command == HARDWARE_DEACTIVATE)
 	{
 		active = false;
+		contextStack.back().stackPtr += 4;	// preparing the place for status code
 		return true;	// Handled
 	}
 	else
@@ -257,5 +259,12 @@ bool HardwareDevice::handleMessage()
 
 bool HardwareDevice::doCycle()
 {
+	// Reporting success for any operation
+	// TODO: we should check if the operation is really succeeded
+	int1* stack = &(getMemory()[activityContext.stackStart]);
+	int4* p_result = ((int4*)&stack[activityContext.stackPtr + 0]);
+	*p_result = HARDWARE_SUCCEEDED;
+	sendMessage();
+
 	contextStack.pop_back();
 }

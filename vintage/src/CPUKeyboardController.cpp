@@ -37,10 +37,15 @@ void CPUKeyboardController::processKeyEvent(bool key_down, int4 key_code)
 	pthread_mutex_unlock(&keyBufferLock);
 }
 
-bool CPUKeyboardController::handleCommand(int4 command)
+bool CPUKeyboardController::handleMessage()
 {
-	bool result = HardwareDevice::handleCommand(command);
+	bool result = HardwareDevice::handleMessage();
 
+	int1* stack = &(getMemory()[contextStack.back().stackStart]);
+	int1* heap = &(getMemory()[contextStack.back().heapStart]);
+
+	// Handling additional commands
+	int4 command = *((int4*)&stack[contextStack.back().stackPtr + 0]);
 	if (command == HARDWARE_ACTIVATE)
 	{
 		activityContext.stackPtr -= 5; // keyboard message size
@@ -51,6 +56,14 @@ bool CPUKeyboardController::handleCommand(int4 command)
 		activityContext.stackPtr += 5; // keyboard message size
 		result = true;	// Handled
 	}
+
+
+	return result;
+}
+
+bool CPUKeyboardController::doCycle()
+{
+	bool result = false;
 
 	if (isActive())
 	{
@@ -88,4 +101,3 @@ bool CPUKeyboardController::handleCommand(int4 command)
 	contextStack.pop_back();
 	return result;
 }
-

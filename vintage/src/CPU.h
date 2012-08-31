@@ -22,28 +22,11 @@ private:
 	pthread_mutex_t portReadingMutex;
 
 protected:
-	virtual bool handleCommand(int4 command);
-
 	void reportToDebugger(int1* stack, int4 stackPtr, int4 stackSize, int1* heap, int4 heapSize, int4 flow, FlowState state);
 	void askDebugger(int1* stack, int4 stackPtr, int4 stackSize, int1* heap, int4 heapSize, int4 flow);
 
-	/*
-	virtual bool onMessageReceived(const MessageContext& context)
-	{
-		pthread_mutex_lock(&portReadingMutex);
-		// Adding the context of the port we are handling to the contexts stack
-		contextStack.push_back(context);
-		// Selecting the new context
-		int1* stack = &(getMemory()[contextStack.back().stackStart]);
-		int1* heap = &(getMemory()[contextStack.back().heapStart]);
-
-		// As far as we have just stepped into a handler, let's report the debugger about it
-		reportToDebugger(stack, contextStack.back().stackPtr, contextStack.back().stackSize, heap, contextStack.back().heapSize, contextStack.back().flow, fsStepInHandler);
-
-		pthread_mutex_unlock(&portReadingMutex);
-
-		return true;
-	}*/
+	virtual bool handleMessage();
+	virtual bool doCycle();
 
 public:
 

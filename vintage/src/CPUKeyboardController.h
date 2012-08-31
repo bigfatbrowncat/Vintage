@@ -20,7 +20,8 @@ private:
 	int4* keyCode;
 
 protected:
-	virtual bool handleCommand(int4 command);
+	virtual bool handleMessage();
+	virtual bool doCycle();
 
 public:
 	CPUKeyboardController(int4 bufferLength, int1* memory, int4 memorySize);

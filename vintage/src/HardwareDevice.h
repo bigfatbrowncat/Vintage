@@ -51,7 +51,8 @@ protected:
 
 	virtual void onOtherDeviceConnected(int4 port) {}
 
-	virtual bool handleCommand(int4 command);
+	virtual bool handleMessage();
+	virtual bool doCycle();
 
 	void sendMessage();
 

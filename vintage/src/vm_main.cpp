@@ -46,7 +46,7 @@ int main(int argc, char* argv[])
 
 	// (int4 heapStart, int4 heapSize, int4 stackStart, int4 stackSize, int4 stackPtr, int4 flow)
 
-	MessageContext initialContext(0, 0, initialHeapSize, initialHeapSize, initialStackSize, initialStackSize, 0);
+	MessageContext initialContext(portsCount, 0, initialHeapSize, initialHeapSize, initialStackSize, initialStackSize, 0);
 	CPU cpu(portsCount, memory, memorySize, initialContext);
 
 	CachedFont font("res/font.txt");

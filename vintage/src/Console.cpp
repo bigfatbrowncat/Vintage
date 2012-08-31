@@ -6,13 +6,15 @@ Console::Console(SDLScreen* window, int1* memory, int4 memorySize) :
 	this->window = window;
 }
 
-bool Console::handleCommand(int4 command)
+bool Console::handleMessage()
 {
-	bool result = HardwareDevice::handleCommand(command);
+	bool result = HardwareDevice::handleMessage();
 
 	int1* stack = &(getMemory()[contextStack.back().stackStart]);
 	int1* heap = &(getMemory()[contextStack.back().heapStart]);
 
+	// Handling additional commands
+	int4 command = *((int4*)&stack[contextStack.back().stackPtr + 0]);
 	if (command == TERMINAL_PRINT)
 	{
 		int4 addr = *((int4*)&stack[contextStack.back().stackPtr + 4]);

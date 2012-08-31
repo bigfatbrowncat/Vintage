@@ -50,7 +50,7 @@ void HardwareDevice::activityFunction()
 					if (inputPortIsWaiting[i])
 					{
 						inputPortsWaitingCount++;
-						if (portToHandle == -1 && (contextStack.back().port == 0 || i > contextStack.back().port))
+						if (portToHandle == -1 && (contextStack.size() == 0 || i < contextStack.back().port))
 						{
 							// If it is the first port we found
 							// and it's priority is greater than the currently handling ones,
@@ -60,7 +60,7 @@ void HardwareDevice::activityFunction()
 						else
 						{
 							// In all other cases it should be handled LATER,
-							// so we have the flag to set
+							// so we have a flag to set
 							someInputPortIsWaiting = true;
 
 							// Nothing to search more
@@ -79,9 +79,9 @@ void HardwareDevice::activityFunction()
 					// Adding the context of the port we are handling to the contexts stack
 					contextStack.push_back(portInWaitingContext[portToHandle]);
 
-					int1* stack = &(getMemory()[contextStack.back().stackStart]);
-					int4 command = *((int4*)&stack[contextStack.back().stackPtr + 0]);
-					handleCommand(command);
+					/*int1* stack = &(getMemory()[contextStack.back().stackStart]);
+					int4 command = *((int4*)&stack[contextStack.back().stackPtr + 0]);*/
+					handleMessage();
 				}
 			}
 			pthread_mutex_unlock(&controlMutex);
@@ -93,7 +93,7 @@ void HardwareDevice::activityFunction()
 
 		if (contextStack.size() > 0)
 		{
-			handleCommand(-1);
+			doCycle();
 		}
 		else
 		{
@@ -227,11 +227,12 @@ void HardwareDevice::receiveMessage(const MessageContext& context)
 	pthread_mutex_unlock(&controlMutex);
 }
 
-bool HardwareDevice::handleCommand(int4 command)
+bool HardwareDevice::handleMessage()
 {
 	int1* stack = &(getMemory()[contextStack.back().stackStart]);
 	int1* heap = &(getMemory()[contextStack.back().heapStart]);
 
+	int4 command = *((int4*)&stack[contextStack.back().stackPtr + 0]);
 	if (command == HARDWARE_INITIALIZE)
 	{
 		int1* new_activity_context = ((int1*)&stack[contextStack.back().stackPtr + 4]);
@@ -254,3 +255,7 @@ bool HardwareDevice::handleCommand(int4 command)
 	}
 }
 
+bool HardwareDevice::doCycle()
+{
+	contextStack.pop_back();
+}

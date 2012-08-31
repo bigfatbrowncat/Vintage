@@ -1,11 +1,15 @@
 #include "HardwareTimer.h"
 
-bool HardwareTimer::handleCommand(int4 command)
+bool HardwareTimer::handleMessage()
 {
 	// Handling base commands
-	bool result = HardwareDevice::handleCommand(command);
+	bool result = HardwareDevice::handleMessage();
+
+	int1* stack = &(getMemory()[contextStack.back().stackStart]);
+	int1* heap = &(getMemory()[contextStack.back().heapStart]);
 
 	// Handling additional commands
+	int4 command = *((int4*)&stack[contextStack.back().stackPtr + 0]);
 	if (command == HARDWARE_ACTIVATE)
 	{
 		activityContext.stackPtr -= sizeof(clock_t);
@@ -17,7 +21,12 @@ bool HardwareTimer::handleCommand(int4 command)
 		result = true;	// Handled
 	}
 
-	// Doing the activity
+	return result;
+}
+
+bool HardwareTimer::doCycle()
+{
+	bool result = false;
 	if (isActive())
 	{
 		clock_t tt = clock();
@@ -34,10 +43,6 @@ bool HardwareTimer::handleCommand(int4 command)
 		sendMessage();
 		result = true;
 	}
-
 	// Everything's done. Clearing the context
 	contextStack.pop_back();
-
-	return result;
 }
-

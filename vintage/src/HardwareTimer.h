@@ -10,7 +10,8 @@ class HardwareTimer : public HardwareDevice
 {
 private:
 protected:
-	virtual bool handleCommand(int4 command);
+	virtual bool handleMessage();
+	virtual bool doCycle();
 
 public:
 	HardwareTimer(int1* memory, int4 memorySize) :

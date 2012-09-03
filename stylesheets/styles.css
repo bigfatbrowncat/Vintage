@@ -19,14 +19,14 @@ body
 	font-size: 10pt;
 	padding: 0;
 	margin: 0;
-	min-width: 700pt;
+	/*min-width: 700pt;*/
 	background: #e0e0d0;
 }
 
 div.header
 {
 	margin: 0;
-	padding: 25pt;
+	padding: 0pt;
 	padding-bottom: 5pt;
 	padding-top: 20pt;
 	background: #333333;
@@ -35,11 +35,12 @@ div.header
 
 div.page
 {
-	width: 600pt;
+	width: 80%;
+	max-width: 600pt;
 	margin-left: auto;
 	margin-right: auto;
-	padding-left: 10pt;
-	padding-right: 10pt;
+	padding-left: 0pt;
+	padding-right: 0pt;
 }
 
 div.text
@@ -58,6 +59,12 @@ div.title
 	font-size: 25pt;
 	color: #ffffdd;
 	text-shadow: 0pt 0pt 2pt white;
+}
+
+div.menu
+{
+	overflow: hidden;
+	white-space: nowrap;
 }
 
 div.menu span.item-selected

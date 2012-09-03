@@ -1,0 +1,15 @@
+@CHARSET "UTF-8";
+
+.news-frame
+{
+	border: 1pt #d0d0c5 solid;
+	background: #f0f0e5;
+	padding: 10pt;
+}
+
+.news-date
+{
+	font-weight: bold;
+	margin: 0pt;
+	margin-bottom: 5pt;
+}

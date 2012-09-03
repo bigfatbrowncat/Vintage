@@ -19,8 +19,7 @@ body
 	font-size: 10pt;
 	padding: 0;
 	margin: 0;
-	/*min-width: 700pt;*/
-	background: #e0e0d0;
+	background: #e0e0d5;
 }
 
 div.header
@@ -36,7 +35,7 @@ div.header
 div.page
 {
 	width: 80%;
-	max-width: 600pt;
+	max-width: 550pt;
 	margin-left: auto;
 	margin-right: auto;
 	padding-left: 0pt;

@@ -17,7 +17,7 @@ function printMenuLinks(selectedPage)
 	document.write("          <span class=\"divider\"> | </span>"); 
 	printMenuLink("history", "История", selectedPage);
 	document.write("          <span class=\"divider\"> | </span>"); 
-	printMenuLink("downloads", "Скачать", selectedPage);
+	printMenuLink("downloads", "Загрузки", selectedPage);
 }
 
 function printMenuLink(linkName, linkText, selectedPage)

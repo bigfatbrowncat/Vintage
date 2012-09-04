@@ -1,0 +1,100 @@
+@CHARSET "ISO-8859-1";
+
+.contents-frame
+{
+	background: #efede2;
+	padding: 10pt;
+	padding-bottom: 20pt;
+}
+
+.contents-frame ul 
+{
+        list-style-type: none;
+        padding-left: 0px;
+        margin-left: 0px;
+}
+
+.contents-frame ul li span 
+{ 
+        float: left;
+        text-align: left;
+        padding-right: 10pt;
+}
+
+div.pic div
+{
+	font-size: 80%;
+}
+
+div.pic
+{
+	text-align: center;
+	margin: 20px;
+}
+
+h2, h3
+{
+	color: #35321f;
+	font-weight: 500;
+	margin-top: 18pt;
+	margin-bottom: 5pt;
+	text-shadow: 0 0 1pt #c2ba94;
+	font-size: 130%;
+}
+
+.contents-frame .text, .contents-frame h2
+{
+	margin: 0;
+}
+
+h2 .number, h3 .number, .contents-frame .number
+{
+	color: #8F8759;
+}
+
+
+h3
+{
+	font-size: 110%;
+}
+
+a:link 
+{
+	color: #7B7BAB;
+}
+a:hover 
+{
+	color: #6B6BBF;
+}
+a:visited 
+{
+	color: #7B7B8C;
+}
+
+table.commands 
+{
+	margin-top: 10pt;
+	margin-bottom: 10pt;
+	border-left: 1px solid #d0d0c5;
+	border-top: 1px solid #d0d0c5;
+}
+
+.commands tr td
+{
+	background: #efede2;
+	border-right: 1px solid #d0d0c5;
+	border-bottom: 1px solid #d0d0c5;
+	padding: 5pt;
+}
+
+.commands thead td
+{
+	background: #e7e4d5;
+}
+
+.cmd-inner tr td
+{
+	padding: 0;
+	padding-right: 5pt;
+	border-width: 0;
+}

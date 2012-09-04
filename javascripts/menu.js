@@ -1,10 +1,10 @@
 function printMenu(thePage)
 {
     document.write("    <div class=\"header\"><div class=\"page\">\n");
-    document.write("      <div class=\"title\">Vintage</div>\n");
     document.write("      <div class=\"menu\">\n");
-    document.write("        " + printMenuLinks(thePage) + "\n");
+    printMenuLinks(thePage);
     document.write("      </div>\n");
+    document.write("      <img src=\"images/Vintage-title.png\" alt=\"Vintage\" />\n");
     document.write("    </div></div>\n");
 }
 
@@ -15,9 +15,9 @@ function printMenuLinks(selectedPage)
 {
 	printMenuLink("news", "Новости", selectedPage);
 	document.write("          <span class=\"divider\"> | </span>"); 
-	printMenuLink("history", "История", selectedPage);
+	printMenuLink("documentation", "Документация", selectedPage);
 	document.write("          <span class=\"divider\"> | </span>"); 
-	printMenuLink("downloads", "Загрузки", selectedPage);
+	printMenuLink("downloads", "Скачать", selectedPage);
 }
 
 function printMenuLink(linkName, linkText, selectedPage)

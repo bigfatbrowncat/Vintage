@@ -13,7 +13,7 @@ function printMenu(thePage)
  */
 function printMenuLinks(selectedPage)
 {
-	printMenuLink("news", "Новости", selectedPage);
+	printMenuLink("about", "О проекте", selectedPage);
 	document.write("          <span class=\"divider\"> | </span>"); 
 	printMenuLink("documentation", "Документация", selectedPage);
 	document.write("          <span class=\"divider\"> | </span>"); 

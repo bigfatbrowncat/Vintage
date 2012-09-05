@@ -31,24 +31,22 @@
   <body>
     <script type="text/javascript">printMenu(window.thePage);</script>
         
-        <div class="contents-frame">
-    <div class="page">
-      <div class="text">
-        <h2>Содержание</h2>
-        <ul>
-          <li><span class="number">1.</span> <a href="#p1">Немного об особенностях архитектуры</a></li>
-          <li><span class="number">2.</span> <a href="#p2">Стандартные устройства</a></li>
-          <li><span class="number second">2.1.</span> <a href="#p2-1">Vintage Processor Unit (VPU)</a></li>
-          <li><span class="number third">2.1.1.</span> <a href="#p2-1-1">Машинные команды</a></li>
-        </ul>
+    <div class="contents-frame">
+      <div class="page">
+          <h2>Содержание</h2>
+          <ul>
+            <li><span class="number">1.</span> <a href="#p1">Немного об особенностях архитектуры</a></li>
+            <li><span class="number">2.</span> <a href="#p2">Стандартные устройства</a></li>
+            <li><span class="number">2.1.</span> <a href="#p2-1">Vintage Processor Unit (VPU)</a></li>
+            <li><span class="number">2.1.1.</span> <a href="#p2-1-1">Язык ассемблера VPU</a></li>
+            <li><span class="number">2.1.2.</span> <a href="#p2-1-2">Инструкции ассемблера VPU</a></li>
+          </ul>
       </div>
     </div>
-    </div>
     <div class="page">
-      <div class="text">
         
         <a name="p1"><h2><span class="number">1.</span> Немного об особенностях архитектуры</h2></a>
-        <p>Vintage &#151; машинная архитектура, предполагающая несколько устройств, рабоающих совместно в общем линейном адресном пространстве
+        <p>Vintage &#151; машинная архитектура, предполагающая несколько устройств, работающих совместно в общем линейном адресном пространстве
         и взаимодействующих посредством передачи друг другу так называемого <em>контекста исполнения</em>. Каждое устройство имеет собственный независимый
         жизненный цикл и любое взаимодействие между устройствами осуществляется асинхронно.</p>
         
@@ -72,38 +70,137 @@
         когда эта команда будет выполнена. За это отвечает основная программа. Экран рапортует о том, что команда выполнена успешно,
         передав процессору специальное сообщение.</p>
         
-        <p>Следует понимать, что в отличие от классической машинной архитектуры, содержащей понятие <em>центральный процессор</em>, в случае
+    </div>
+    <div class="helper-frame">
+      <div class="page">
+        <p>Следует понимать, что в отличие от привычной машинной архитектуры, содержащей понятие <em>центральный процессор</em>, в случае
         Vintage такого понятия в общем случае нет. Несмотря на то, что системы, содержащие только один процессор, неминуемо опираются на него как
         на основной, в случае Vintage принципиально то, что все устройства равноценны с точки зрения своего взаимодействия. Ни 
         &laquo;главных&raquo;, ни &laquo;второстепенных&raquo; нет.</p>
-        
+      </div>
+    </div>
+    <div class="page">
+
         <a name="p2"><h2><span class="number">2.</span> Стандартные устройства</h2></a>
         Здесь будет описание ряда стандартных устройств, поддержка которых предполагается в дальнейшем.
         <a name="p2-1"><h3><span class="number">2.1.</span> Vintage Processor Unit (VPU)</h3></a>
-        Основным компонентом любой программируемой системы является процессор. В архитектуре Vintage процессор принимает и передает сообщения прочим 
+        <p>Основным компонентом любой программируемой системы является процессор. В архитектуре Vintage процессор принимает и передает сообщения прочим 
         устройствам. Процессор исполняет машинные команды, записанные в память. Для того, чтобы запустить исполнение, процессор должен получить сообщение,
         содержащее контекст, который ему следует исполнять. Обсуждаемая реализация процессора VPU имеет 32х-разрядную архитектуру, то есть длина адреса
-        памяти составляет 4 байта.
-        <a name="p2-1-1"><h3><span class="number">2.1.1</span> Машинные команды</h3></a>
+        памяти составляет 4 байта.</p>
+        <p>Контекст процессора делит память на две части &#151; хип (heap) и стек (stack). Адресация хипа абсолютна, то есть адрес 0 соответствует
+        самому началу выделенной под него части памяти. Адресация стека ведется относительно его вершины, которую можно двигать, забирая или освобождая под него память.
+        Все сиюминутные операции процессор производит в стеке.</p>
+        
+        <a name="p2-1-1"><h3><span class="number">2.1.1.</span> Язык ассемблера VPU</h3></a>
+        
+        <p>Для программирования под процессор VPU был придуман язык ассемблера, транслируемый прямо, инструкция за инструкцией, в машинный код. 
+        Синтаксис этого языка достаточно прост:</p>
+        
+        <div class="codeframe">
+          <code>          <span class="instr">instr1</span> <span class="param">{param1}</span>, <span class="param">[{param2}]</span>, <span class="param optional">param3</span></code> 
+          <code><span class="label">label:    </span><span class="instr">instr2</span> <span class="param">{param1}</span>                         <span class="comment">; comment</span></code> 
+        </div>
+        
+        <p>instr1 и instr2 здесь &#151; инструкции. Каждая (или почти каждая) инструкция, как и в любом языке ассемблера, означает одно действие, выполняемое
+        процессором. После инструкции следует пробел, за которым через запятую перечислены параметры. Параметры бывают константами или одним из двух вариантов 
+        указателей. Указатель может указывать либо на стек, либо на хип.</p>
+        <ol>
+          <li>Синтаксис вида <span class="codeframe"><code><span class="param">param</span></code></span> (без скобок) означает, что величина будет 
+          воспринята процессором как константа.</li>
+          <li>Синтаксис вида <span class="codeframe"><code><span class="param">{param}</span></code></span> (в фигурных скобках) означает, что 
+          будет использован указатель на ячейку стека с номером param.</li>
+          <li>Синтаксис вида <span class="codeframe"><code><span class="param">[{param}]</span></code></span> (в фигурных и квадратных скобках) означает, что 
+          будет использован указатель на ячейку хипа, адрес которой равен значению, взятому из стека по адресу param.</li>
+        </ol>
+        
+    </div>
+    <div class="helper-frame">
+      <div class="page">
+        Для удобства можно читать параметры &laquo;изнутри наружу&raquo;. Например, рассмотрим последний вариант: 
+        <span class="codeframe"><code><span class="param">[{param}]</span></code></span>. Алгоритм разбра будет такой:
+        <ol>
+          <li>Берем значение param.</li>
+          <li>Видим фигурные скобки, значит берем значение из стека по адресу, равному имеющемуся значению. Полученную величину запомним.</li>
+          <li>Видим квадратные скобки, значит берем значение из хипа по адресу, равному имеющемуся значению. Полученная величина &#151; и есть ответ.</li>
+        </ol>
+      </div>
+    </div>
+    <div class="page">
+
+        <p>Каждые скобки означают операцию взятия значения по заданному внутри скобок адресу. Фигурные &#151; из стека, квадратные &#151; из хипа.</p>
+        
+        <p>Перед инструкцией может находиться метка, отделенная двоеточием. Метка позволяет помечать позицию в коде, на которую впоследствии будет совершен
+        переход (например,         
+        <span class="codeframe"><code><span class="instr">jmp</span></code></span> или 
+        <span class="codeframe"><code><span class="instr">call</span></code></span>). 
+        Будучи подставленной куда-либо в качестве параметра, 
+        метка заменяется на адрес хипа, по которому начинается инструкция, следующая за данной меткой.</p>
+        
+        <p>Любой текст после знака <span class="codeframe"><code>;</code></span> (точка с запятой) 
+        будет считаться комментарием в коде и игнорироваться до конца строки.</p>
+        
+        <p>И наконец, обратим внимание на запись <span class="codeframe"><code><span class="param optional">param3</span></code></span>
+        (параметр, записанный курсивом). Условимся здесь и далее, что параметры, указанные курсивом, являются необязательными, то есть в
+        нашем случае инструкция <span class="codeframe"><code><span class="instr">instr1</span></code></span> может быть вызвана как с тремя, так
+        и с двумя параметрами</p>
+        
+        <a name="p2-1-2"><h3><span class="number">2.1.2.</span> Инструкции ассемблера VPU</h3></a>
+        В этом разделе приводятся машинные команды VPU, записанные в виде инструкций на языке ассемблер. В соответствии с vasm-синтаксисом значения, 
+        заключенные в фигурные скобки (как {dest}), являются указателями  
         <table cellpadding=0 cellspacing=0 class="commands">
           <thead>
-            <td>Семейство команд</td><td>Описание</td>
+            <td>Команда</td><td>Описание</td>
           </thead>
 
           <tr>
-          	<td style="padding-right: 10pt; white-space: nowrap; vertical-align: top;">
-          	  <table cellpadding=0 cellspacing=0 class="cmd-inner">
-          	    <tr><td>mov</td> <td><em>bytes</em>,</td> <td>{dest},</td> <td>src</td></tr>
-          	    <tr><td>mov</td> <td><em>bytes</em>,</td> <td>[{dest}],</td> <td>{src}</td></tr>
-          	    <tr><td>mov</td> <td><em>bytes</em>,</td> <td>{dest},</td> <td>[{src}]</td></tr>
-          	  </table>
+          	<td class="codeframe" style="border-left-width: 0; border-top-width: 0">
+              <code><span class="instr">alloc</span> <span class="param">bytes</span></code><br/>
           	</td>
-          	<td>Копирует bytes памяти из src в dest. Bytes является необязательным параметром. Если оно не указано, по умолчанию используется
-          	длина адреса (4 байта).</td>
+          	<td>
+          	  <p class="title">Allocate &#151; выделить память в стеке.</p>
+          	  Сдвигает вершину стека на <span class="codeframe"><code><span class="param">bytes</span></code></span> байтов влево.
+          	  Таким образом значение, которое находилось по адресу <span class="codeframe"><code>{0}</code></span>, после выполнения
+          	  данной команды окажется в <span class="codeframe"><code>{bytes}</code></span>, а перед ним окажется соответственное
+          	  количество &laquo;выделенных&raquo; байтов.</p>
+          	  <p>Никаких гарантий касаемо содержимого выделенной памяти не представляется. Там может быть что угодно. Таким образом
+          	  перед использованием, ее следует инициализировать какими-нибудь значениями.</p>
+          	</td>
+          </tr>
+
+          <tr>
+          	<td class="codeframe" style="border-left-width: 0; border-top-width: 0">
+              <code><span class="instr">free</span> <span class="param">bytes</span></code><br/>
+          	</td>
+          	<td>
+          	  <p class="title">Free &#151; освободить стековую память.</p>
+          	  <p>Сдвигает вершину стека на <span class="codeframe"><code><span class="param">bytes</span></code></span> байтов вправо.
+          	  Таким образом значение, которое находилось по адресу <span class="codeframe"><code>{bytes}</code></span>, после выполнения
+          	  данной команды окажется в <span class="codeframe"><code>{0}</code></span>, а все данные, находившиеся перед ним,
+          	  будут уничтожены.</p>
+          	</td>
+          </tr>
+
+          <tr>
+          	<td class="codeframe" style="border-left-width: 0; border-top-width: 0">
+              <code><span class="instr">mov</span> <span class="param optional">bytes</span>, <span class="param">{dest}</span>, <span class="param">src</span></code><br/>
+              <code><span class="instr">mov</span> <span class="param optional">bytes</span>, <span class="param">[{dest}]</span>, <span class="param">{src}</span></code><br/> 
+              <code><span class="instr">mov</span> <span class="param optional">bytes</span>, <span class="param">{dest}</span>, <span class="param">[{src}]</span></code> <br/>
+          	</td>
+          	<td>
+          	  <p class="title">Move &#151; переместить значения в памяти.</p>
+          	  <p>Копирует <span class="codeframe"><code><span class="param">bytes</span></code></span> памяти из 
+          	  <span class="codeframe"><code><span class="param">src</span></code></span> в 
+          	  <span class="codeframe"><code><span class="param">dest</span></code></span>. 
+          	  Параметр <span class="codeframe"><code><span class="param optional">bytes</span></code></span> является необязательным параметром.
+          	  Если он не указан, по умолчанию используется
+          	  длина адреса (4 байта).</p> 
+          	  
+          	  <p>В данной версии поддерживаются только длины 1, 2, 4 и 8 байтов.</p>
+          	</td>
           </tr>
 
         </table>
-      </div>
     </div>
   </body>
   

@@ -38,13 +38,12 @@ div.page
 	max-width: 550pt;
 	margin-left: auto;
 	margin-right: auto;
-	padding-left: 0pt;
-	padding-right: 0pt;
+	padding: 5pt 0pt 5pt 0pt;
 }
 
-div.text
+p
 {
-	padding-top: 7pt;
+	display: block;
 }
 
 .header p  
@@ -80,7 +79,40 @@ div.menu a.item:visited
 	color: #b0b0c0;
 }
 
+a:link 
+{
+	color: #7B7BAB;
+}
+a:hover 
+{
+	color: #6B6BBF;
+}
+a:visited 
+{
+	color: #7B7B8C;
+}
+
 span.divider
 {
 	color: #666666;
+}
+
+h2, h3
+{
+	color: #35321f;
+	font-weight: normal;
+	margin-top: 18pt;
+	margin-bottom: 5pt;
+	text-shadow: 0 0 1pt #c2ba94;
+	font-size: 130%;
+}
+
+h3
+{
+	font-size: 110%;
+}
+
+.frame h2:first-child
+{
+	margin-top: 0;
 }

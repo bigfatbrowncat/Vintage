@@ -1,10 +1,14 @@
-@CHARSET "ISO-8859-1";
+@CHARSET "UTF-8";
+
+div.page
+{
+	max-width: 550pt;
+}
 
 .contents-frame
 {
 	background: #efede2;
 	padding: 10pt;
-	padding-bottom: 20pt;
 }
 
 .contents-frame ul 
@@ -21,6 +25,13 @@
         padding-right: 10pt;
 }
 
+.helper-frame
+{
+	background: #efede2;
+	padding: 5pt;
+}
+
+
 div.pic div
 {
 	font-size: 80%;
@@ -30,16 +41,6 @@ div.pic
 {
 	text-align: center;
 	margin: 20px;
-}
-
-h2, h3
-{
-	color: #35321f;
-	font-weight: 500;
-	margin-top: 18pt;
-	margin-bottom: 5pt;
-	text-shadow: 0 0 1pt #c2ba94;
-	font-size: 130%;
 }
 
 .contents-frame .text, .contents-frame h2
@@ -58,19 +59,6 @@ h3
 	font-size: 110%;
 }
 
-a:link 
-{
-	color: #7B7BAB;
-}
-a:hover 
-{
-	color: #6B6BBF;
-}
-a:visited 
-{
-	color: #7B7B8C;
-}
-
 table.commands 
 {
 	margin-top: 10pt;
@@ -84,17 +72,82 @@ table.commands
 	background: #efede2;
 	border-right: 1px solid #d0d0c5;
 	border-bottom: 1px solid #d0d0c5;
-	padding: 5pt;
+	padding: 5pt 9pt 6pt 9pt; 
+	vertical-align: top; 
 }
 
 .commands thead td
 {
 	background: #e7e4d5;
+	color: #35321f;
+	font-weight: normal;
+	text-shadow: 0 0 1pt #c2ba94;
 }
 
-.cmd-inner tr td
+.commands td p.title
 {
-	padding: 0;
-	padding-right: 5pt;
-	border-width: 0;
+	font-style: oblique;
+}
+
+p:first-child
+{
+	margin-top: 0;
+}
+
+p:last-child
+{
+	margin-bottom: 2pt;
+}
+
+.codeframe
+{
+	border: 1pt #d0d0c5 solid;
+	background: #efede2;
+	padding: 2pt 4pt 2pt 4pt;
+	overflow: auto;
+}
+div.codeframe
+{
+	padding: 6pt 8pt 6pt 8pt;
+	margin-top: 10pt;
+	margin-bottom: 10pt;
+}
+span.codeframe
+{
+	padding: 0pt 2pt 2pt 2pt;
+}
+.codeframe code
+{
+	margin: 0;
+	white-space: pre;
+}
+span.codeframe pre
+{
+	display: inline-block;
+}
+
+.codeframe .instr
+{
+	color: #7B7B8C;
+	font-weight: bold;
+}
+
+.codeframe .label
+{
+	color: #35321f;
+}
+
+.codeframe .comment
+{
+	color: #7B7B8C;
+}
+
+.codeframe .param
+{
+	color: #35321f;
+}
+
+.codeframe .optional
+{
+	font-style: italic;
 }

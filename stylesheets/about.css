@@ -1,0 +1,44 @@
+@CHARSET "UTF-8";
+
+div.page
+{
+	width: 80%;
+	max-width: 800pt;
+}
+
+.frame
+{
+	border: 1pt #d0d0c5 solid;
+	background: #efede2;
+	padding: 10pt;
+	margin: 5pt 0pt 5pt 0pt;
+	overflow: auto;
+}
+
+.news-date
+{
+	color: #35321f;
+	font-weight: bold;
+	margin: 0pt;
+	margin-bottom: 5pt;
+	text-shadow: 0 0 1pt #c2ba94;
+}
+
+a.fake-link:link 
+{
+	border-bottom: 1px dotted #7B7BAB; text-decoration: none;
+}
+a.fake-link:hover 
+{
+	border-bottom: 1px dotted #6B6BBF; text-decoration: none;
+}
+a.fake-link:visited 
+{
+	border-bottom: 1px dotted #7B7B8C; text-decoration: none;
+}
+
+a.fake-link
+{
+	    line-height: 0.9em;
+    display: inline-block;
+}

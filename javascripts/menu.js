@@ -1,3 +1,24 @@
+var names = new Object();
+names["about"] = "О проекте";
+names["about/thoughts"] = "Размышления";
+names["doc"] = "Документация";
+names["downloads"] = "Скачать";
+
+var htmls = new Object();
+htmls["about"] = "about.html";
+htmls["about/thoughts"] = "thoughts.html";
+htmls["doc"] = "doc.html";
+htmls["downloads"] = "downloads.html";
+
+Object.size = function(obj) {
+    var size = 0, key;
+    for (key in obj) {
+        if (obj.hasOwnProperty(key)) size++;
+    }
+    return size;
+};
+
+
 function printMenu(thePage)
 {
     document.write("    <div class=\"header\"><div class=\"page\">\n");
@@ -13,17 +34,41 @@ function printMenu(thePage)
  */
 function printMenuLinks(selectedPage)
 {
-	printMenuLink("about", "О проекте", selectedPage);
+	splited = selectedPage.split("/");
+	printMenuLink("about", selectedPage);
 	document.write("          <span class=\"divider\"> | </span>"); 
-	printMenuLink("documentation", "Документация", selectedPage);
+	printMenuLink("doc", selectedPage);
 	document.write("          <span class=\"divider\"> | </span>"); 
-	printMenuLink("downloads", "Скачать", selectedPage);
+	printMenuLink("downloads", selectedPage);
 }
 
-function printMenuLink(linkName, linkText, selectedPage)
+function printMenuLink(baseName, selectedPage)
 {
-	if (selectedPage == linkName)
-		document.write("          <span class=\"item-selected\">" + linkText + "</span>");
+	splitted = selectedPage.split("/");
+
+	if (splitted[0] != baseName)
+	{
+		document.write("<a class=\"item\" href=\"" + htmls[baseName] + "\">" + names[baseName] + "</a>");
+	}
+	else if (splitted.length == 1)
+	{
+		document.write("<span class=\"item-selected\">" + names[baseName] + "</span>");
+	}
 	else
-		document.write("          <a class=\"item\" href=\"" + linkName + ".html\">" + linkText + "</a>"); 
+	{
+		path = splitted[0];
+		document.write("          <a class=\"item\" href=\"" + htmls[path] + "\">" + names[path] + "</a>");
+
+		for (i = 1; i < splitted.length - 1; i++)
+		{
+			path += "/" + splitted[i];
+			document.write("<span class=\"divider\"> / </span><a class=\"item\" href=\"" + htmls[path] + "\">" + names[path] + "</a>");
+		}
+	
+		if (splitted.length > 1)
+		{
+			path += "/" + splitted[splitted.length - 1];
+			document.write("<span class=\"divider\"> / </span><span class=\"item-selected\">" + names[path] + "</span>");
+		}
+	}
 }

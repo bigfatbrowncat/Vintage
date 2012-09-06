@@ -20,6 +20,19 @@ body
 	padding: 0;
 	margin: 0;
 	background: #e7e4d5;
+	
+    -webkit-hyphens: auto;
+    -moz-hyphens: auto;
+    hyphens: auto;
+    
+    text-align: justify;
+}
+
+.main
+{
+	margin: 5pt 0pt 5pt 0pt;
+	overflow: auto;
+	padding: 10pt;
 }
 
 div.header
@@ -112,7 +125,7 @@ h3
 	font-size: 110%;
 }
 
-.frame h2:first-child
+h2:first-child
 {
 	margin-top: 0;
 }

@@ -11,7 +11,7 @@
 #define GET_INSTR(instr, flow)		instr = *((instr_t*)(&heap[flow])); flow += sizeof(instr_t);
 #define GET_ARG_INT4(arg, flow)		arg   = *((int4*)   (&heap[flow])); flow += sizeof(int4);
 
-#define OUTPUT_INSTRUCTIONS
+//#define OUTPUT_INSTRUCTIONS
 
 void CPU::reportToDebugger(int1* stack, int4 stackPtr, int4 stackSize, int1* heap, int4 heapSize, int4 flow, FlowState state)
 {
@@ -770,26 +770,15 @@ bool CPU::doCycle()
 			printf("hret");
 			fflush(stdout);
 #endif
-			if (contextStack.size() > 1)
-			{
-				pthread_mutex_lock(&portReadingMutex);
+			// Removing the last context from the context stack
+			contextStack.pop_back();
 
-				// Removing the last context from the context stack
-				contextStack.pop_back();
+			// Setting the next context from the stack as the current
+			stack = &(getMemory()[contextStack.back().stackStart]);
+			heap = &(getMemory()[contextStack.back().heapStart]);
 
-				// Setting the next context from the stack as the current
-				stack = &(getMemory()[contextStack.back().stackStart]);
-				heap = &(getMemory()[contextStack.back().heapStart]);
-
-				//portHandlingJustFinished = true;
-				reportToDebugger(stack, contextStack.back().stackPtr, contextStack.back().stackSize, heap, contextStack.back().heapSize, contextStack.back().flow, fsStepOutHandler);
-
-				pthread_mutex_unlock(&portReadingMutex);
-			}
-			else
-			{
-				// TODO: Put some exception code here :)
-			}
+			//portHandlingJustFinished = true;
+			reportToDebugger(stack, contextStack.back().stackPtr, contextStack.back().stackSize, heap, contextStack.back().heapSize, contextStack.back().flow, fsStepOutHandler);
 
 			break;
 

@@ -19,7 +19,6 @@ class CPU : public HardwareDevice
 {
 private:
 	Debugger* debugger;
-	pthread_mutex_t portReadingMutex;
 
 protected:
 	void reportToDebugger(int1* stack, int4 stackPtr, int4 stackSize, int1* heap, int4 heapSize, int4 flow, FlowState state);
@@ -39,13 +38,11 @@ public:
 		HardwareDevice(true, portsCount, memory, memorySize),
 		debugger(NULL)
 	{
-		pthread_mutex_init(&portReadingMutex, NULL);
 		contextStack.push_back(initialContext);
 	}
 
 	virtual ~CPU()
 	{
-		pthread_mutex_destroy(&portReadingMutex);
 	}
 
 };

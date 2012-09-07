@@ -29,6 +29,7 @@ class HardwareDevice
 {
 private:
 	pthread_mutex_t controlMutex;
+	pthread_mutex_t contextStackTopMutex;
 	bool* inputPortIsWaiting;
 	MessageContext* portInWaitingContext;
 	volatile bool someInputPortIsWaiting;

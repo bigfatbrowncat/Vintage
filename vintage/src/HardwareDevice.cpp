@@ -76,12 +76,12 @@ void HardwareDevice::activityFunction()
 					// If it was the last port to handle, clearing the flag
 					if (inputPortsWaitingCount == 1) someInputPortIsWaiting = false;
 
+					pthread_mutex_lock(&contextStackTopMutex);
 					// Adding the context of the port we are handling to the contexts stack
 					contextStack.push_back(portInWaitingContext[portToHandle]);
-
-					/*int1* stack = &(getMemory()[contextStack.back().stackStart]);
-					int4 command = *((int4*)&stack[contextStack.back().stackPtr + 0]);*/
 					handleMessage();
+					pthread_mutex_unlock(&contextStackTopMutex);
+
 				}
 			}
 			pthread_mutex_unlock(&controlMutex);
@@ -91,13 +91,13 @@ void HardwareDevice::activityFunction()
 			portHandlingJustFinished = false;
 		}
 
-		if (contextStack.size() > 0)
+		pthread_mutex_lock(&contextStackTopMutex);
+		bool cycleRes = doCycle();
+		pthread_mutex_unlock(&contextStackTopMutex);
+
+		if (!cycleRes)
 		{
-			doCycle();
-		}
-		else
-		{
-			usleep(100);
+			usleep(1000);
 		}
 	}
 }
@@ -106,6 +106,7 @@ HardwareDevice::HardwareDevice(bool initiallyActive, int4 portsCount, int1* memo
 	active(initiallyActive), portsCount(portsCount)
 {
 	pthread_mutex_init(&controlMutex, NULL);
+	pthread_mutex_init(&contextStackTopMutex, NULL);
 
 	inputPortIsWaiting = new bool[portsCount + 1];
 	for (int i = 0; i <= portsCount; i++)
@@ -143,48 +144,40 @@ HardwareDevice::~HardwareDevice()
 bool HardwareDevice::turnOn()
 {
 	// Checking if the device is turned off
+	pthread_mutex_lock(&controlMutex);
+	bool result = false;
+
 	if (state == hdsOff)
 	{
-		pthread_mutex_lock(&controlMutex);
 
 		state = hdsTurningOnPending;
 		// Turning it on
 		pthread_create(&this->activity, NULL, &HardwareDevice_activity_function, this);
 		state = hdsOn;
 
-		pthread_mutex_unlock(&controlMutex);
-
-		return true;
+		result = true;
 	}
-	else
-	{
-		// Returning false otherwise
-		return false;
-	}
+	pthread_mutex_unlock(&controlMutex);
+	return result;
 }
 
 bool HardwareDevice::turnOff()
 {
 	// Checking if the device is turned on
+	pthread_mutex_lock(&controlMutex);
+	bool result = false;
+
 	if (state == hdsOn)
 	{
-		pthread_mutex_lock(&controlMutex);
-
 		state = hdsTurningOffPending;
 		void* value;
 		pthread_join(activity, &value);
 		state = hdsOff;
 
-		pthread_mutex_unlock(&controlMutex);
-
-		return true;
+		result = true;
 	}
-	else
-	{
-		// Returning false otherwise
-		return false;
-	}
-
+	pthread_mutex_unlock(&controlMutex);
+	return result;
 }
 
 void HardwareDevice::connectDevices(HardwareDevice& dev1, int port1, HardwareDevice& dev2, int port2)
@@ -259,12 +252,15 @@ bool HardwareDevice::handleMessage()
 
 bool HardwareDevice::doCycle()
 {
-	// Reporting success for any operation
-	// TODO: we should check if the operation is really succeeded
-	int1* stack = &(getMemory()[activityContext.stackStart]);
-	int4* p_result = ((int4*)&stack[activityContext.stackPtr + 0]);
-	*p_result = HARDWARE_SUCCEEDED;
-	sendMessage();
-
-	contextStack.pop_back();
+	if (contextStack.size() > 0)
+	{
+		// Reporting success for any operation
+		int1* stack = &(getMemory()[activityContext.stackStart]);
+		int4* p_result = ((int4*)&stack[activityContext.stackPtr + 0]);
+		*p_result = HARDWARE_SUCCEEDED;
+		sendMessage();
+		contextStack.pop_back();
+		return true;
+	}
+	return false;
 }

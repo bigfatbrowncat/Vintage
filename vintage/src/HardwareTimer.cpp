@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include "HardwareTimer.h"
 
 bool HardwareTimer::handleMessage()
@@ -27,6 +28,12 @@ bool HardwareTimer::handleMessage()
 bool HardwareTimer::doCycle()
 {
 	bool result = false;
+	if (contextStack.size() > 0)
+	{
+		// Do nothing with the input context. Just pass it.
+		contextStack.pop_back();
+	}
+
 	if (isActive())
 	{
 		clock_t tt = clock();
@@ -35,14 +42,17 @@ bool HardwareTimer::doCycle()
 		int1* heap = &getMemory()[activityContext.heapStart];
 
 		// Getting address from the top of stack
-		int4* target = ((int4*)&stack[activityContext.stackPtr]);
+		int4* status = ((int4*)&stack[activityContext.stackPtr]);
+		int4* value = ((int4*)&stack[activityContext.stackPtr + 4]);
 
 		// Writing the current clock data there
-		*target = tt;
+		*status = HARDWARE_TIMER_REPORT_TIME;
+		*value = tt;
 
 		sendMessage();
+
+		usleep(5000);	// sleeping for 5ms
 		result = true;
 	}
-	// Everything's done. Clearing the context
-	contextStack.pop_back();
+	return result;
 }

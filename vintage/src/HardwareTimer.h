@@ -6,6 +6,8 @@ class HardwareTimer;
 #include "HardwareDevice.h"
 #include "CPU.h"
 
+#define HARDWARE_TIMER_REPORT_TIME		HARDWARE_CUSTOM + 0
+
 class HardwareTimer : public HardwareDevice
 {
 private:

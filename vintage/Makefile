@@ -69,10 +69,12 @@ $(OBJ_PATH):
 
 ##### Objects #####
 
-$(VM_OBJS) : $(OBJ_PATH)/%.o : $(SRC_PATH)/%.cpp $(VM_HEADERS) $(OBJ_PATH)
+$(VM_OBJS) : $(OBJ_PATH)/%.o : $(SRC_PATH)/%.cpp $(VM_HEADERS)
+	mkdir -p $(OBJ_PATH)
 	$(CXX) $(CXXFLAGS) -c -o $@ $(INCLUDES_PATH) $(LIBS_PATH) $(VM_LIBS) $< 
 
-$(ASM_OBJS) : $(OBJ_PATH)/%.o : $(SRC_PATH)/%.cpp $(ASM_HEADERS) $(OBJ_PATH)
+$(ASM_OBJS) : $(OBJ_PATH)/%.o : $(SRC_PATH)/%.cpp $(ASM_HEADERS)
+	mkdir -p $(OBJ_PATH)
 	$(CXX) $(CXXFLAGS) -c -o $@ $(INCLUDES_PATH) $(LIBS_PATH) $(ASM_LIBS) $< 
 
 ##### Target #####

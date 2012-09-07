@@ -51,13 +51,13 @@ its_exit:      mov {16}, {0}                     ; result saved
                ; ***** Timer *****
 
 timer_value:   text 0 0                          ; 4 bytes for timer value
-timer_stack:   text 0 0 0 0                      ; 8 bytes allocated for timer handler stack
+timer_stack:   text 0 0 0 0 0 0 0 0              ; 16 bytes allocated for timer handler stack
 
 timer_handler: alloc 4
 
                ; moving timer data to the "timer_value" address
                mov {0}, timer_value
-               mov [{0}], {4}
+               mov [{0}], {4+4}                  ; 4 allocated + 4 for status code (which is always HARDWARE_TIMER_REPORT_TIME)
                
                free 4
                hret
@@ -253,12 +253,12 @@ main:          alloc 28                            ; allocating space for contex
                mov {16+4}, 16                      ; stack size
                mov {20+4}, 16                      ; stack ptr
                mov {24+4}, kbd_handler             ; flow
-               out 3                               ; assuming keyboard is on the port #3 and sending the command to it
+               ;out 3                               ; assuming keyboard is on the port #3 and sending the command to it
 
 
                ; *** Activating devices ***
                mov {0}, 1                          ; 1 is "HARDWARE_ACTIVATE" command
-               out 1                               ; sending to timer
+               ;out 1                               ; sending to timer
                out 2
                call out_to_console_sync            ; sending to console
                ;out 3                               ; sending to keyboard

@@ -52,6 +52,8 @@ private:
 	bool handleSpecialKeyUp(SDL_keysym* keysym);
 
 	void draw(SDL_Surface* frameSurface);
+
+	HICON icon;
 protected:
 	void setActiveScreen(int index)
 	{

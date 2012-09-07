@@ -261,7 +261,7 @@ main:          alloc 28                            ; allocating space for contex
                out 1                               ; sending to timer
                out 2
                call out_to_console_sync            ; sending to console
-               out 3                               ; sending to keyboard
+               ;out 3                               ; sending to keyboard
 
                free 28
 

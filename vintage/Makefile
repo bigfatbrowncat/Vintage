@@ -45,6 +45,8 @@ VM_HEADERS = 		$(SRC_PATH)/SDLTerminal.h $(SRC_PATH)/SDLScreen.h $(SRC_PATH)/Mes
 ASM_HEADERS = 		$(SRC_PATH)/asm.h $(SRC_PATH)/instructions.h \
 					$(SRC_PATH)/chain.h $(SRC_PATH)/globals.h 
 					
+DEPLOYED_RESOURCES = res/curfont.txt res/font.txt res/term.frag res/term.vert
+					
 VM_LIBS =			-lmingw32 -lSDLmain -lSDL -lopengl32 -lglu32 -lglew32 -lglew32mx -lpthread.dll
 
 ASM_LIBS =			-lpthread.dll
@@ -73,13 +75,12 @@ $(VM_OBJS) : $(OBJ_PATH)/%.o : $(SRC_PATH)/%.cpp $(VM_HEADERS) $(OBJ_PATH)
 $(ASM_OBJS) : $(OBJ_PATH)/%.o : $(SRC_PATH)/%.cpp $(ASM_HEADERS) $(OBJ_PATH)
 	$(CXX) $(CXXFLAGS) -c -o $@ $(INCLUDES_PATH) $(LIBS_PATH) $(ASM_LIBS) $< 
 
-
 ##### Target #####
 
-vm-target: $(OUT_PATH)/$(VM_TARGET) externals
+vm-target: $(OUT_PATH)/$(VM_TARGET) externals resources
 
-$(OUT_PATH)/$(VM_TARGET): $(VM_OBJS) $(OUT_PATH)
-	$(CXX) $(CXXFLAGS) -mwindows $(VM_OBJS) -o $@ $(LIBS_PATH) $(VM_LIBS) 
+$(OUT_PATH)/$(VM_TARGET): $(VM_OBJS) $(OUT_PATH) $(OUT_PATH)/res/vintage-vm.res
+	$(CXX) $(CXXFLAGS) -mwindows $(VM_OBJS) -o $@ $(LIBS_PATH) $(VM_LIBS) $(OUT_PATH)/res/vintage-vm.res
 
 asm-target: $(OUT_PATH)/$(ASM_TARGET)
 
@@ -89,12 +90,6 @@ $(OUT_PATH)/$(ASM_TARGET): $(ASM_OBJS) $(OUT_PATH)
 ##### Externals #####
 
 externals: $(OUT_PATH)/$(SDL_DLL) $(OUT_PATH)/$(GLEW_DLL) $(OUT_PATH)/$(GLEW_MX_DLL) $(OUT_PATH)/$(PTHREADS_DLL)
-
-$(OUT_PATH)/wave.frag: wave.frag
-	cp -f wave.frag $(OUT_PATH)/
-
-$(OUT_PATH)/wave.vert: wave.vert
-	cp -f wave.vert $(OUT_PATH)/
 
 $(OUT_PATH)/$(GLEW_DLL): $(GLEW_LIBS_PATH)/$(GLEW_DLL)
 	cp -f $(GLEW_LIBS_PATH)/$(GLEW_DLL) $(OUT_PATH)/
@@ -109,8 +104,14 @@ $(OUT_PATH)/$(PTHREADS_DLL): $(PTHREADS_BIN_PATH)/$(PTHREADS_DLL)
 	cp -f $(PTHREADS_BIN_PATH)/$(PTHREADS_DLL) $(OUT_PATH)/
 
 ##### Res #####
-resources: res $(OUT_PATH)
-	cp -rf res $(OUT_PATH)/
+
+$(OUT_PATH)/res/vintage-vm.res: res-src/vintage-vm.rc
+	mkdir -p $(OUT_PATH)/res
+	windres res-src/vintage-vm.rc -O coff -o $(OUT_PATH)/res/vintage-vm.res
+
+resources: $(DEPLOYED_RESOURCES)
+	mkdir -p $(OUT_PATH)
+	cp -rf $(DEPLOYED_RESOURCES) $(OUT_PATH)/res/
 
 ##### Cleaning #####
 

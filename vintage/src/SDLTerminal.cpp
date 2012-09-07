@@ -1,4 +1,5 @@
 #include <SDL.h>
+#include <SDL_syswm.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -170,11 +171,43 @@ SDLTerminal::SDLTerminal(CachedFont& font, CachedFont& cursorFont):
 		screens[i] = new SDLScreen(frameBufferWidth, frameBufferHeight);
 	}
 	screens[activeScreen]->setActivity(true);
+
+
+
+    printf("Initializing SDL.\n");
+
+
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER) == -1)
+    {
+        printf("Could not initialize SDL: %s.\n", SDL_GetError());
+        exit(-1);
+    }
+
+    // Loading our icon from the resource
+	HINSTANCE handle = ::GetModuleHandle(NULL);
+	icon = ::LoadIcon(handle, "MainIcon");
+
+	// Getting WM info from SDL
+	SDL_SysWMinfo wminfo;
+	SDL_VERSION(&wminfo.version)
+	if (SDL_GetWMInfo(&wminfo) != 1)
+	{
+		// error: wrong SDL version
+	}
+
+	// Getting our window
+	HWND hwnd = wminfo.window;
+
+	// Setting the icon for the window
+	::SetClassLong(hwnd, GCL_HICON, (LONG) icon);
+
+    printf("SDL initialized.\n");
 }
 
 SDLTerminal::~SDLTerminal()
 {
 	SDL_Quit();
+	::DestroyIcon(icon);
 }
 
 bool SDLTerminal::setGLTextureFromSurface(SDL_Surface* surface, GLuint shaderProgramId)
@@ -232,16 +265,7 @@ bool SDLTerminal::setGLTextureFromSurface(SDL_Surface* surface, GLuint shaderPro
 
 bool SDLTerminal::Run()
 {
-    printf("Initializing SDL.\n");
 
-
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER) == -1)
-    {
-        printf("Could not initialize SDL: %s.\n", SDL_GetError());
-        exit(-1);
-    }
-
-    printf("SDL initialized.\n");
 
 	int distance = 0;
 

@@ -11,7 +11,7 @@
 #define GET_INSTR(instr, flow)		instr = *((instr_t*)(&heap[flow])); flow += sizeof(instr_t);
 #define GET_ARG_INT4(arg, flow)		arg   = *((int4*)   (&heap[flow])); flow += sizeof(int4);
 
-//#define OUTPUT_INSTRUCTIONS
+#define OUTPUT_INSTRUCTIONS
 
 void CPU::reportToDebugger(int1* stack, int4 stackPtr, int4 stackSize, int1* heap, int4 heapSize, int4 flow, FlowState state)
 {

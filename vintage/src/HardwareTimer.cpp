@@ -32,6 +32,7 @@ bool HardwareTimer::doCycle()
 	{
 		// Do nothing with the input context. Just pass it.
 		contextStack.pop_back();
+		result = true;
 	}
 
 	if (isActive())

@@ -94,11 +94,11 @@ console_success_flag:
                                                  ; should be changed to "0" immediately 
                                                  ; after it's readed
 
-console_stack: text 0 0 0 0                      ; 8 bytes for console stack
+console_stack: text 0 0 0 0 0 0 0 0              ; 16 bytes for console stack
 
 console_handler:
                alloc 8
-               mov {0}, {4}
+               mov {0}, {8}
                sub {0}, 64                       ; 64 means HARDWARE_SUCCEEDED
                
                ifp 1, {0}, console_zero
@@ -231,8 +231,8 @@ main:          alloc 28                            ; allocating space for contex
                getcont {4}
                mov {0+4},  1                       ; port
                mov {12+4}, timer_stack             ; stack start
-               mov {16+4}, 8                       ; stack size
-               mov {20+4}, 8                       ; stack ptr
+               mov {16+4}, 16                      ; stack size
+               mov {20+4}, 16                      ; stack ptr
                mov {24+4}, timer_handler           ; flow
                out 1                               ; assuming timer is on the port #1 and sending the command to it
 
@@ -240,11 +240,10 @@ main:          alloc 28                            ; allocating space for contex
                getcont {4}
                mov {0+4},  1                       ; port
                mov {12+4}, console_stack           ; stack start
-               mov {16+4}, 8                       ; stack size
-               mov {20+4}, 8                       ; stack ptr
+               mov {16+4}, 16                      ; stack size
+               mov {20+4}, 16                      ; stack ptr
                mov {24+4}, console_handler         ; flow
-               out 2
-               call out_to_console_sync            ; assuming consol is on the port #2 and sending the command to it
+               out 2                               ; assuming console is on the port #2 and sending the command to it
 
                ; setting the context for keyboard handler
                getcont {4}
@@ -258,7 +257,7 @@ main:          alloc 28                            ; allocating space for contex
 
                ; *** Activating devices ***
                mov {0}, 1                          ; 1 is "HARDWARE_ACTIVATE" command
-               ;out 1                               ; sending to timer
+               out 1                               ; sending to timer
                out 2
                call out_to_console_sync            ; sending to console
                ;out 3                               ; sending to keyboard

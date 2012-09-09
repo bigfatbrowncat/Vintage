@@ -13,8 +13,6 @@
 using namespace std;
 
 #define	HARDWARE_INITIALIZE									0
-#define	HARDWARE_ACTIVATE									1
-#define	HARDWARE_DEACTIVATE									2
 
 #define	HARDWARE_SUCCEEDED									64 + 0
 #define	HARDWARE_FAILED										64 + 1
@@ -24,12 +22,12 @@ using namespace std;
 class HardwareDevice;
 
 enum HardwareDeviceState { hdsTurningOnPending, hdsOn, hdsTurningOffPending, hdsOff };
+enum MessageHandlingResult { mhsNotHandled, mhsSuccessful, mhsUnsuccessful };
 
 class HardwareDevice
 {
 private:
 	pthread_mutex_t controlMutex;
-	pthread_mutex_t contextStackTopMutex;
 	bool* inputPortIsWaiting;
 	MessageContext* portInWaitingContext;
 	volatile bool someInputPortIsWaiting;
@@ -40,8 +38,6 @@ private:
 	pthread_t activity;
 	int1* memory;
 	int4 memorySize;
-
-	volatile bool active;
 
 	friend void* HardwareDevice_activity_function(void* arg);
 
@@ -55,8 +51,8 @@ protected:
 
 	virtual void onOtherDeviceConnected(int4 port) {}
 
-	virtual bool handleMessage();
-	virtual bool doCycle();
+	virtual MessageHandlingResult handleMessage();
+	virtual void doCycle(MessageHandlingResult handlingResult);
 
 	void sendMessage();
 
@@ -85,10 +81,6 @@ public:
 	bool turnOn();
 	bool turnOff();
 
-	bool isActive()
-	{
-		return active;
-	}
 	int1* getMemory()
 	{
 		return memory;

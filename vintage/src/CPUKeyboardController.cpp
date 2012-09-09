@@ -37,35 +37,48 @@ void CPUKeyboardController::processKeyEvent(bool key_down, int4 key_code)
 	pthread_mutex_unlock(&keyBufferLock);
 }
 
-bool CPUKeyboardController::handleMessage()
+MessageHandlingResult CPUKeyboardController::handleMessage()
 {
 	bool result = HardwareDevice::handleMessage();
+	if (result == mhsUnsuccessful)
+	{
+		return mhsUnsuccessful;
+	}
 
 	int1* stack = &(getMemory()[contextStack.back().stackStart]);
 	int1* heap = &(getMemory()[contextStack.back().heapStart]);
 
 	// Handling additional commands
+	if (contextStack.back().getAllocatedStackMemory() < sizeof(int4))
+	{
+		return mhsUnsuccessful;	// Can't read the command
+	}
 	int4 command = *((int4*)&stack[contextStack.back().stackPtr + 0]);
-	if (command == HARDWARE_ACTIVATE)
+	if (command == HARDWARE_INITIALIZE)
 	{
-		activityContext.stackPtr -= 5; // keyboard message size
-		result = true;	// Handled
+		// activityContext has already been
+		// checked in HardwareDevice::handleMessage(),
+		// so no double checking here
+		if (activityContext.getFreeStackMemory() >= 5)
+		{
+			activityContext.stackPtr -= 5; // keyboard message size
+			return mhsSuccessful;
+		}
+		else
+		{
+			return mhsUnsuccessful;
+		}
 	}
-	else if (command == HARDWARE_DEACTIVATE)
+	else
 	{
-		activityContext.stackPtr += 5; // keyboard message size
-		result = true;	// Handled
+		return mhsUnsuccessful;
 	}
-
-
-	return result;
 }
 
-bool CPUKeyboardController::doCycle()
+void CPUKeyboardController::doCycle(MessageHandlingResult handlingResult)
 {
-	bool result = false;
-
-	if (isActive())
+	if (activityContext.isValid(getMemorySize()) &&
+	    activityContext.getAllocatedStackMemory() >= sizeof(int4) + 5)
 	{
 		// Taking the event away from the buffer.
 		// This is synchronized with adding event to the buffer
@@ -82,8 +95,9 @@ bool CPUKeyboardController::doCycle()
 			int1* heap = &getMemory()[activityContext.heapStart];
 
 			int1* msg = &stack[activityContext.stackPtr];
-			*((int4*)&msg[0]) = keyCode[current];
-			*((int1*)&msg[4]) = keyDown[current] ? 1 : 0;
+			*((int4*)&msg[0]) = HARDWARE_KEYBOARD_KEY_EVENT;
+			*((int4*)&msg[4]) = keyCode[current];
+			*((int1*)&msg[8]) = keyDown[current] ? 1 : 0;
 			printf("<- (%d, %d) %d %d\n", current, last, keyCode[current], keyDown[current]);
 			current = (current + 1) % bufferLength;
 		}
@@ -94,10 +108,8 @@ bool CPUKeyboardController::doCycle()
 		if (notEmpty)
 		{
 			sendMessage();
-			result = true;
 		}
 	}
 
 	contextStack.pop_back();
-	return result;
 }

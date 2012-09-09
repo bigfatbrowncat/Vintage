@@ -24,8 +24,8 @@ protected:
 	void reportToDebugger(int1* stack, int4 stackPtr, int4 stackSize, int1* heap, int4 heapSize, int4 flow, FlowState state);
 	void askDebugger(int1* stack, int4 stackPtr, int4 stackSize, int1* heap, int4 heapSize, int4 flow);
 
-	virtual bool handleMessage();
-	virtual bool doCycle();
+	virtual MessageHandlingResult handleMessage();
+	virtual void doCycle(MessageHandlingResult handlingResult);
 
 public:
 

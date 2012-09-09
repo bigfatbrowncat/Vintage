@@ -1,5 +1,6 @@
 PTHREADS_BIN_PATH =		/mingw/bin
-PTHREADS_DLL =			pthreadGC2.dll
+PTHREADS_DLL1 =			pthreadGC2.dll 
+PTHREADS_DLL2 =			libpthread-2.dll
 
 SDL_INCLUDE_PATH =		../../SDL-1.2.14/include/SDL
 SDL_LIBS_PATH =			../../SDL-1.2.14/lib
@@ -14,7 +15,7 @@ GLEW_MX_DLL =			glew32mx.dll
 SRC_PATH = 				src
 
 ifdef DEBUG
-	CXXFLAGS =			-O0 -g2 -Wall -Wno-write-strings -fmessage-length=0 -static-libgcc -static-libstdc++ -DDEBUG
+	CXXFLAGS =			-O0 -g2 -Weffc++ -Wall -Wno-write-strings -fmessage-length=0 -static-libgcc -static-libstdc++ -DDEBUG
 	
 	OUT_PATH = 			debug/out
 	OBJ_PATH =			debug/obj
@@ -91,7 +92,7 @@ $(OUT_PATH)/$(ASM_TARGET): $(ASM_OBJS) $(OUT_PATH)
 
 ##### Externals #####
 
-externals: $(OUT_PATH)/$(SDL_DLL) $(OUT_PATH)/$(GLEW_DLL) $(OUT_PATH)/$(GLEW_MX_DLL) $(OUT_PATH)/$(PTHREADS_DLL)
+externals: $(OUT_PATH)/$(SDL_DLL) $(OUT_PATH)/$(GLEW_DLL) $(OUT_PATH)/$(GLEW_MX_DLL) $(OUT_PATH)/$(PTHREADS_DLL1) $(OUT_PATH)/$(PTHREADS_DLL2)
 
 $(OUT_PATH)/$(GLEW_DLL): $(GLEW_LIBS_PATH)/$(GLEW_DLL)
 	cp -f $(GLEW_LIBS_PATH)/$(GLEW_DLL) $(OUT_PATH)/
@@ -102,8 +103,11 @@ $(OUT_PATH)/$(GLEW_MX_DLL): $(GLEW_LIBS_PATH)/$(GLEW_MX_DLL)
 $(OUT_PATH)/$(SDL_DLL): $(SDL_BIN_PATH)/$(SDL_DLL)
 	cp -f $(SDL_BIN_PATH)/$(SDL_DLL) $(OUT_PATH)/
 
-$(OUT_PATH)/$(PTHREADS_DLL): $(PTHREADS_BIN_PATH)/$(PTHREADS_DLL)
-	cp -f $(PTHREADS_BIN_PATH)/$(PTHREADS_DLL) $(OUT_PATH)/
+$(OUT_PATH)/$(PTHREADS_DLL1): $(PTHREADS_BIN_PATH)/$(PTHREADS_DLL1)
+	cp -f $(PTHREADS_BIN_PATH)/$(PTHREADS_DLL1) $(OUT_PATH)/
+
+$(OUT_PATH)/$(PTHREADS_DLL2): $(PTHREADS_BIN_PATH)/$(PTHREADS_DLL2)
+	cp -f $(PTHREADS_BIN_PATH)/$(PTHREADS_DLL2) $(OUT_PATH)/
 
 ##### Res #####
 
@@ -123,5 +127,6 @@ clean:
 	      $(OUT_PATH)/$(VM_TARGET) \
 	      $(OUT_PATH)/$(ASM_TARGET) \
 	      $(OUT_PATH)/$(SDL_DLL) \
-	      $(OUT_PATH)/$(PTHREADS_DLL) \
+	      $(OUT_PATH)/$(PTHREADS_DLL1) \
+	      $(OUT_PATH)/$(PTHREADS_DLL2) \
 	rm -rf $(OUT_PATH)/res

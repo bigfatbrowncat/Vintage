@@ -8,6 +8,8 @@
 
 #include <pthread.h>
 
+#define HARDWARE_KEYBOARD_KEY_EVENT				HARDWARE_CUSTOM + 0
+
 class CPUKeyboardController : public HardwareDevice, public KeyboardController
 {
 private:
@@ -20,8 +22,8 @@ private:
 	int4* keyCode;
 
 protected:
-	virtual bool handleMessage();
-	virtual bool doCycle();
+	virtual MessageHandlingResult handleMessage();
+	virtual void doCycle(MessageHandlingResult handlingResult);
 
 public:
 	CPUKeyboardController(int4 bufferLength, int1* memory, int4 memorySize);

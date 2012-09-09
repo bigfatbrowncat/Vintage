@@ -18,10 +18,12 @@ void HardwareDevice::activityFunction()
 
 	while (getState() == hdsOn)
 	{
+		pthread_mutex_lock(&controlMutex);
+		MessageHandlingResult handlingResult = mhsNotHandled;
+
 		if (!portHandlingJustFinished)
 		{
 			// Checking ports input
-			pthread_mutex_lock(&controlMutex);
 			if (someInputPortIsWaiting)
 			{
 				// Clearing our flag (doing this by default, we will check it later)
@@ -45,8 +47,6 @@ void HardwareDevice::activityFunction()
 				// (i.e. the least index) port
 				for (int i = 0; i <= portsCount; i++)
 				{
-					// TODO: There is a great problem here...
-
 					if (inputPortIsWaiting[i])
 					{
 						inputPortsWaitingCount++;
@@ -76,37 +76,29 @@ void HardwareDevice::activityFunction()
 					// If it was the last port to handle, clearing the flag
 					if (inputPortsWaitingCount == 1) someInputPortIsWaiting = false;
 
-					pthread_mutex_lock(&contextStackTopMutex);
 					// Adding the context of the port we are handling to the contexts stack
 					contextStack.push_back(portInWaitingContext[portToHandle]);
-					handleMessage();
-					pthread_mutex_unlock(&contextStackTopMutex);
 
+					pthread_mutex_unlock(&controlMutex);
+					handlingResult = handleMessage();
+					pthread_mutex_lock(&controlMutex);
 				}
 			}
-			pthread_mutex_unlock(&controlMutex);
 		}
 		else
 		{
 			portHandlingJustFinished = false;
 		}
 
-		pthread_mutex_lock(&contextStackTopMutex);
-		bool cycleRes = doCycle();
-		pthread_mutex_unlock(&contextStackTopMutex);
-
-		if (!cycleRes)
-		{
-			usleep(1000);
-		}
+		pthread_mutex_unlock(&controlMutex);
+		doCycle(handlingResult);
 	}
 }
 
 HardwareDevice::HardwareDevice(bool initiallyActive, int4 portsCount, int1* memory, int4 memorySize) :
-	active(initiallyActive), portsCount(portsCount)
+	portsCount(portsCount), memory(memory), memorySize(memorySize)
 {
 	pthread_mutex_init(&controlMutex, NULL);
-	pthread_mutex_init(&contextStackTopMutex, NULL);
 
 	inputPortIsWaiting = new bool[portsCount + 1];
 	for (int i = 0; i <= portsCount; i++)
@@ -115,9 +107,6 @@ HardwareDevice::HardwareDevice(bool initiallyActive, int4 portsCount, int1* memo
 	}
 	portInWaitingContext = new MessageContext[portsCount + 1];
 	someInputPortIsWaiting = false;
-
-	this->memory = memory;
-	this->memorySize = memorySize;
 
 	devicesConnectedToPorts = new HardwareDevice*[portsCount + 1];
 	devicesConnectedToPorts[0] = this;	// self-connection at zero port
@@ -224,58 +213,64 @@ void HardwareDevice::receiveMessage(const MessageContext& context)
 	pthread_mutex_unlock(&controlMutex);
 }
 
-bool HardwareDevice::handleMessage()
+MessageHandlingResult HardwareDevice::handleMessage()
 {
 	int1* stack = &(getMemory()[contextStack.back().stackStart]);
 	int1* heap = &(getMemory()[contextStack.back().heapStart]);
 
+	if (contextStack.back().getAllocatedStackMemory() < sizeof(int4))
+	{
+		return mhsUnsuccessful;	// Can't read the command
+	}
 	int4 command = *((int4*)&stack[contextStack.back().stackPtr + 0]);
+
 	if (command == HARDWARE_INITIALIZE)
 	{
-		int1* new_activity_context = ((int1*)&stack[contextStack.back().stackPtr + 4]);
-		activityContext.readFrom(new_activity_context);
-		return true;	// Handled
-	}
-	else if (command == HARDWARE_ACTIVATE)
-	{
-		active = true;
-		activityContext.stackPtr -= 4;	// preparing the place for status code
-		return true;	// Handled
-	}
-	else if (command == HARDWARE_DEACTIVATE)
-	{
-		active = false;
-		activityContext.stackPtr += 4;	// preparing the place for status code
-		return true;	// Handled
+		int1* new_activity_context_data = ((int1*)&stack[contextStack.back().stackPtr + 4]);
+		MessageContext newActivityContext;
+		newActivityContext.readFrom(new_activity_context_data);
+		if (newActivityContext.isValid(memorySize) &&
+		    newActivityContext.getFreeStackMemory() >= 4)
+		{
+			newActivityContext.stackPtr -= 4;		// preparing the place for status code
+			activityContext = newActivityContext;	// setting to the new one
+			return mhsSuccessful;
+		}
+		else
+		{
+			return mhsUnsuccessful;
+		}
 	}
 	else
 	{
-		return false;	// Not handled
+		return mhsNotHandled;
 	}
 }
 
-bool HardwareDevice::doCycle()
+void HardwareDevice::doCycle(MessageHandlingResult handlingResult)
 {
-	bool result = false;
-
-	// Checking if there is incoming messages pending
-	if (contextStack.size() > 0)
+	if (activityContext.isValid(memorySize) &&
+		activityContext.getAllocatedStackMemory() >= sizeof(int4))
 	{
-		// No analysis. Just removing it.
-		contextStack.pop_back();
+		int1* stack = &(getMemory()[activityContext.stackStart]);
+		int4* p_result = ((int4*)&stack[activityContext.stackPtr + 0]);
 
-		if (isActive())
+		if (handlingResult == mhsSuccessful)
 		{
 			// Reporting success for every incoming message operation
-			int1* stack = &(getMemory()[activityContext.stackStart]);
-			int4* p_result = ((int4*)&stack[activityContext.stackPtr + 0]);
 			*p_result = HARDWARE_SUCCEEDED;
 			sendMessage();
 		}
-
-		result = true;
+		else if (handlingResult == mhsUnsuccessful)
+		{
+			// Reporting success for every incoming message operation
+			*p_result = HARDWARE_FAILED;
+			sendMessage();
+		}
 	}
 
-
-	return result;
+	if (contextStack.size() > 0)
+	{
+		contextStack.pop_back();
+	}
 }

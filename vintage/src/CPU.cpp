@@ -42,7 +42,7 @@ void CPU::askDebugger(int1* stack, int4 stackPtr, int4 stackSize, int1* heap, in
 	}
 }
 
-bool CPU::handleMessage()
+MessageHandlingResult CPU::handleMessage()
 {
 	// Selecting the new context
 	int1* stack = &(getMemory()[contextStack.back().stackStart]);
@@ -50,10 +50,10 @@ bool CPU::handleMessage()
 
 	// As far as we have just stepped into a handler, let's report the debugger about it
 	reportToDebugger(stack, contextStack.back().stackPtr, contextStack.back().stackSize, heap, contextStack.back().heapSize, contextStack.back().flow, fsStepInHandler);
-	return true;
+	return mhsSuccessful;
 }
 
-bool CPU::doCycle()
+void CPU::doCycle(MessageHandlingResult handlingResult)
 {
 	int1* stack = &(getMemory()[contextStack.back().stackStart]);
 	int1* heap = &(getMemory()[contextStack.back().heapStart]);
@@ -881,6 +881,4 @@ bool CPU::doCycle()
 		printf("}\n");
 		fflush(stdout);
 #endif
-		return true;
-//	}
 }

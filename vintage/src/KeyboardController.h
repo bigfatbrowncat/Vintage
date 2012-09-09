@@ -9,6 +9,7 @@ class KeyboardController
 {
 public:
 	virtual void processKeyEvent(bool key_down, int4 key_code) = 0;
+	virtual ~KeyboardController() {}
 };
 
 #endif

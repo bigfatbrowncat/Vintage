@@ -14,7 +14,7 @@ class Console : public HardwareDevice
 private:
 	SDLScreen* window;
 protected:
-	virtual bool handleMessage();
+	virtual MessageHandlingResult handleMessage();
 
 public:
 	Console(SDLScreen* window, int1* memory, int4 memorySize);

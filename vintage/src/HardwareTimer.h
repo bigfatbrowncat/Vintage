@@ -6,14 +6,14 @@ class HardwareTimer;
 #include "HardwareDevice.h"
 #include "CPU.h"
 
-#define HARDWARE_TIMER_REPORT_TIME		HARDWARE_CUSTOM + 0
+#define HARDWARE_TIMER_REPORT_TIME				HARDWARE_CUSTOM + 0
 
 class HardwareTimer : public HardwareDevice
 {
 private:
 protected:
-	virtual bool handleMessage();
-	virtual bool doCycle();
+	virtual MessageHandlingResult handleMessage();
+	virtual void doCycle(MessageHandlingResult handlingResult);
 
 public:
 	HardwareTimer(int1* memory, int4 memorySize) :

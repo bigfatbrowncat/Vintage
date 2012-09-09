@@ -59,13 +59,13 @@ int main(int argc, char* argv[])
 
 	HardwareTimer hardTimer(memory, memorySize);
 	Console cpuConsole(&cpuScreen, memory, memorySize);
-	CPUKeyboardController kbd(256, memory, memorySize);
+	//CPUKeyboardController kbd(256, memory, memorySize);
 
 	HardwareDevice::connectDevices(hardTimer, 1, cpu, 1);		// Hardware timer on port 1 -- the highest priority
 	HardwareDevice::connectDevices(cpuConsole, 1, cpu, 2);		// Console on port 2
-	HardwareDevice::connectDevices(kbd, 1, cpu, 3);				// Keyboard on the port 3
+	//HardwareDevice::connectDevices(kbd, 1, cpu, 3);				// Keyboard on the port 3
 
-	cpuScreen.setKeyboardController(&kbd);
+	//cpuScreen.setKeyboardController(&kbd);
 
 	Debugger* dbg = NULL;
 	DebuggerKeyboardController* dbg_kbd = NULL;
@@ -116,7 +116,7 @@ int main(int argc, char* argv[])
 
 	cpuConsole.turnOn();
 	hardTimer.turnOn();
-	kbd.turnOn();
+	//kbd.turnOn();
 	cpu.turnOn();
 
 	try
@@ -130,7 +130,7 @@ int main(int argc, char* argv[])
 	GLenum err = glGetError();
 
 	cpu.turnOff();
-	kbd.turnOff();
+	//kbd.turnOff();
 	hardTimer.turnOff();
 	cpuConsole.turnOff();
 

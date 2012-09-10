@@ -653,12 +653,12 @@ void CPU::doCycle(MessageHandlingResult handlingResult)
 
 			break;
 
-		case if_stp_flow:
+		case jnz_stp_flow:
 			GET_ARG_INT4(arg1, contextStack.back().flow);
 			GET_ARG_INT4(arg2, contextStack.back().flow);
 			GET_ARG_INT4(arg3, contextStack.back().flow);
 #ifdef OUTPUT_INSTRUCTIONS
-			printf("if %d, {%d} [%d]", arg1, arg2, arg3);
+			printf("if %d, {%d} %d", arg1, arg2, arg3);
 			fflush(stdout);
 #endif
 			switch (arg1)
@@ -690,7 +690,7 @@ void CPU::doCycle(MessageHandlingResult handlingResult)
 			}
 			break;
 
-		case ifp_stp_flow:
+		case jp_stp_flow:
 			GET_ARG_INT4(arg1, contextStack.back().flow);
 			GET_ARG_INT4(arg2, contextStack.back().flow);
 			GET_ARG_INT4(arg3, contextStack.back().flow);

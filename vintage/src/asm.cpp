@@ -1303,7 +1303,7 @@ int assemble(char* code, int1* target, int4 max_target_size, int& error_line, in
 					}
 					else if (arg1_type == ARG_STACK && arg2_type == ARG_CONST)
 					{
-						if (!addInstr(target, max_target_size, mem_pos, if_stp_flow, arg_vals, 3))
+						if (!addInstr(target, max_target_size, mem_pos, jnz_stp_flow, arg_vals, 3))
 						{
 							RAISE_ERROR(ASM_NO_MEMORY)
 						}
@@ -1368,7 +1368,7 @@ int assemble(char* code, int1* target, int4 max_target_size, int& error_line, in
 					}
 					else if (arg1_type == ARG_STACK && arg2_type == ARG_CONST)
 					{
-						if (!addInstr(target, max_target_size, mem_pos, ifp_stp_flow, arg_vals, 3))
+						if (!addInstr(target, max_target_size, mem_pos, jp_stp_flow, arg_vals, 3))
 						{
 							RAISE_ERROR(ASM_NO_MEMORY)
 						}

@@ -754,7 +754,7 @@ void CPU::doCycle(MessageHandlingResult handlingResult)
 			reportToDebugger(stack, contextStack.back().stackPtr, contextStack.back().stackSize, heap, contextStack.back().heapSize, contextStack.back().flow, fsStepIn);
 			break;
 
-		case ret_stp:
+		case ret:
 #ifdef OUTPUT_INSTRUCTIONS
 			printf("ret");
 			fflush(stdout);
@@ -765,7 +765,7 @@ void CPU::doCycle(MessageHandlingResult handlingResult)
 			reportToDebugger(stack, contextStack.back().stackPtr, contextStack.back().stackSize, heap, contextStack.back().heapSize, contextStack.back().flow, fsStepOut);
 			break;
 
-		case hret_stp:
+		case hret:
 #ifdef OUTPUT_INSTRUCTIONS
 			printf("hret");
 			fflush(stdout);

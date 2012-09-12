@@ -1,7 +1,7 @@
 #ifndef INSTRUCTIONS_H_
 #define INSTRUCTIONS_H_
 
-typedef unsigned short instr_t;
+typedef short instr_t;
 
 // Integer types
 typedef signed char int1;
@@ -135,12 +135,12 @@ const instr_t call_stp			= 0x0400 + 0x7;
 // call		flow
 const instr_t call_flow			= 0x0400 + 0x8;
 // ret
-const instr_t ret_stp			= 0x0400 + 0x9;
+const instr_t ret				= 0x0400 + 0x9;
 
 // *** 0x500 group -- contexts ***
 
 // hret
-const instr_t hret_stp			= 0x0500 + 0x0;
+const instr_t hret				= 0x0500 + 0x0;
 // setcont {stp}
 const instr_t setcont_stp		= 0x0500 + 0x1;
 // setcont [{stp}]

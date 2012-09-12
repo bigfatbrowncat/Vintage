@@ -81,8 +81,8 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="1"
-     inkscape:cx="8.2468463"
-     inkscape:cy="5.5583788"
+     inkscape:cx="-40.125"
+     inkscape:cy="-28.69557"
      inkscape:current-layer="layer3"
      showgrid="false"
      inkscape:grid-bbox="true"
@@ -111,7 +111,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
+        <dc:title></dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>

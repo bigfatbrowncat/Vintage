@@ -18,21 +18,326 @@
 #define BRACE_SQUARE					2
 #define BRACE_ROUND						3
 
-#define ARG_INVALID						0
-#define ARG_CONST						1
-#define ARG_STACK						2
-#define ARG_MEMORY						3
-#define ARG_MEMORY_STACK				4
-
 #define PARSECONST_OK					0
 #define PARSECONST_INVALID_TOKEN		1
 #define PARSECONST_DIV_BY_ZERO			2
+
+#define ARG_INVALID						0
+#define ARG_NULL						0	// never meets ARG_INVALID
+#define ARG_MEMORY_STACK				1
+#define ARG_STACK						2
+#define ARG_CONST						4
+
+#define MAX_ARGUMENTS_NUMBER			8
+#define MAX_ARG_TYPE_VARIATIONS			32
+
+struct instr_argument_type_variation
+{
+	instr_t operation_code;
+	int optional_argument_type;
+	int optional_argument_default_value;
+	int argument_type_flags[MAX_ARGUMENTS_NUMBER];		// A combination of ARG_* flags
+};
+
+instr_argument_type_variation INSTR_ARGUMENT_TYPE_VARIATION_NULL = { -1, ARG_NULL, 0, {} };
+
+struct instruction_descriptor
+{
+	char* operator_string;
+	instr_argument_type_variation argument_variations[MAX_ARG_TYPE_VARIATIONS];		// A combination of ARG_* flags
+};
+
+instruction_descriptor INSTRUCTION_DESCRIPTOR_NULL = { NULL, {} };
+
+instruction_descriptor INSTR_DESCS[] =
+{
+	{
+		"nop",
+		{
+			{ nop, ARG_NULL, 0, { ARG_NULL } },
+			INSTR_ARGUMENT_TYPE_VARIATION_NULL
+		}
+	},
+	{
+		"alloc",
+		{
+			{ alloc_const, ARG_NULL, 0, { ARG_CONST, ARG_NULL } },
+			INSTR_ARGUMENT_TYPE_VARIATION_NULL
+		}
+	},
+	{
+		"free",
+		{
+			{ alloc_const, ARG_NULL, 0, { ARG_CONST, ARG_NULL } },
+			INSTR_ARGUMENT_TYPE_VARIATION_NULL
+		}
+	},
+	{
+		"mov",
+		{
+			{ mov_stp_const, ARG_CONST, 4,   { ARG_STACK,        ARG_CONST,        ARG_NULL } },
+			{ mov_stp_stp,   ARG_CONST, 4,   { ARG_STACK,        ARG_STACK,        ARG_NULL } },
+			{ mov_m_stp_stp, ARG_CONST, 4,   { ARG_MEMORY_STACK, ARG_STACK,        ARG_NULL } },
+			{ mov_stp_m_stp, ARG_CONST, 4,   { ARG_STACK,        ARG_MEMORY_STACK, ARG_NULL } },
+			INSTR_ARGUMENT_TYPE_VARIATION_NULL
+		}
+	},
+	{
+		"add",
+		{
+			{ add_stp_const, ARG_CONST, 4,   { ARG_STACK,        ARG_CONST, ARG_NULL } },
+			{ add_stp_stp,   ARG_CONST, 4,   { ARG_STACK,        ARG_STACK, ARG_NULL } },
+			INSTR_ARGUMENT_TYPE_VARIATION_NULL
+		}
+	},
+	{
+		"sub",
+		{
+			{ sub_stp_const, ARG_CONST, 4,     { ARG_STACK,        ARG_CONST, ARG_NULL } },
+			{ sub_stp_stp,   ARG_CONST, 4,     { ARG_STACK,        ARG_STACK, ARG_NULL } },
+			INSTR_ARGUMENT_TYPE_VARIATION_NULL
+		}
+	},
+	{
+		"mul",
+		{
+			{ mul_stp_const, ARG_CONST, 4,     { ARG_STACK,        ARG_CONST, ARG_NULL } },
+			{ mul_stp_stp,   ARG_CONST, 4,     { ARG_STACK,        ARG_STACK, ARG_NULL } },
+			INSTR_ARGUMENT_TYPE_VARIATION_NULL
+		}
+	},
+	{
+		"div",
+		{
+			{ div_stp_const, ARG_CONST, 4,     { ARG_STACK,        ARG_CONST, ARG_NULL } },
+			{ div_stp_stp,   ARG_CONST, 4,     { ARG_STACK,        ARG_STACK, ARG_NULL } },
+			INSTR_ARGUMENT_TYPE_VARIATION_NULL
+		}
+	},
+	{
+		"mod",
+		{
+			{ mod_stp_const, ARG_CONST, 4,     { ARG_STACK,        ARG_CONST, ARG_NULL } },
+			{ mod_stp_stp,   ARG_CONST, 4,     { ARG_STACK,        ARG_STACK, ARG_NULL } },
+			INSTR_ARGUMENT_TYPE_VARIATION_NULL
+		}
+	},
+	{
+		"not",
+		{
+			{ not_stp,       ARG_CONST, 4,     { ARG_STACK,        ARG_CONST, ARG_NULL } },
+			INSTR_ARGUMENT_TYPE_VARIATION_NULL
+		}
+	},
+	{
+		"and",
+		{
+			{ and_stp_const, ARG_CONST, 4,     { ARG_STACK,        ARG_CONST, ARG_NULL } },
+			{ and_stp_stp,   ARG_CONST, 4,     { ARG_STACK,        ARG_STACK, ARG_NULL } },
+			INSTR_ARGUMENT_TYPE_VARIATION_NULL
+		}
+	},
+	{
+		"or",
+		{
+			{ or_stp_const,  ARG_CONST, 4,    { ARG_STACK,        ARG_CONST, ARG_NULL } },
+			{ or_stp_stp,    ARG_CONST, 4,    { ARG_STACK,        ARG_STACK, ARG_NULL } },
+			INSTR_ARGUMENT_TYPE_VARIATION_NULL
+		}
+	},
+	{
+		"xor",
+		{
+			{ xor_stp_const, ARG_CONST, 4,     { ARG_STACK,        ARG_CONST, ARG_NULL } },
+			{ xor_stp_stp,   ARG_CONST, 4,     { ARG_STACK,        ARG_STACK, ARG_NULL } },
+			INSTR_ARGUMENT_TYPE_VARIATION_NULL
+		}
+	},
+	{
+		"gr",
+		{
+			{ gr_stp_const,  ARG_CONST, 4,    { ARG_STACK,        ARG_CONST, ARG_NULL } },
+			{ gr_stp_stp,    ARG_CONST, 4,    { ARG_STACK,        ARG_STACK, ARG_NULL } },
+			INSTR_ARGUMENT_TYPE_VARIATION_NULL
+		}
+	},
+	{
+		"greq",
+		{
+			{ greq_stp_const, ARG_CONST, 4,     { ARG_STACK,        ARG_CONST, ARG_NULL } },
+			{ greq_stp_stp,   ARG_CONST, 4,     { ARG_STACK,        ARG_STACK, ARG_NULL } },
+			INSTR_ARGUMENT_TYPE_VARIATION_NULL
+		}
+	},
+	{
+		"lweq",
+		{
+			{ lweq_stp_const, ARG_CONST, 4,     { ARG_STACK,        ARG_CONST, ARG_NULL } },
+			{ lweq_stp_stp,   ARG_CONST, 4,     { ARG_STACK,        ARG_STACK, ARG_NULL } },
+			INSTR_ARGUMENT_TYPE_VARIATION_NULL
+		}
+	},
+	{
+		"eq",
+		{
+			{ eq_stp_const, ARG_CONST, 4,     { ARG_STACK,        ARG_CONST, ARG_NULL } },
+			{ eq_stp_stp,   ARG_CONST, 4,     { ARG_STACK,        ARG_STACK, ARG_NULL } },
+			INSTR_ARGUMENT_TYPE_VARIATION_NULL
+		}
+	},
+	{
+		"neq",
+		{
+			{ neq_stp_const, ARG_CONST, 4,     { ARG_STACK,        ARG_CONST, ARG_NULL } },
+			{ neq_stp_stp,   ARG_CONST, 4,     { ARG_STACK,        ARG_STACK, ARG_NULL } },
+			INSTR_ARGUMENT_TYPE_VARIATION_NULL
+		}
+	},
+	{
+		"jz",
+		{
+			{ jz_stp_flow, ARG_CONST, 4,     { ARG_STACK,        ARG_CONST, ARG_NULL } },
+			INSTR_ARGUMENT_TYPE_VARIATION_NULL
+		}
+	},
+	{
+		"jnz",
+		{
+			{ jnz_stp_flow, ARG_CONST, 4,     { ARG_STACK,        ARG_CONST, ARG_NULL } },
+			INSTR_ARGUMENT_TYPE_VARIATION_NULL
+		}
+	},
+	{
+		"jp",
+		{
+			{ jp_stp_flow, ARG_CONST, 4,     { ARG_STACK,        ARG_CONST, ARG_NULL } },
+			INSTR_ARGUMENT_TYPE_VARIATION_NULL
+		}
+	},
+	{
+		"jnp",
+		{
+			{ jnp_stp_flow, ARG_CONST, 4,     { ARG_STACK,        ARG_CONST, ARG_NULL } },
+			INSTR_ARGUMENT_TYPE_VARIATION_NULL
+		}
+	},
+	{
+		"jn",
+		{
+			{ jn_stp_flow, ARG_CONST, 4,     { ARG_STACK,        ARG_CONST, ARG_NULL } },
+			INSTR_ARGUMENT_TYPE_VARIATION_NULL
+		}
+	},
+	{
+		"jnn",
+		{
+			{ jnn_stp_flow, ARG_CONST, 4,     { ARG_STACK,        ARG_CONST, ARG_NULL } },
+			INSTR_ARGUMENT_TYPE_VARIATION_NULL
+		}
+	},
+	{
+		"jmp",
+		{
+			{ jmp_flow,    ARG_NULL, 0,     { ARG_CONST,      ARG_NULL } },
+			INSTR_ARGUMENT_TYPE_VARIATION_NULL
+		}
+	},
+	{
+		"call",
+		{
+			{ call_stp,    ARG_NULL, 0,      { ARG_STACK,      ARG_NULL } },
+			{ call_flow,   ARG_NULL, 0,      { ARG_CONST,      ARG_NULL } },
+			INSTR_ARGUMENT_TYPE_VARIATION_NULL
+		}
+	},
+	{
+		"ret",
+		{
+			{ ret,         ARG_NULL, 0,  { ARG_NULL } },
+			INSTR_ARGUMENT_TYPE_VARIATION_NULL
+		}
+	},
+	{
+		"hret",
+		{
+			{ hret,        ARG_NULL, 0,   { ARG_NULL } },
+			INSTR_ARGUMENT_TYPE_VARIATION_NULL
+		}
+	},
+	{
+		"setcont_stp",
+		{
+			{ setcont_stp,   ARG_NULL, 0,        { ARG_STACK, ARG_NULL } },
+			INSTR_ARGUMENT_TYPE_VARIATION_NULL
+		}
+	},
+	{
+		"setcont_m_stp",
+		{
+			{ setcont_m_stp, ARG_NULL, 0,          { ARG_MEMORY_STACK, ARG_NULL } },
+			INSTR_ARGUMENT_TYPE_VARIATION_NULL
+		}
+	},
+	{
+		"getcont_stp",
+		{
+			{ getcont_stp,   ARG_NULL, 0,        { ARG_STACK, ARG_NULL } },
+			INSTR_ARGUMENT_TYPE_VARIATION_NULL
+		}
+	},
+	{
+		"getcont_m_stp",
+		{
+			{ getcont_m_stp, ARG_NULL, 0,          { ARG_MEMORY_STACK, ARG_NULL } },
+			INSTR_ARGUMENT_TYPE_VARIATION_NULL
+		}
+	},
+	{
+		"out_const",
+		{
+			{ out_const,     ARG_NULL, 0,      { ARG_CONST, ARG_NULL } },
+			INSTR_ARGUMENT_TYPE_VARIATION_NULL
+		}
+	},
+	{
+		"out_stp",
+		{
+			{ out_stp,       ARG_NULL, 0,    { ARG_STACK, ARG_NULL } },
+			INSTR_ARGUMENT_TYPE_VARIATION_NULL
+		}
+	},
+	INSTRUCTION_DESCRIPTOR_NULL
+};
 
 bool isLetter(char);
 bool isDigit(char);
 bool toDefint(char* str, int4& res);
 
 typedef chain<int4> id_pair;
+
+int find_instruction_descriptor(char* operator_string)
+{
+	int instruction_descriptor_index = -1;
+	for (int i = 0; INSTR_DESCS[i].operator_string != NULL; i++)
+	{
+		if (areEqual(operator_string, INSTR_DESCS[i].operator_string))
+		{
+			instruction_descriptor_index = i;
+			break;
+		}
+	}
+	return instruction_descriptor_index;
+}
+
+int count_arguments_in_variation_no_optional(instr_argument_type_variation var)
+{
+	int cnt = 0;
+	while (var.argument_type_flags[cnt] != ARG_NULL)
+	{
+		cnt++;
+	}
+	return cnt;
+}
 
 int parseConst(char* arg, int4& value, id_pair* labels)
 {
@@ -131,12 +436,6 @@ int parseArg(int pass, char* arg, int4& value, id_pair* labels)
 	{
 		braces = 2;
 		tpe = ARG_MEMORY_STACK;
-	}
-	else if (len > 1 && arg[0] == '[' && arg[len - 1] == ']')
-	{
-		braces = 1;
-		tpe = ARG_MEMORY;
-
 	}
 	else if (len > 1 && arg[0] == '{' && arg[len - 1] == '}')
 	{
@@ -488,138 +787,111 @@ int assemble(char* code, int1* target, int4 max_target_size, int& error_line, in
 
 			// Generating the code
 
+
+
 			if (tokens_num > instr_start)	// If there is an instruction
 			{
-				if (areEqual(tokens[instr_start], "nop"))
+				int instruction_descriptor_index = find_instruction_descriptor(tokens[instr_start]);
+				if (instruction_descriptor_index > -1)
 				{
-					if (tokens_num > instr_start + 1)
+					// Checking for commas
+					for (int i = instr_start + 2; i < tokens_num; i += 2)
 					{
-						RAISE_L_ERROR(ASM_UNEXPECTED_IDENTIFIER)
-					}
-					if (!addInstr(target, max_target_size, mem_pos, nop, NULL, 0))
-					{
-						RAISE_L_ERROR(ASM_NO_MEMORY)
-					}
-				}
-				else if (areEqual(tokens[instr_start], "alloc"))
-				{
-					if (tokens_num > instr_start + 2)
-					{
-						RAISE_L_ERROR(ASM_UNEXPECTED_IDENTIFIER)
-					}
-					int4 alloc_arg = 0;
-					if (!toDefint(tokens[instr_start + 1], alloc_arg))
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARG_TYPE_CONST_WANTED)
-					}
-
-					if (!addInstr(target, max_target_size, mem_pos, alloc_const, &alloc_arg, 1))
-					{
-						RAISE_L_ERROR(ASM_NO_MEMORY)
-					}
-				}
-				else if (areEqual(tokens[instr_start], "free"))
-				{
-					if (tokens_num > instr_start + 2)
-					{
-						RAISE_L_ERROR(ASM_UNEXPECTED_IDENTIFIER)
-					}
-					int4 free_arg = 0;
-					if (!toDefint(tokens[instr_start + 1], free_arg))
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARG_TYPE_CONST_WANTED)
-					}
-
-					if (!addInstr(target, max_target_size, mem_pos, free_const, &free_arg, 1))
-					{
-						RAISE_L_ERROR(ASM_NO_MEMORY)
-					}
-				}
-				else if (areEqual(tokens[instr_start], "mov"))
-				{
-					int4 arg_vals[3];
-					arg_vals[0] = 4;		// default size in bytes
-
-					int arg1_type;
-					int arg2_type;
-
-					if (tokens_num == instr_start + 6)
-					{
-						int arg0_type = parseArg(pass, tokens[instr_start + 1], arg_vals[0], labels);
-						arg1_type = parseArg(pass, tokens[instr_start + 3], arg_vals[1], labels);
-						arg2_type = parseArg(pass, tokens[instr_start + 5], arg_vals[2], labels);
-
-						if (arg0_type != ARG_CONST)
-						{
-							RAISE_L_ERROR(ASM_INCORRECT_ARG_TYPE_CONST_WANTED)
-						}
-
-						if (!areEqual(tokens[instr_start + 2], ","))
-						{
-							RAISE_L_ERROR(ASM_MISSING_COMMA)
-						}
-
-						if (!areEqual(tokens[instr_start + 4], ","))
-						{
-							RAISE_L_ERROR(ASM_MISSING_COMMA)
-						}
-
-					}
-					else if (tokens_num == instr_start + 4)
-					{
-						arg1_type = parseArg(pass, tokens[instr_start + 1], arg_vals[1], labels);
-						arg2_type = parseArg(pass, tokens[instr_start + 3], arg_vals[2], labels);
-
-						if (!areEqual(tokens[instr_start + 2], ","))
+						if (!areEqual(tokens[i], ","))
 						{
 							RAISE_L_ERROR(ASM_MISSING_COMMA)
 						}
 					}
-					else
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENTS_NUMBER)
-					}
 
-
-					if (arg1_type == ARG_INVALID || arg2_type == ARG_INVALID)
+					if (((tokens_num - 1) - instr_start) % 2 != 1)
 					{
 						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT)
 					}
-					else if (arg1_type == ARG_STACK && arg2_type == ARG_STACK)
+					int param_tokens_number = ((tokens_num - 1) - instr_start) / 2 + 1;
+
+					// Getting the actual parameter types and values
+					int4 arg_vals[param_tokens_number + 1];		// this "1" is for the optional argument
+					int4 arg_types[param_tokens_number + 1];
+
+					for (int k = 0; k < param_tokens_number; k++)
 					{
-						if (!addInstr(target, max_target_size, mem_pos, mov_stp_stp, arg_vals, 3))
+						arg_types[k] = parseArg(pass, tokens[instr_start + 1 + 2 * k], arg_vals[k], labels);
+					}
+
+					// Trying to map this into any operator variation
+					int applied_variation_index = -1;
+
+					for (int var_index = 0;
+					     INSTR_DESCS[instruction_descriptor_index].argument_variations[var_index].operation_code != -1;
+					     var_index++)
+					{
+						instr_argument_type_variation cur_var = INSTR_DESCS[instruction_descriptor_index].argument_variations[var_index];
+						bool applicable = true;
+						bool with_optional = false;
+
+						if (count_arguments_in_variation_no_optional(cur_var) == param_tokens_number)
 						{
-							RAISE_ERROR(ASM_NO_MEMORY)
+							// Checking the types
+							for (int i = 0; i < param_tokens_number; i++)
+							{
+								if (cur_var.argument_type_flags[i] != arg_types[i])
+								{
+									applicable = false;
+									break;
+								}
+							}
+						}
+
+						if (!applicable &&
+						    count_arguments_in_variation_no_optional(cur_var) + 1 == param_tokens_number &&
+						    cur_var.optional_argument_type == arg_types[0])
+						{
+							// Trying again including the optional argument
+							applicable = true;
+							with_optional = true;
+
+							// Checking the types
+							for (int i = 1; i < param_tokens_number; i++)
+							{
+								if (cur_var.argument_type_flags[i - 1] != arg_types[i])
+								{
+									applicable = false;
+									break;
+								}
+							}
+						}
+
+						if (applicable)
+						{
+							// We've found it! Now let's generate the code.
+							if (cur_var.optional_argument_type != ARG_NULL && !with_optional)
+							{
+								// Adding the default value as the first argument
+								for (int i = param_tokens_number; i > 0; i--)
+								{
+									arg_vals[i] = arg_vals[i - 1];
+									arg_types[i] = arg_types[i - 1];
+								}
+								arg_types[0] = cur_var.optional_argument_type;
+								arg_vals[0] = cur_var.optional_argument_default_value;
+								param_tokens_number++;	// one extra argument added
+							}
+
+							addInstr(target, max_target_size, mem_pos, cur_var.operation_code, arg_vals, param_tokens_number);
+
+							applied_variation_index = var_index;
+							break;
 						}
 					}
-					else if (arg1_type == ARG_STACK && arg2_type == ARG_CONST)
+
+					if (applied_variation_index == -1)
 					{
-						if (!addInstr(target, max_target_size, mem_pos, mov_stp_const, arg_vals, 3))
-						{
-							RAISE_ERROR(ASM_NO_MEMORY)
-						}
-					}
-					else if (arg1_type == ARG_MEMORY_STACK && arg2_type == ARG_STACK)
-					{
-						if (!addInstr(target, max_target_size, mem_pos, mov_m_stp_stp, arg_vals, 3))
-						{
-							RAISE_ERROR(ASM_NO_MEMORY)
-						}
-					}
-					else if (arg1_type == ARG_STACK && arg2_type == ARG_MEMORY_STACK)
-					{
-						if (!addInstr(target, max_target_size, mem_pos, mov_stp_m_stp, arg_vals, 3))
-						{
-							RAISE_ERROR(ASM_NO_MEMORY)
-						}
-					}
-					else
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT_TYPE)
+						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT)
 					}
 
 				}
-				else if (areEqual(tokens[instr_start], "add"))
+
+				/*if (areEqual(tokens[instr_start], "add"))
 				{
 					int4 arg_vals[3];
 					arg_vals[0] = 4;		// default size in bytes
@@ -689,976 +961,7 @@ int assemble(char* code, int1* target, int4 max_target_size, int& error_line, in
 					{
 						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT_TYPE)
 					}
-				}
-				else if (areEqual(tokens[instr_start], "sub"))
-				{
-					int4 arg_vals[3];
-					arg_vals[0] = 4;		// default size in bytes
-
-					int arg1_type;
-					int arg2_type;
-					int argnum;
-
-					if (tokens_num == instr_start + 6)
-					{
-						int arg0_type = parseArg(pass, tokens[instr_start + 1], arg_vals[0], labels);
-						arg1_type = parseArg(pass, tokens[instr_start + 3], arg_vals[1], labels);
-						arg2_type = parseArg(pass, tokens[instr_start + 5], arg_vals[2], labels);
-
-						if (arg0_type != ARG_CONST)
-						{
-							RAISE_L_ERROR(ASM_INCORRECT_ARG_TYPE_CONST_WANTED)
-						}
-
-						if (!areEqual(tokens[instr_start + 2], ","))
-						{
-							RAISE_L_ERROR(ASM_MISSING_COMMA)
-						}
-
-						if (!areEqual(tokens[instr_start + 4], ","))
-						{
-							RAISE_L_ERROR(ASM_MISSING_COMMA)
-						}
-
-						argnum = 3;
-					}
-					else if (tokens_num == instr_start + 4)
-					{
-						arg1_type = parseArg(pass, tokens[instr_start + 1], arg_vals[1], labels);
-						arg2_type = parseArg(pass, tokens[instr_start + 3], arg_vals[2], labels);
-
-						if (!areEqual(tokens[instr_start + 2], ","))
-						{
-							RAISE_L_ERROR(ASM_MISSING_COMMA)
-						}
-						argnum = 2;
-					}
-					else
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENTS_NUMBER)
-					}
-
-
-					if (arg1_type == ARG_INVALID || arg2_type == ARG_INVALID)
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT)
-					}
-					else if (arg1_type == ARG_STACK && arg2_type == ARG_STACK)
-					{
-						if (!addInstr(target, max_target_size, mem_pos, sub_stp_stp, arg_vals, 3))
-						{
-							RAISE_ERROR(ASM_NO_MEMORY)
-						}
-					}
-					else if (arg1_type == ARG_STACK && arg2_type == ARG_CONST)
-					{
-						if (!addInstr(target, max_target_size, mem_pos, sub_stp_const, arg_vals, 3))
-						{
-							RAISE_ERROR(ASM_NO_MEMORY)
-						}
-					}
-					else
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT_TYPE)
-					}
-				}
-				else if (areEqual(tokens[instr_start], "mul"))
-				{
-					int4 arg_vals[3];
-					arg_vals[0] = 4;		// default size in bytes
-
-					int arg1_type;
-					int arg2_type;
-					int argnum;
-
-					if (tokens_num == instr_start + 6)
-					{
-						int arg0_type = parseArg(pass, tokens[instr_start + 1], arg_vals[0], labels);
-						arg1_type = parseArg(pass, tokens[instr_start + 3], arg_vals[1], labels);
-						arg2_type = parseArg(pass, tokens[instr_start + 5], arg_vals[2], labels);
-
-						if (arg0_type != ARG_CONST)
-						{
-							RAISE_L_ERROR(ASM_INCORRECT_ARG_TYPE_CONST_WANTED)
-						}
-
-						if (!areEqual(tokens[instr_start + 2], ","))
-						{
-							RAISE_L_ERROR(ASM_MISSING_COMMA)
-						}
-
-						if (!areEqual(tokens[instr_start + 4], ","))
-						{
-							RAISE_L_ERROR(ASM_MISSING_COMMA)
-						}
-
-						argnum = 3;
-					}
-					else if (tokens_num == instr_start + 4)
-					{
-						arg1_type = parseArg(pass, tokens[instr_start + 1], arg_vals[1], labels);
-						arg2_type = parseArg(pass, tokens[instr_start + 3], arg_vals[2], labels);
-
-						if (!areEqual(tokens[instr_start + 2], ","))
-						{
-							RAISE_L_ERROR(ASM_MISSING_COMMA)
-						}
-						argnum = 2;
-					}
-					else
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENTS_NUMBER)
-					}
-
-
-					if (arg1_type == ARG_INVALID || arg2_type == ARG_INVALID)
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT)
-					}
-					else if (arg1_type == ARG_STACK && arg2_type == ARG_STACK)
-					{
-						if (!addInstr(target, max_target_size, mem_pos, mul_stp_stp, arg_vals, 2))
-						{
-							RAISE_ERROR(ASM_NO_MEMORY)
-						}
-					}
-					else if (arg1_type == ARG_STACK && arg2_type == ARG_CONST)
-					{
-						if (!addInstr(target, max_target_size, mem_pos, mul_stp_const, arg_vals, 2))
-						{
-							RAISE_ERROR(ASM_NO_MEMORY)
-						}
-					}
-					else
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT_TYPE)
-					}
-				}
-				else if (areEqual(tokens[instr_start], "div"))
-				{
-					int4 arg_vals[3];
-					arg_vals[0] = 4;		// default size in bytes
-
-					int arg1_type;
-					int arg2_type;
-					int argnum;
-
-					if (tokens_num == instr_start + 6)
-					{
-						int arg0_type = parseArg(pass, tokens[instr_start + 1], arg_vals[0], labels);
-						arg1_type = parseArg(pass, tokens[instr_start + 3], arg_vals[1], labels);
-						arg2_type = parseArg(pass, tokens[instr_start + 5], arg_vals[2], labels);
-
-						if (arg0_type != ARG_CONST)
-						{
-							RAISE_L_ERROR(ASM_INCORRECT_ARG_TYPE_CONST_WANTED)
-						}
-
-						if (!areEqual(tokens[instr_start + 2], ","))
-						{
-							RAISE_L_ERROR(ASM_MISSING_COMMA)
-						}
-
-						if (!areEqual(tokens[instr_start + 4], ","))
-						{
-							RAISE_L_ERROR(ASM_MISSING_COMMA)
-						}
-
-						argnum = 3;
-					}
-					else if (tokens_num == instr_start + 4)
-					{
-						arg1_type = parseArg(pass, tokens[instr_start + 1], arg_vals[1], labels);
-						arg2_type = parseArg(pass, tokens[instr_start + 3], arg_vals[2], labels);
-
-						if (!areEqual(tokens[instr_start + 2], ","))
-						{
-							RAISE_L_ERROR(ASM_MISSING_COMMA)
-						}
-						argnum = 2;
-					}
-					else
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENTS_NUMBER)
-					}
-
-
-					if (arg1_type == ARG_INVALID || arg2_type == ARG_INVALID)
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT)
-					}
-					else if (arg1_type == ARG_STACK && arg2_type == ARG_STACK)
-					{
-						if (!addInstr(target, max_target_size, mem_pos, div_stp_stp, arg_vals, 3))
-						{
-							RAISE_ERROR(ASM_NO_MEMORY)
-						}
-					}
-					else if (arg1_type == ARG_STACK && arg2_type == ARG_CONST)
-					{
-						if (!addInstr(target, max_target_size, mem_pos, div_stp_const, arg_vals, 3))
-						{
-							RAISE_ERROR(ASM_NO_MEMORY)
-						}
-					}
-					else
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT_TYPE)
-					}
-				}
-				else if (areEqual(tokens[instr_start], "mod"))
-				{
-					int4 arg_vals[3];
-					arg_vals[0] = 4;		// default size in bytes
-
-					int arg1_type;
-					int arg2_type;
-					int argnum;
-
-					if (tokens_num == instr_start + 6)
-					{
-						int arg0_type = parseArg(pass, tokens[instr_start + 1], arg_vals[0], labels);
-						arg1_type = parseArg(pass, tokens[instr_start + 3], arg_vals[1], labels);
-						arg2_type = parseArg(pass, tokens[instr_start + 5], arg_vals[2], labels);
-
-						if (arg0_type != ARG_CONST)
-						{
-							RAISE_L_ERROR(ASM_INCORRECT_ARG_TYPE_CONST_WANTED)
-						}
-
-						if (!areEqual(tokens[instr_start + 2], ","))
-						{
-							RAISE_L_ERROR(ASM_MISSING_COMMA)
-						}
-
-						if (!areEqual(tokens[instr_start + 4], ","))
-						{
-							RAISE_L_ERROR(ASM_MISSING_COMMA)
-						}
-
-						argnum = 3;
-					}
-					else if (tokens_num == instr_start + 4)
-					{
-						arg1_type = parseArg(pass, tokens[instr_start + 1], arg_vals[1], labels);
-						arg2_type = parseArg(pass, tokens[instr_start + 3], arg_vals[2], labels);
-
-						if (!areEqual(tokens[instr_start + 2], ","))
-						{
-							RAISE_L_ERROR(ASM_MISSING_COMMA)
-						}
-						argnum = 2;
-					}
-					else
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENTS_NUMBER)
-					}
-
-
-					if (arg1_type == ARG_INVALID || arg2_type == ARG_INVALID)
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT)
-					}
-					else if (arg1_type == ARG_STACK && arg2_type == ARG_STACK)
-					{
-						if (!addInstr(target, max_target_size, mem_pos, mod_stp_stp, arg_vals, 3))
-						{
-							RAISE_ERROR(ASM_NO_MEMORY)
-						}
-					}
-					else if (arg1_type == ARG_STACK && arg2_type == ARG_CONST)
-					{
-						if (!addInstr(target, max_target_size, mem_pos, mod_stp_const, arg_vals, 3))
-						{
-							RAISE_ERROR(ASM_NO_MEMORY)
-						}
-					}
-					else
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT_TYPE)
-					}
-				}
-				else if (areEqual(tokens[instr_start], "not"))
-				{
-					int4 arg_vals[2];
-					arg_vals[0] = 4;		// default size in bytes
-
-					int arg1_type;
-					int argnum;
-
-					if (tokens_num == instr_start + 4)
-					{
-						int arg0_type = parseArg(pass, tokens[instr_start + 1], arg_vals[0], labels);
-						arg1_type = parseArg(pass, tokens[instr_start + 3], arg_vals[1], labels);
-
-						if (arg0_type != ARG_CONST)
-						{
-							RAISE_L_ERROR(ASM_INCORRECT_ARG_TYPE_CONST_WANTED)
-						}
-
-						if (!areEqual(tokens[instr_start + 2], ","))
-						{
-							RAISE_L_ERROR(ASM_MISSING_COMMA)
-						}
-
-						argnum = 2;
-					}
-					else if (tokens_num == instr_start + 2)
-					{
-						arg1_type = parseArg(pass, tokens[instr_start + 1], arg_vals[1], labels);
-
-						argnum = 1;
-					}
-					else
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENTS_NUMBER)
-					}
-
-
-					if (arg1_type == ARG_INVALID)
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT)
-					}
-					else if (arg1_type == ARG_STACK)
-					{
-						if (!addInstr(target, max_target_size, mem_pos, not_stp, arg_vals, 2))
-						{
-							RAISE_ERROR(ASM_NO_MEMORY)
-						}
-					}
-					else
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT_TYPE)
-					}
-				}
-				else if (areEqual(tokens[instr_start], "and"))
-				{
-					int4 arg_vals[3];
-					arg_vals[0] = 4;		// default size in bytes
-
-					int arg1_type;
-					int arg2_type;
-					int argnum;
-
-					if (tokens_num == instr_start + 6)
-					{
-						int arg0_type = parseArg(pass, tokens[instr_start + 1], arg_vals[0], labels);
-						arg1_type = parseArg(pass, tokens[instr_start + 3], arg_vals[1], labels);
-						arg2_type = parseArg(pass, tokens[instr_start + 5], arg_vals[2], labels);
-
-						if (arg0_type != ARG_CONST)
-						{
-							RAISE_L_ERROR(ASM_INCORRECT_ARG_TYPE_CONST_WANTED)
-						}
-
-						if (!areEqual(tokens[instr_start + 2], ","))
-						{
-							RAISE_L_ERROR(ASM_MISSING_COMMA)
-						}
-
-						if (!areEqual(tokens[instr_start + 4], ","))
-						{
-							RAISE_L_ERROR(ASM_MISSING_COMMA)
-						}
-
-						argnum = 3;
-					}
-					else if (tokens_num == instr_start + 4)
-					{
-						arg1_type = parseArg(pass, tokens[instr_start + 1], arg_vals[1], labels);
-						arg2_type = parseArg(pass, tokens[instr_start + 3], arg_vals[2], labels);
-
-						if (!areEqual(tokens[instr_start + 2], ","))
-						{
-							RAISE_L_ERROR(ASM_MISSING_COMMA)
-						}
-						argnum = 2;
-					}
-					else
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENTS_NUMBER)
-					}
-
-
-					if (arg1_type == ARG_INVALID || arg2_type == ARG_INVALID)
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT)
-					}
-					else if (arg1_type == ARG_STACK && arg2_type == ARG_STACK)
-					{
-						if (!addInstr(target, max_target_size, mem_pos, and_stp_stp, arg_vals, 3))
-						{
-							RAISE_ERROR(ASM_NO_MEMORY)
-						}
-					}
-					else if (arg1_type == ARG_STACK && arg2_type == ARG_CONST)
-					{
-						if (!addInstr(target, max_target_size, mem_pos, and_stp_const, arg_vals, 3))
-						{
-							RAISE_ERROR(ASM_NO_MEMORY)
-						}
-					}
-					else
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT_TYPE)
-					}
-				}
-				else if (areEqual(tokens[instr_start], "or"))
-				{
-					int4 arg_vals[3];
-					arg_vals[0] = 4;		// default size in bytes
-
-					int arg1_type;
-					int arg2_type;
-					int argnum;
-
-					if (tokens_num == instr_start + 6)
-					{
-						int arg0_type = parseArg(pass, tokens[instr_start + 1], arg_vals[0], labels);
-						arg1_type = parseArg(pass, tokens[instr_start + 3], arg_vals[1], labels);
-						arg2_type = parseArg(pass, tokens[instr_start + 5], arg_vals[2], labels);
-
-						if (arg0_type != ARG_CONST)
-						{
-							RAISE_L_ERROR(ASM_INCORRECT_ARG_TYPE_CONST_WANTED)
-						}
-
-						if (!areEqual(tokens[instr_start + 2], ","))
-						{
-							RAISE_L_ERROR(ASM_MISSING_COMMA)
-						}
-
-						if (!areEqual(tokens[instr_start + 4], ","))
-						{
-							RAISE_L_ERROR(ASM_MISSING_COMMA)
-						}
-
-						argnum = 3;
-					}
-					else if (tokens_num == instr_start + 4)
-					{
-						arg1_type = parseArg(pass, tokens[instr_start + 1], arg_vals[1], labels);
-						arg2_type = parseArg(pass, tokens[instr_start + 3], arg_vals[2], labels);
-
-						if (!areEqual(tokens[instr_start + 2], ","))
-						{
-							RAISE_L_ERROR(ASM_MISSING_COMMA)
-						}
-						argnum = 2;
-					}
-					else
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENTS_NUMBER)
-					}
-
-
-					if (arg1_type == ARG_INVALID || arg2_type == ARG_INVALID)
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT)
-					}
-					else if (arg1_type == ARG_STACK && arg2_type == ARG_STACK)
-					{
-						if (!addInstr(target, max_target_size, mem_pos, or_stp_stp, arg_vals, 3))
-						{
-							RAISE_ERROR(ASM_NO_MEMORY)
-						}
-					}
-					else if (arg1_type == ARG_STACK && arg2_type == ARG_CONST)
-					{
-						if (!addInstr(target, max_target_size, mem_pos, or_stp_const, arg_vals, 3))
-						{
-							RAISE_ERROR(ASM_NO_MEMORY)
-						}
-					}
-					else
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT_TYPE)
-					}
-				}
-				else if (areEqual(tokens[instr_start], "xor"))
-				{
-					int4 arg_vals[3];
-					arg_vals[0] = 4;		// default size in bytes
-
-					int arg1_type;
-					int arg2_type;
-
-					if (tokens_num == instr_start + 6)
-					{
-						int arg0_type = parseArg(pass, tokens[instr_start + 1], arg_vals[0], labels);
-						arg1_type = parseArg(pass, tokens[instr_start + 3], arg_vals[1], labels);
-						arg2_type = parseArg(pass, tokens[instr_start + 5], arg_vals[2], labels);
-
-						if (arg0_type != ARG_CONST)
-						{
-							RAISE_L_ERROR(ASM_INCORRECT_ARG_TYPE_CONST_WANTED)
-						}
-
-						if (arg1_type != ARG_CONST)
-						{
-							RAISE_L_ERROR(ASM_INCORRECT_ARG_TYPE_CONST_WANTED)
-						}
-
-						if (!areEqual(tokens[instr_start + 2], ","))
-						{
-							RAISE_L_ERROR(ASM_MISSING_COMMA)
-						}
-
-						if (!areEqual(tokens[instr_start + 4], ","))
-						{
-							RAISE_L_ERROR(ASM_MISSING_COMMA)
-						}
-
-					}
-					else if (tokens_num == instr_start + 4)
-					{
-						arg1_type = parseArg(pass, tokens[instr_start + 1], arg_vals[1], labels);
-						arg2_type = parseArg(pass, tokens[instr_start + 3], arg_vals[2], labels);
-
-						if (!areEqual(tokens[instr_start + 2], ","))
-						{
-							RAISE_L_ERROR(ASM_MISSING_COMMA)
-						}
-					}
-					else
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENTS_NUMBER)
-					}
-
-
-					if (arg1_type == ARG_INVALID || arg2_type == ARG_INVALID)
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT)
-					}
-					else if (arg1_type == ARG_STACK && arg2_type == ARG_STACK)
-					{
-						if (!addInstr(target, max_target_size, mem_pos, xor_stp_stp, arg_vals, 3))
-						{
-							RAISE_ERROR(ASM_NO_MEMORY)
-						}
-					}
-					else if (arg1_type == ARG_STACK && arg2_type == ARG_CONST)
-					{
-						if (!addInstr(target, max_target_size, mem_pos, xor_stp_const, arg_vals, 3))
-						{
-							RAISE_ERROR(ASM_NO_MEMORY)
-						}
-					}
-					else
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT_TYPE)
-					}
-				}
-				else if (areEqual(tokens[instr_start], "if"))
-				{
-					int4 arg_vals[3];
-					arg_vals[0] = 4;		// default size in bytes
-
-					int arg1_type;
-					int arg2_type;
-					int argnum;
-
-					if (tokens_num == instr_start + 6)
-					{
-						int arg0_type = parseArg(pass, tokens[instr_start + 1], arg_vals[0], labels);
-						arg1_type = parseArg(pass, tokens[instr_start + 3], arg_vals[1], labels);
-						arg2_type = parseArg(pass, tokens[instr_start + 5], arg_vals[2], labels);
-
-						if (arg0_type != ARG_CONST)
-						{
-							RAISE_L_ERROR(ASM_INCORRECT_ARG_TYPE_CONST_WANTED)
-						}
-
-						if (!areEqual(tokens[instr_start + 2], ","))
-						{
-							RAISE_L_ERROR(ASM_MISSING_COMMA)
-						}
-
-						if (!areEqual(tokens[instr_start + 4], ","))
-						{
-							RAISE_L_ERROR(ASM_MISSING_COMMA)
-						}
-
-						argnum = 3;
-					}
-					else if (tokens_num == instr_start + 4)
-					{
-						arg1_type = parseArg(pass, tokens[instr_start + 1], arg_vals[1], labels);
-						arg2_type = parseArg(pass, tokens[instr_start + 3], arg_vals[2], labels);
-
-						if (!areEqual(tokens[instr_start + 2], ","))
-						{
-							RAISE_L_ERROR(ASM_MISSING_COMMA)
-						}
-						argnum = 2;
-					}
-					else
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENTS_NUMBER)
-					}
-
-					if (arg1_type == ARG_INVALID || arg2_type == ARG_INVALID)
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT)
-					}
-					else if (arg1_type == ARG_STACK && arg2_type == ARG_CONST)
-					{
-						if (!addInstr(target, max_target_size, mem_pos, jnz_stp_flow, arg_vals, 3))
-						{
-							RAISE_ERROR(ASM_NO_MEMORY)
-						}
-					}
-					else
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT_TYPE)
-					}
-				}
-				else if (areEqual(tokens[instr_start], "ifp"))
-				{
-					int4 arg_vals[3];
-					arg_vals[0] = 4;		// default size in bytes
-
-					int arg1_type;
-					int arg2_type;
-					int argnum;
-
-					if (tokens_num == instr_start + 6)
-					{
-						int arg0_type = parseArg(pass, tokens[instr_start + 1], arg_vals[0], labels);
-						arg1_type = parseArg(pass, tokens[instr_start + 3], arg_vals[1], labels);
-						arg2_type = parseArg(pass, tokens[instr_start + 5], arg_vals[2], labels);
-
-						if (arg0_type != ARG_CONST)
-						{
-							RAISE_L_ERROR(ASM_INCORRECT_ARG_TYPE_CONST_WANTED)
-						}
-
-						if (!areEqual(tokens[instr_start + 2], ","))
-						{
-							RAISE_L_ERROR(ASM_MISSING_COMMA)
-						}
-
-						if (!areEqual(tokens[instr_start + 4], ","))
-						{
-							RAISE_L_ERROR(ASM_MISSING_COMMA)
-						}
-
-						argnum = 3;
-					}
-					else if (tokens_num == instr_start + 4)
-					{
-						arg1_type = parseArg(pass, tokens[instr_start + 1], arg_vals[1], labels);
-						arg2_type = parseArg(pass, tokens[instr_start + 3], arg_vals[2], labels);
-
-						if (!areEqual(tokens[instr_start + 2], ","))
-						{
-							RAISE_L_ERROR(ASM_MISSING_COMMA)
-						}
-						argnum = 2;
-					}
-					else
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENTS_NUMBER)
-					}
-
-
-					if (arg1_type == ARG_INVALID || arg2_type == ARG_INVALID)
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT)
-					}
-					else if (arg1_type == ARG_STACK && arg2_type == ARG_CONST)
-					{
-						if (!addInstr(target, max_target_size, mem_pos, jp_stp_flow, arg_vals, 3))
-						{
-							RAISE_ERROR(ASM_NO_MEMORY)
-						}
-					}
-					else
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT_TYPE)
-					}
-				}
-				/*
-				else if (areEqual(tokens[instr_start], "regin"))
-				{
-					int4 arg_vals[2];
-
-					int arg1_type;
-					int arg2_type;
-
-					if (tokens_num == instr_start + 4)
-					{
-						arg1_type = parseArg(pass, tokens[instr_start + 1], arg_vals[0], labels);
-						arg2_type = parseArg(pass, tokens[instr_start + 3], arg_vals[1], labels);
-
-						if (!areEqual(tokens[instr_start + 2], ","))
-						{
-							RAISE_L_ERROR(ASM_MISSING_COMMA)
-						}
-
-					}
-					else
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENTS_NUMBER)
-					}
-
-
-					if (arg1_type == ARG_INVALID || arg2_type == ARG_INVALID)
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT)
-					}
-					else if (arg1_type == ARG_CONST && arg2_type == ARG_STACK)
-					{
-						if (!addInstr(target, max_target_size, mem_pos, regin_const_stp, arg_vals, 2))
-						{
-							RAISE_ERROR(ASM_NO_MEMORY)
-						}
-					}
-					else
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT_TYPE)
-					}
-				}
-				else if (areEqual(tokens[instr_start], "uregin"))
-				{
-					if (tokens_num != instr_start + 2)
-					{
-						RAISE_L_ERROR(ASM_UNEXPECTED_IDENTIFIER)
-					}
-
-					int4 arg_vals[1];
-
-					int arg1_type = parseArg(pass, tokens[instr_start + 1], arg_vals[0], labels);
-
-					if (arg1_type == ARG_INVALID)
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT)
-					}
-					else if (arg1_type == ARG_CONST)
-					{
-						if (!addInstr(target, max_target_size, mem_pos, uregin_const, arg_vals, 1))
-						{
-							RAISE_ERROR(ASM_NO_MEMORY)
-						}
-					}
-					else
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT_TYPE)
-					}
 				}*/
-				else if (areEqual(tokens[instr_start], "call"))
-				{
-					if (tokens_num > instr_start + 2)
-					{
-						RAISE_L_ERROR(ASM_UNEXPECTED_IDENTIFIER)
-					}
-
-					int4 arg_vals[1];
-
-					int arg1_type = parseArg(pass, tokens[instr_start + 1], arg_vals[0], labels);
-
-					if (arg1_type == ARG_INVALID)
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT)
-					}
-					else if (arg1_type == ARG_STACK)
-					{
-						if (!addInstr(target, max_target_size, mem_pos, call_stp, arg_vals, 1))
-						{
-							RAISE_ERROR(ASM_NO_MEMORY)
-						}
-					}
-					else if (arg1_type == ARG_CONST)
-					{
-						if (!addInstr(target, max_target_size, mem_pos, call_flow, arg_vals, 1))
-						{
-							RAISE_ERROR(ASM_NO_MEMORY)
-						}
-					}
-					else
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT_TYPE)
-					}
-				}
-				else if (areEqual(tokens[instr_start], "ret"))
-				{
-					if (tokens_num > instr_start + 1)
-					{
-						RAISE_L_ERROR(ASM_UNEXPECTED_IDENTIFIER)
-					}
-
-					if (!addInstr(target, max_target_size, mem_pos, ret_stp, NULL, 0))
-					{
-						RAISE_ERROR(ASM_NO_MEMORY)
-					}
-				}
-				else if (areEqual(tokens[instr_start], "hret"))
-				{
-					if (tokens_num > instr_start + 1)
-					{
-						RAISE_L_ERROR(ASM_UNEXPECTED_IDENTIFIER)
-					}
-
-					if (!addInstr(target, max_target_size, mem_pos, hret_stp, NULL, 0))
-					{
-						RAISE_ERROR(ASM_NO_MEMORY)
-					}
-				}
-
-				else if (areEqual(tokens[instr_start], "jmp"))
-				{
-					if (tokens_num > instr_start + 2)
-					{
-						RAISE_L_ERROR(ASM_UNEXPECTED_IDENTIFIER)
-					}
-
-					int4 arg_vals[1];
-
-					int arg1_type = parseArg(pass, tokens[instr_start + 1], arg_vals[0], labels);
-
-					if (arg1_type == ARG_INVALID)
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT)
-					}
-					else if (arg1_type == ARG_CONST)
-					{
-						if (!addInstr(target, max_target_size, mem_pos, jmp_flow, arg_vals, 1))
-						{
-							RAISE_ERROR(ASM_NO_MEMORY)
-						}
-					}
-					else
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT_TYPE)
-					}
-				}
-				else if (areEqual(tokens[instr_start], "out"))
-				{
-					int4 arg_vals[1];
-					int arg_types[1];
-
-					if (tokens_num == instr_start + 2)
-					{
-						arg_types[0] = parseArg(pass, tokens[instr_start + 1], arg_vals[0], labels);
-					}
-					else
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENTS_NUMBER)
-					}
-
-
-					if (arg_types[0] == ARG_INVALID)
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT)
-					}
-					else if (arg_types[0] == ARG_CONST)
-					{
-						if (!addInstr(target, max_target_size, mem_pos, out_const, arg_vals, 1))
-						{
-							RAISE_ERROR(ASM_NO_MEMORY)
-						}
-					}
-					else if (arg_types[0] == ARG_STACK)
-					{
-						if (!addInstr(target, max_target_size, mem_pos, out_stp, arg_vals, 1))
-						{
-							RAISE_ERROR(ASM_NO_MEMORY)
-						}
-					}
-					else
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT_TYPE)
-					}
-
-				}
-				else if (areEqual(tokens[instr_start], "halt"))
-				{
-					if (tokens_num > instr_start + 1)
-					{
-						RAISE_L_ERROR(ASM_UNEXPECTED_IDENTIFIER)
-					}
-
-					if (!addInstr(target, max_target_size, mem_pos, halt, NULL, 0))
-					{
-						RAISE_ERROR(ASM_NO_MEMORY)
-					}
-				}
-				else if (areEqual(tokens[instr_start], "setcont"))
-				{
-					int4 arg_vals[1];
-
-					int arg1_type;
-
-					if (tokens_num == instr_start + 2)
-					{
-						arg1_type = parseArg(pass, tokens[instr_start + 1], arg_vals[0], labels);
-					}
-					else
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENTS_NUMBER)
-					}
-
-					if (arg1_type == ARG_INVALID)
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT)
-					}
-					else if (arg1_type == ARG_STACK)
-					{
-						if (!addInstr(target, max_target_size, mem_pos, setcont_stp, arg_vals, 1))
-						{
-							RAISE_ERROR(ASM_NO_MEMORY)
-						}
-					}
-					else if (arg1_type == ARG_MEMORY_STACK)
-					{
-						if (!addInstr(target, max_target_size, mem_pos, setcont_m_stp, arg_vals, 1))
-						{
-							RAISE_ERROR(ASM_NO_MEMORY)
-						}
-					}
-					else
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT_TYPE)
-					}
-				}
-				else if (areEqual(tokens[instr_start], "getcont"))
-				{
-					int4 arg_vals[1];
-
-					int arg1_type;
-
-					if (tokens_num == instr_start + 2)
-					{
-						arg1_type = parseArg(pass, tokens[instr_start + 1], arg_vals[0], labels);
-					}
-					else
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENTS_NUMBER)
-					}
-
-					if (arg1_type == ARG_INVALID)
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT)
-					}
-					else if (arg1_type == ARG_STACK)
-					{
-						if (!addInstr(target, max_target_size, mem_pos, getcont_stp, arg_vals, 1))
-						{
-							RAISE_ERROR(ASM_NO_MEMORY)
-						}
-					}
-					else if (arg1_type == ARG_MEMORY_STACK)
-					{
-						if (!addInstr(target, max_target_size, mem_pos, getcont_m_stp, arg_vals, 1))
-						{
-							RAISE_ERROR(ASM_NO_MEMORY)
-						}
-					}
-					else
-					{
-						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT_TYPE)
-					}
-				}
 				else if (areEqual(tokens[instr_start], "text"))
 				{
 					wchar_t txt_res[MAX_DATA_BUFFER_LENGTH];

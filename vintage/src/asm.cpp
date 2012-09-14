@@ -59,6 +59,13 @@ instruction_descriptor INSTR_DESCS[] =
 		}
 	},
 	{
+		"halt",
+		{
+			{ halt, ARG_NULL, 0, { ARG_NULL } },
+			INSTR_ARGUMENT_TYPE_VARIATION_NULL
+		}
+	},
+	{
 		"alloc",
 		{
 			{ alloc_const, ARG_NULL, 0, { ARG_CONST, ARG_NULL } },
@@ -68,7 +75,7 @@ instruction_descriptor INSTR_DESCS[] =
 	{
 		"free",
 		{
-			{ alloc_const, ARG_NULL, 0, { ARG_CONST, ARG_NULL } },
+			{ free_const, ARG_NULL, 0, { ARG_CONST, ARG_NULL } },
 			INSTR_ARGUMENT_TYPE_VARIATION_NULL
 		}
 	},
@@ -265,43 +272,31 @@ instruction_descriptor INSTR_DESCS[] =
 		}
 	},
 	{
-		"setcont_stp",
+		"setcont",
 		{
 			{ setcont_stp,   ARG_NULL, 0,        { ARG_STACK, ARG_NULL } },
 			INSTR_ARGUMENT_TYPE_VARIATION_NULL
 		}
 	},
 	{
-		"setcont_m_stp",
+		"setcont",
 		{
 			{ setcont_m_stp, ARG_NULL, 0,          { ARG_MEMORY_STACK, ARG_NULL } },
 			INSTR_ARGUMENT_TYPE_VARIATION_NULL
 		}
 	},
 	{
-		"getcont_stp",
+		"getcont",
 		{
 			{ getcont_stp,   ARG_NULL, 0,        { ARG_STACK, ARG_NULL } },
-			INSTR_ARGUMENT_TYPE_VARIATION_NULL
-		}
-	},
-	{
-		"getcont_m_stp",
-		{
 			{ getcont_m_stp, ARG_NULL, 0,          { ARG_MEMORY_STACK, ARG_NULL } },
 			INSTR_ARGUMENT_TYPE_VARIATION_NULL
 		}
 	},
 	{
-		"out_const",
+		"out",
 		{
 			{ out_const,     ARG_NULL, 0,      { ARG_CONST, ARG_NULL } },
-			INSTR_ARGUMENT_TYPE_VARIATION_NULL
-		}
-	},
-	{
-		"out_stp",
-		{
 			{ out_stp,       ARG_NULL, 0,    { ARG_STACK, ARG_NULL } },
 			INSTR_ARGUMENT_TYPE_VARIATION_NULL
 		}
@@ -803,11 +798,16 @@ int assemble(char* code, int1* target, int4 max_target_size, int& error_line, in
 						}
 					}
 
-					if (((tokens_num - 1) - instr_start) % 2 != 1)
+					if (tokens_num - instr_start != 1 && ((tokens_num - 1) - instr_start) % 2 != 1)
 					{
 						RAISE_L_ERROR(ASM_INCORRECT_ARGUMENT)
 					}
-					int param_tokens_number = ((tokens_num - 1) - instr_start) / 2 + 1;
+
+					int param_tokens_number;
+					if (tokens_num - instr_start == 1)
+						param_tokens_number = 0;
+					else
+						param_tokens_number = ((tokens_num - 1) - instr_start) / 2 + 1;
 
 					// Getting the actual parameter types and values
 					int4 arg_vals[param_tokens_number + 1];		// this "1" is for the optional argument
@@ -826,11 +826,12 @@ int assemble(char* code, int1* target, int4 max_target_size, int& error_line, in
 					     var_index++)
 					{
 						instr_argument_type_variation cur_var = INSTR_DESCS[instruction_descriptor_index].argument_variations[var_index];
-						bool applicable = true;
+						bool applicable = false;
 						bool with_optional = false;
 
 						if (count_arguments_in_variation_no_optional(cur_var) == param_tokens_number)
 						{
+							applicable = true;
 							// Checking the types
 							for (int i = 0; i < param_tokens_number; i++)
 							{
@@ -882,6 +883,7 @@ int assemble(char* code, int1* target, int4 max_target_size, int& error_line, in
 							applied_variation_index = var_index;
 							break;
 						}
+
 					}
 
 					if (applied_variation_index == -1)

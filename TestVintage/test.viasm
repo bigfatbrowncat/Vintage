@@ -1,5 +1,4 @@
                jmp main                          ; the entry point is here
-
 ; *** HELPER FUNCTIONS SECTION *********************************************************************************************
 
 inttostr:      ; in:  (integer value) 
@@ -28,10 +27,10 @@ its_loop:      sub {0}, 2                        ; size of char
                mov {8}, [{8}]
             
                mov 2, [{0}], {8}                 ; moving 2 bytes of char
-               if {16}, its_loop
+               jnz {16}, its_loop
               
                ; now we should add the remaining digits
-               ifp 1, {21}, its_next
+               jp 1, {21}, its_next
                jmp its_exit
 
 its_next:      sub {0}, 2
@@ -39,7 +38,7 @@ its_next:      sub {0}, 2
                mov 2, {4}, [{4}]
                mov 2, [{0}], {4}                 ; adding zero
                sub 1, {21}, 1
-               ifp 1, {21}, its_next                          
+               jp 1, {21}, its_next                          
             
 its_exit:      mov {16}, {0}                     ; result saved
                free 12
@@ -101,7 +100,7 @@ console_handler:
                mov {0}, {8}
                sub {0}, 64                       ; 64 means HARDWARE_SUCCEEDED
                
-               ifp 1, {0}, console_zero
+               jp  1, {0}, console_zero
 console_one:   mov {0}, console_success_flag
                mov 1, {4}, 1
                mov 1, [{0}], {4}
@@ -120,7 +119,7 @@ out_to_console_sync:
 console_wait_loop:
                mov {0}, console_success_flag
                mov 1, {0}, [{0}]
-               ifp 1, {0}, console_wait_end
+               jp  1, {0}, console_wait_end
                jmp console_wait_loop
 console_wait_end:
                ; clearing the flag
@@ -203,7 +202,7 @@ kbd_next:
                mov {0}, kbd_isdown
                mov 1, {0}, [{0}]
 
-               if 1, {0}, kbd_down 
+               jnz 1, {0}, kbd_down 
 kbd_up:        mov {4}, kbd_isup_str
                jmp kbd_print_ud
 kbd_down:      mov {4}, kbd_isdown_str

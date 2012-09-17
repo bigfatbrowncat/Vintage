@@ -85,6 +85,15 @@ void CPU::doCycle(MessageHandlingResult handlingResult)
 			// Do nothing
 			break;
 
+		case halt:
+#ifdef OUTPUT_INSTRUCTIONS
+			printf("halt");
+			fflush(stdout);
+#endif
+			// Halt
+			issueTurningOff();		// Close the world...
+			break;
+
 		case alloc_const:
 			GET_ARG_INT4(arg1, contextStack.back().flow);
 #ifdef OUTPUT_INSTRUCTIONS
@@ -811,15 +820,6 @@ void CPU::doCycle(MessageHandlingResult handlingResult)
 			activityContext = contextStack.back();
 			activityContext.port = *((int4*)&stack[contextStack.back().stackPtr + arg1]);
 			sendMessage();
-			break;
-
-		case halt:
-#ifdef OUTPUT_INSTRUCTIONS
-			printf("halt");
-			fflush(stdout);
-#endif
-			// Halt
-			issueTurningOff();		// Close the world...
 			break;
 
 		case setcont_stp:

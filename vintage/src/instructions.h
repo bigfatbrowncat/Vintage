@@ -84,50 +84,50 @@ const instr_t xor_stp_stp		= 0x0300 + 0x5;
 const instr_t xor_stp_const		= 0x0300 + 0x6;
 
 // gr		const, {stp}, {stp}
-const instr_t gr_stp_stp		= 0x0300 + 0x7;
+const instr_t gr_stp_stp		= 0x0300 + 0x7; // NOT IMPLEMENTED
 // gr		const, {stp}, const
-const instr_t gr_stp_const		= 0x0300 + 0x8;
+const instr_t gr_stp_const		= 0x0300 + 0x8; // NOT IMPLEMENTED
 
 // greq		const, {stp}, {stp}
-const instr_t greq_stp_stp		= 0x0300 + 0x9;
+const instr_t greq_stp_stp		= 0x0300 + 0x9; // NOT IMPLEMENTED
 // greq		const, {stp}, const
-const instr_t greq_stp_const	= 0x0300 + 0x10;
+const instr_t greq_stp_const	= 0x0300 + 0x10; // NOT IMPLEMENTED
 
 // lw		const, {stp}, {stp}
-const instr_t lw_stp_stp		= 0x0300 + 0x11;
+const instr_t lw_stp_stp		= 0x0300 + 0x11; // NOT IMPLEMENTED
 // lw		const, {stp}, const
-const instr_t lw_stp_const		= 0x0300 + 0x12;
+const instr_t lw_stp_const		= 0x0300 + 0x12; // NOT IMPLEMENTED
 
 // lweq		const, {stp}, {stp}
-const instr_t lweq_stp_stp		= 0x0300 + 0x13;
+const instr_t lweq_stp_stp		= 0x0300 + 0x13; // NOT IMPLEMENTED
 // lweq		const, {stp}, const
-const instr_t lweq_stp_const	= 0x0300 + 0x14;
+const instr_t lweq_stp_const	= 0x0300 + 0x14; // NOT IMPLEMENTED
 
 // eq		const, {stp}, {stp}
-const instr_t eq_stp_stp		= 0x0300 + 0x15;
+const instr_t eq_stp_stp		= 0x0300 + 0x15; // NOT IMPLEMENTED
 // eq		const, {stp}, const
-const instr_t eq_stp_const		= 0x0300 + 0x16;
+const instr_t eq_stp_const		= 0x0300 + 0x16; // NOT IMPLEMENTED
 
 // neq		const, {stp}, {stp}
-const instr_t neq_stp_stp		= 0x0300 + 0x17;
+const instr_t neq_stp_stp		= 0x0300 + 0x17; // NOT IMPLEMENTED
 // neq		const, {stp}, const
-const instr_t neq_stp_const		= 0x0300 + 0x18;
+const instr_t neq_stp_const		= 0x0300 + 0x18; // NOT IMPLEMENTED
 
 
 // *** 0x400 group -- jumps ***
 
 // jz		const, {stp}, flow
-const instr_t jz_stp_flow		= 0x0400 + 0x0;
+const instr_t jz_stp_flow		= 0x0400 + 0x0; // NOT IMPLEMENTED
 // jnz		const, {stp}, flow
 const instr_t jnz_stp_flow		= 0x0400 + 0x1;
 // jp		const, {stp}, flow
 const instr_t jp_stp_flow		= 0x0400 + 0x2;
 // jnp		const, {stp}, flow
-const instr_t jnp_stp_flow		= 0x0400 + 0x3;
+const instr_t jnp_stp_flow		= 0x0400 + 0x3; // NOT IMPLEMENTED
 // jn		const, {stp}, flow
-const instr_t jn_stp_flow		= 0x0400 + 0x4;
+const instr_t jn_stp_flow		= 0x0400 + 0x4; // NOT IMPLEMENTED
 // jnn		const, {stp}, flow
-const instr_t jnn_stp_flow		= 0x0400 + 0x5;
+const instr_t jnn_stp_flow		= 0x0400 + 0x5; // NOT IMPLEMENTED
 // jmp		flow
 const instr_t jmp_flow			= 0x0400 + 0x6;
 // call		{stp}

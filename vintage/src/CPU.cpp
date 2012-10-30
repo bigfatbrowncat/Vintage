@@ -247,110 +247,6 @@ void CPU::doCycle(MessageHandlingResult handlingResult)
 
 			break;
 
-		case sub_stp_stp:
-			GET_ARG_INT4(arg1, contextStack.back().flow);
-			GET_ARG_INT4(arg2, contextStack.back().flow);
-			GET_ARG_INT4(arg3, contextStack.back().flow);
-#ifdef OUTPUT_INSTRUCTIONS
-			printf("sub %d, {%d}, {%d}", arg1, arg2, arg3);
-			fflush(stdout);
-#endif
-			switch (arg1)
-			{
-			case 1:
-				stack[contextStack.back().stackPtr + arg2] -= stack[contextStack.back().stackPtr + arg3];
-				break;
-			case 2:
-				*((int2*)&stack[contextStack.back().stackPtr + arg2]) -= *((int2*)&stack[contextStack.back().stackPtr + arg3]);
-				break;
-			case 4:
-				*((int4*)&stack[contextStack.back().stackPtr + arg2]) -= *((int4*)&stack[contextStack.back().stackPtr + arg3]);
-				break;
-			case 8:
-				*((int8*)&stack[contextStack.back().stackPtr + arg2]) -= *((int8*)&stack[contextStack.back().stackPtr + arg3]);
-				break;
-			}
-
-			break;
-
-		case mul_stp_stp:
-			GET_ARG_INT4(arg1, contextStack.back().flow);
-			GET_ARG_INT4(arg2, contextStack.back().flow);
-			GET_ARG_INT4(arg3, contextStack.back().flow);
-#ifdef OUTPUT_INSTRUCTIONS
-			printf("mul %d, {%d}, {%d}", arg1, arg2, arg3);
-			fflush(stdout);
-#endif
-			switch (arg1)
-			{
-			case 1:
-				stack[contextStack.back().stackPtr + arg2] *= stack[contextStack.back().stackPtr + arg3];
-				break;
-			case 2:
-				*((int2*)&stack[contextStack.back().stackPtr + arg2]) *= *((int2*)&stack[contextStack.back().stackPtr + arg3]);
-				break;
-			case 4:
-				*((int4*)&stack[contextStack.back().stackPtr + arg2]) *= *((int4*)&stack[contextStack.back().stackPtr + arg3]);
-				break;
-			case 8:
-				*((int8*)&stack[contextStack.back().stackPtr + arg2]) *= *((int8*)&stack[contextStack.back().stackPtr + arg3]);
-				break;
-			}
-
-			break;
-
-		case div_stp_stp:
-			GET_ARG_INT4(arg1, contextStack.back().flow);
-			GET_ARG_INT4(arg2, contextStack.back().flow);
-			GET_ARG_INT4(arg3, contextStack.back().flow);
-#ifdef OUTPUT_INSTRUCTIONS
-			printf("div %d, {%d}, {%d}", arg1, arg2, arg3);
-			fflush(stdout);
-#endif
-			switch (arg1)
-			{
-			case 1:
-				stack[contextStack.back().stackPtr + arg2] /= stack[contextStack.back().stackPtr + arg3];
-				break;
-			case 2:
-				*((int2*)&stack[contextStack.back().stackPtr + arg2]) /= *((int2*)&stack[contextStack.back().stackPtr + arg3]);
-				break;
-			case 4:
-				*((int4*)&stack[contextStack.back().stackPtr + arg2]) /= *((int4*)&stack[contextStack.back().stackPtr + arg3]);
-				break;
-			case 8:
-				*((int8*)&stack[contextStack.back().stackPtr + arg2]) /= *((int8*)&stack[contextStack.back().stackPtr + arg3]);
-				break;
-			}
-
-			break;
-
-		case mod_stp_stp:
-			GET_ARG_INT4(arg1, contextStack.back().flow);
-			GET_ARG_INT4(arg2, contextStack.back().flow);
-			GET_ARG_INT4(arg3, contextStack.back().flow);
-#ifdef OUTPUT_INSTRUCTIONS
-			printf("mod %d, {%d}, {%d}", arg1, arg2, arg3);
-			fflush(stdout);
-#endif
-			switch (arg1)
-			{
-			case 1:
-				stack[contextStack.back().stackPtr + arg2] %= stack[contextStack.back().stackPtr + arg3];
-				break;
-			case 2:
-				*((int2*)&stack[contextStack.back().stackPtr + arg2]) %= *((int2*)&stack[contextStack.back().stackPtr + arg3]);
-				break;
-			case 4:
-				*((int4*)&stack[contextStack.back().stackPtr + arg2]) %= *((int4*)&stack[contextStack.back().stackPtr + arg3]);
-				break;
-			case 8:
-				*((int8*)&stack[contextStack.back().stackPtr + arg2]) %= *((int8*)&stack[contextStack.back().stackPtr + arg3]);
-				break;
-			}
-
-			break;
-
 		case add_stp_const:
 			GET_ARG_INT4(arg1, contextStack.back().flow);
 			GET_ARG_INT4(arg2, contextStack.back().flow);
@@ -372,6 +268,32 @@ void CPU::doCycle(MessageHandlingResult handlingResult)
 				break;
 			case 8:
 				*((int8*)&stack[contextStack.back().stackPtr + arg2]) += (int8)arg3;
+				break;
+			}
+
+			break;
+
+		case sub_stp_stp:
+			GET_ARG_INT4(arg1, contextStack.back().flow);
+			GET_ARG_INT4(arg2, contextStack.back().flow);
+			GET_ARG_INT4(arg3, contextStack.back().flow);
+#ifdef OUTPUT_INSTRUCTIONS
+			printf("sub %d, {%d}, {%d}", arg1, arg2, arg3);
+			fflush(stdout);
+#endif
+			switch (arg1)
+			{
+			case 1:
+				stack[contextStack.back().stackPtr + arg2] -= stack[contextStack.back().stackPtr + arg3];
+				break;
+			case 2:
+				*((int2*)&stack[contextStack.back().stackPtr + arg2]) -= *((int2*)&stack[contextStack.back().stackPtr + arg3]);
+				break;
+			case 4:
+				*((int4*)&stack[contextStack.back().stackPtr + arg2]) -= *((int4*)&stack[contextStack.back().stackPtr + arg3]);
+				break;
+			case 8:
+				*((int8*)&stack[contextStack.back().stackPtr + arg2]) -= *((int8*)&stack[contextStack.back().stackPtr + arg3]);
 				break;
 			}
 
@@ -403,6 +325,33 @@ void CPU::doCycle(MessageHandlingResult handlingResult)
 
 			break;
 
+
+		case mul_stp_stp:
+			GET_ARG_INT4(arg1, contextStack.back().flow);
+			GET_ARG_INT4(arg2, contextStack.back().flow);
+			GET_ARG_INT4(arg3, contextStack.back().flow);
+#ifdef OUTPUT_INSTRUCTIONS
+			printf("mul %d, {%d}, {%d}", arg1, arg2, arg3);
+			fflush(stdout);
+#endif
+			switch (arg1)
+			{
+			case 1:
+				stack[contextStack.back().stackPtr + arg2] *= stack[contextStack.back().stackPtr + arg3];
+				break;
+			case 2:
+				*((int2*)&stack[contextStack.back().stackPtr + arg2]) *= *((int2*)&stack[contextStack.back().stackPtr + arg3]);
+				break;
+			case 4:
+				*((int4*)&stack[contextStack.back().stackPtr + arg2]) *= *((int4*)&stack[contextStack.back().stackPtr + arg3]);
+				break;
+			case 8:
+				*((int8*)&stack[contextStack.back().stackPtr + arg2]) *= *((int8*)&stack[contextStack.back().stackPtr + arg3]);
+				break;
+			}
+
+			break;
+
 		case mul_stp_const:
 			GET_ARG_INT4(arg1, contextStack.back().flow);
 			GET_ARG_INT4(arg2, contextStack.back().flow);
@@ -429,6 +378,32 @@ void CPU::doCycle(MessageHandlingResult handlingResult)
 
 			break;
 
+		case div_stp_stp:
+			GET_ARG_INT4(arg1, contextStack.back().flow);
+			GET_ARG_INT4(arg2, contextStack.back().flow);
+			GET_ARG_INT4(arg3, contextStack.back().flow);
+#ifdef OUTPUT_INSTRUCTIONS
+			printf("div %d, {%d}, {%d}", arg1, arg2, arg3);
+			fflush(stdout);
+#endif
+			switch (arg1)
+			{
+			case 1:
+				stack[contextStack.back().stackPtr + arg2] /= stack[contextStack.back().stackPtr + arg3];
+				break;
+			case 2:
+				*((int2*)&stack[contextStack.back().stackPtr + arg2]) /= *((int2*)&stack[contextStack.back().stackPtr + arg3]);
+				break;
+			case 4:
+				*((int4*)&stack[contextStack.back().stackPtr + arg2]) /= *((int4*)&stack[contextStack.back().stackPtr + arg3]);
+				break;
+			case 8:
+				*((int8*)&stack[contextStack.back().stackPtr + arg2]) /= *((int8*)&stack[contextStack.back().stackPtr + arg3]);
+				break;
+			}
+
+			break;
+
 		case div_stp_const:
 			GET_ARG_INT4(arg1, contextStack.back().flow);
 			GET_ARG_INT4(arg2, contextStack.back().flow);
@@ -450,6 +425,32 @@ void CPU::doCycle(MessageHandlingResult handlingResult)
 				break;
 			case 8:
 				*((int8*)&stack[contextStack.back().stackPtr + arg2]) /= (int8)arg3;
+				break;
+			}
+
+			break;
+
+		case mod_stp_stp:
+			GET_ARG_INT4(arg1, contextStack.back().flow);
+			GET_ARG_INT4(arg2, contextStack.back().flow);
+			GET_ARG_INT4(arg3, contextStack.back().flow);
+#ifdef OUTPUT_INSTRUCTIONS
+			printf("mod %d, {%d}, {%d}", arg1, arg2, arg3);
+			fflush(stdout);
+#endif
+			switch (arg1)
+			{
+			case 1:
+				stack[contextStack.back().stackPtr + arg2] %= stack[contextStack.back().stackPtr + arg3];
+				break;
+			case 2:
+				*((int2*)&stack[contextStack.back().stackPtr + arg2]) %= *((int2*)&stack[contextStack.back().stackPtr + arg3]);
+				break;
+			case 4:
+				*((int4*)&stack[contextStack.back().stackPtr + arg2]) %= *((int4*)&stack[contextStack.back().stackPtr + arg3]);
+				break;
+			case 8:
+				*((int8*)&stack[contextStack.back().stackPtr + arg2]) %= *((int8*)&stack[contextStack.back().stackPtr + arg3]);
 				break;
 			}
 
@@ -532,58 +533,6 @@ void CPU::doCycle(MessageHandlingResult handlingResult)
 
 			break;
 
-		case or_stp_stp:
-			GET_ARG_INT4(arg1, contextStack.back().flow);
-			GET_ARG_INT4(arg2, contextStack.back().flow);
-			GET_ARG_INT4(arg3, contextStack.back().flow);
-#ifdef OUTPUT_INSTRUCTIONS
-			printf("or %d, {%d}, {%d}", arg1, arg2, arg3);
-			fflush(stdout);
-#endif
-			switch (arg1)
-			{
-			case 1:
-				stack[contextStack.back().stackPtr + arg2] |= stack[contextStack.back().stackPtr + arg3];
-				break;
-			case 2:
-				*((int2*)&stack[contextStack.back().stackPtr + arg2]) |= *((int2*)&stack[contextStack.back().stackPtr + arg3]);
-				break;
-			case 4:
-				*((int4*)&stack[contextStack.back().stackPtr + arg2]) |= *((int4*)&stack[contextStack.back().stackPtr + arg3]);
-				break;
-			case 8:
-				*((int8*)&stack[contextStack.back().stackPtr + arg2]) |= *((int8*)&stack[contextStack.back().stackPtr + arg3]);
-				break;
-			}
-
-			break;
-
-		case xor_stp_stp:
-			GET_ARG_INT4(arg1, contextStack.back().flow);
-			GET_ARG_INT4(arg2, contextStack.back().flow);
-			GET_ARG_INT4(arg3, contextStack.back().flow);
-#ifdef OUTPUT_INSTRUCTIONS
-			printf("xor %d, {%d}, {%d}", arg1, arg2, arg3);
-			fflush(stdout);
-#endif
-			switch (arg1)
-			{
-			case 1:
-				stack[contextStack.back().stackPtr + arg2] ^= stack[contextStack.back().stackPtr + arg3];
-				break;
-			case 2:
-				*((int2*)&stack[contextStack.back().stackPtr + arg2]) ^= *((int2*)&stack[contextStack.back().stackPtr + arg3]);
-				break;
-			case 4:
-				*((int4*)&stack[contextStack.back().stackPtr + arg2]) ^= *((int4*)&stack[contextStack.back().stackPtr + arg3]);
-				break;
-			case 8:
-				*((int8*)&stack[contextStack.back().stackPtr + arg2]) ^= *((int8*)&stack[contextStack.back().stackPtr + arg3]);
-				break;
-			}
-
-			break;
-
 		case and_stp_const:
 			GET_ARG_INT4(arg1, contextStack.back().flow);
 			GET_ARG_INT4(arg2, contextStack.back().flow);
@@ -610,6 +559,32 @@ void CPU::doCycle(MessageHandlingResult handlingResult)
 
 			break;
 
+		case or_stp_stp:
+			GET_ARG_INT4(arg1, contextStack.back().flow);
+			GET_ARG_INT4(arg2, contextStack.back().flow);
+			GET_ARG_INT4(arg3, contextStack.back().flow);
+#ifdef OUTPUT_INSTRUCTIONS
+			printf("or %d, {%d}, {%d}", arg1, arg2, arg3);
+			fflush(stdout);
+#endif
+			switch (arg1)
+			{
+			case 1:
+				stack[contextStack.back().stackPtr + arg2] |= stack[contextStack.back().stackPtr + arg3];
+				break;
+			case 2:
+				*((int2*)&stack[contextStack.back().stackPtr + arg2]) |= *((int2*)&stack[contextStack.back().stackPtr + arg3]);
+				break;
+			case 4:
+				*((int4*)&stack[contextStack.back().stackPtr + arg2]) |= *((int4*)&stack[contextStack.back().stackPtr + arg3]);
+				break;
+			case 8:
+				*((int8*)&stack[contextStack.back().stackPtr + arg2]) |= *((int8*)&stack[contextStack.back().stackPtr + arg3]);
+				break;
+			}
+
+			break;
+
 		case or_stp_const:
 			GET_ARG_INT4(arg1, contextStack.back().flow);
 			GET_ARG_INT4(arg2, contextStack.back().flow);
@@ -631,6 +606,32 @@ void CPU::doCycle(MessageHandlingResult handlingResult)
 				break;
 			case 8:
 				*((int8*)&stack[contextStack.back().stackPtr + arg2]) |= (int8)arg3;
+				break;
+			}
+
+			break;
+
+		case xor_stp_stp:
+			GET_ARG_INT4(arg1, contextStack.back().flow);
+			GET_ARG_INT4(arg2, contextStack.back().flow);
+			GET_ARG_INT4(arg3, contextStack.back().flow);
+#ifdef OUTPUT_INSTRUCTIONS
+			printf("xor %d, {%d}, {%d}", arg1, arg2, arg3);
+			fflush(stdout);
+#endif
+			switch (arg1)
+			{
+			case 1:
+				stack[contextStack.back().stackPtr + arg2] ^= stack[contextStack.back().stackPtr + arg3];
+				break;
+			case 2:
+				*((int2*)&stack[contextStack.back().stackPtr + arg2]) ^= *((int2*)&stack[contextStack.back().stackPtr + arg3]);
+				break;
+			case 4:
+				*((int4*)&stack[contextStack.back().stackPtr + arg2]) ^= *((int4*)&stack[contextStack.back().stackPtr + arg3]);
+				break;
+			case 8:
+				*((int8*)&stack[contextStack.back().stackPtr + arg2]) ^= *((int8*)&stack[contextStack.back().stackPtr + arg3]);
 				break;
 			}
 
@@ -704,7 +705,7 @@ void CPU::doCycle(MessageHandlingResult handlingResult)
 			GET_ARG_INT4(arg2, contextStack.back().flow);
 			GET_ARG_INT4(arg3, contextStack.back().flow);
 #ifdef OUTPUT_INSTRUCTIONS
-			printf("ifp %d, {%d} [%d]", arg1, arg2, arg3);
+			printf("jp %d, {%d} [%d]", arg1, arg2, arg3);
 			fflush(stdout);
 #endif
 			switch (arg1)
@@ -736,6 +737,14 @@ void CPU::doCycle(MessageHandlingResult handlingResult)
 			}
 			break;
 
+		case jmp_flow:
+			GET_ARG_INT4(arg1, contextStack.back().flow);
+#ifdef OUTPUT_INSTRUCTIONS
+			printf("jmp [%d]", arg1);
+			fflush(stdout);
+#endif
+			contextStack.back().flow = arg1;
+			break;
 
 		case call_stp:
 			GET_ARG_INT4(arg1, contextStack.back().flow);
@@ -791,37 +800,6 @@ void CPU::doCycle(MessageHandlingResult handlingResult)
 
 			break;
 
-		case jmp_flow:
-			GET_ARG_INT4(arg1, contextStack.back().flow);
-#ifdef OUTPUT_INSTRUCTIONS
-			printf("jmp [%d]", arg1);
-			fflush(stdout);
-#endif
-			contextStack.back().flow = arg1;
-			break;
-
-		case out_const:
-			GET_ARG_INT4(arg1, contextStack.back().flow);
-#ifdef OUTPUT_INSTRUCTIONS
-			printf("out %d", arg1);
-			fflush(stdout);
-#endif
-			activityContext = contextStack.back();
-			activityContext.port = arg1;
-			sendMessage();
-			break;
-
-		case out_stp:
-			GET_ARG_INT4(arg1, contextStack.back().flow);
-#ifdef OUTPUT_INSTRUCTIONS
-			printf("out {%d}", arg1);
-			fflush(stdout);
-#endif
-			activityContext = contextStack.back();
-			activityContext.port = *((int4*)&stack[contextStack.back().stackPtr + arg1]);
-			sendMessage();
-			break;
-
 		case setcont_stp:
 			GET_ARG_INT4(arg1, contextStack.back().flow);
 #ifdef OUTPUT_INSTRUCTIONS
@@ -869,6 +847,28 @@ void CPU::doCycle(MessageHandlingResult handlingResult)
 			tmpAddr = *((int4*)&stack[contextStack.back().stackPtr + arg1]);
 			contextStack.back().writeTo(((int1*)&heap[tmpAddr]));
 
+			break;
+
+		case out_const:
+			GET_ARG_INT4(arg1, contextStack.back().flow);
+#ifdef OUTPUT_INSTRUCTIONS
+			printf("out %d", arg1);
+			fflush(stdout);
+#endif
+			activityContext = contextStack.back();
+			activityContext.port = arg1;
+			sendMessage();
+			break;
+
+		case out_stp:
+			GET_ARG_INT4(arg1, contextStack.back().flow);
+#ifdef OUTPUT_INSTRUCTIONS
+			printf("out {%d}", arg1);
+			fflush(stdout);
+#endif
+			activityContext = contextStack.back();
+			activityContext.port = *((int4*)&stack[contextStack.back().stackPtr + arg1]);
+			sendMessage();
 			break;
 
 		}
